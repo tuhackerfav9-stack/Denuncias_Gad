@@ -74,4 +74,4 @@ class PasswordChangeView(APIView):
         u.updated_at = timezone.now()
         u.save(update_fields=["password_hash", "updated_at"])
 
-        return Response({"detail": "Contraseña actualizada ✅"}, status=200)
+        return Response({"detail": "Contraseña actualizada  "}, status=200)

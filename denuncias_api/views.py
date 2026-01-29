@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from db.models import Denuncias, Ciudadanos, DenunciaRespuestas  # ✅ aquí está el modelo real
+from db.models import Denuncias, Ciudadanos, DenunciaRespuestas  #   aquí está el modelo real
 from .serializers import DenunciaCreateSerializer
 
 import requests

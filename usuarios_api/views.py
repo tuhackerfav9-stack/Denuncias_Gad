@@ -329,4 +329,4 @@ class RegisterFinalizarView(APIView):
             borrador.finalizado = True
             borrador.save()
 
-        return Response({"detail": "Registro completo ✅", "usuario_id": str(user.id)}, status=201)
+        return Response({"detail": "Registro completo  ", "usuario_id": str(user.id)}, status=201)

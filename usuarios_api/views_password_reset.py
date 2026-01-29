@@ -126,7 +126,7 @@ class ResetCambiarPasswordView(APIView):
         if timezone.now() > token.expira_en:
             return Response({"detail": "Token expirado"}, status=400)
 
-        # ✅ Actualizar password
+        #   Actualizar password
         Usuarios.objects.filter(id=token.usuario_id).update(
             password_hash=make_password(p1)
         )
