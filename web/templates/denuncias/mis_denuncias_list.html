@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    {% if not funcionario %}
+    <div class="alert alert-warning" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Acceso denegado:</strong> No tiene un perfil de funcionario asociado. Contacte al administrador.
+    </div>
+    {% else %}
+    <!-- Información del Funcionario -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4 class="mb-1">
+                                <i class="bi bi-person-badge me-2"></i>{{ funcionario.nombres }} {{ funcionario.apellidos }}
+                            </h4>
+                            <p class="mb-0">
+                                <strong>Cargo:</strong> {{ funcionario.cargo|default:"Sin cargo" }} | 
+                                <strong>Departamento:</strong> {{ funcionario.departamento.nombre|default:"Sin departamento" }}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <span class="badge bg-light text-primary fs-6">
+                                <i class="bi bi-megaphone me-1"></i>{{ total_denuncias }} Denuncias Asignadas
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Pendientes</h6>
+                            <h3 class="mb-0 text-warning">{{ denuncias_pendientes }}</h3>
+                        </div>
+                        <i class="bi bi-clock-history fs-1 text-warning opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">En Proceso</h6>
+                            <h3 class="mb-0 text-primary">{{ denuncias_en_proceso }}</h3>
+                        </div>
+                        <i class="bi bi-gear-fill fs-1 text-primary opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Resueltas</h6>
+                            <h3 class="mb-0 text-success">{{ denuncias_resueltas }}</h3>
+                        </div>
+                        <i class="bi bi-check-circle-fill fs-1 text-success opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="estado" class="form-label">
+                                <i class="bi bi-funnel me-1"></i>Filtrar por Estado
+                            </label>
+                            <select name="estado" id="estado" class="form-select" onchange="this.form.submit()">
+                                <option value="">Todos los estados</option>
+                                <option value="pendiente" {% if estado_actual == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                                <option value="en_proceso" {% if estado_actual == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+                                <option value="resuelto" {% if estado_actual == 'resuelto' %}selected{% endif %}>Resuelto</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="tipo_denuncia" class="form-label">
+                                <i class="bi bi-tags me-1"></i>Filtrar por Tipo
+                            </label>
+                            <select name="tipo_denuncia" id="tipo_denuncia" class="form-select" onchange="this.form.submit()">
+                                <option value="">Todos los tipos</option>
+                                {% for tipo in tipos_denuncia %}
+                                <option value="{{ tipo.id }}" {% if tipo_denuncia_actual == tipo.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ tipo.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <a href="{% url 'web:mis_denuncias' %}" class="btn btn-secondary w-100">
+                                <i class="bi bi-x-circle me-1"></i>Limpiar Filtros
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listado de Denuncias -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-list-check me-2"></i>Mis Denuncias Asignadas
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Ciudadano</th>
+                                    <th>Descripción</th>
+                                    <th>Estado</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for denuncia in denuncias %}
+                                <tr>
+                                    <td><strong>#{{ denuncia.id }}</strong></td>
+                                    <td>
+                                        {{ denuncia.created_at|date:"d/m/Y" }}<br>
+                                        <small class="text-muted">{{ denuncia.created_at|date:"H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ denuncia.tipo_denuncia.nombre }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ denuncia.ciudadano.nombres }} {{ denuncia.ciudadano.apellidos }}</div>
+                                        <small class="text-muted">{{ denuncia.ciudadano.cedula }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="text-truncate" style="max-width: 200px;" title="{{ denuncia.descripcion }}">
+                                            {{ denuncia.descripcion }}
+                                        </div>
+                                        {% if denuncia.direccion_texto %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-geo-alt"></i> {{ denuncia.direccion_texto|truncatewords:5 }}
+                                        </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if denuncia.estado == 'pendiente' %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-clock me-1"></i>Pendiente
+                                            </span>
+                                        {% elif denuncia.estado == 'en_proceso' %}
+                                            <span class="badge bg-primary">
+                                                <i class="bi bi-arrow-repeat me-1"></i>En Proceso
+                                            </span>
+                                        {% elif denuncia.estado == 'resuelto' %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>Resuelto
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ denuncia.estado }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <div class="btn-group" role="group">
+                                            {% if denuncia.estado != 'resuelto' %}
+                                            <a href="{% url 'web:denuncia_detail' denuncia.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalles completo">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'web:denuncia_update' denuncia.pk %}" class="btn btn-sm btn-outline-warning" title="Gestionar">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="bi bi-inbox display-1 mb-3 d-block"></i>
+                                            <h5>No tienes denuncias asignadas</h5>
+                                            <p>Las denuncias que te sean asignadas aparecerán aquí.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Paginación -->
+                {% if is_paginated %}
+                <div class="card-footer bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted small">
+                            Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ paginator.count }} registros
+                        </div>
+                        <nav aria-label="Navegación de páginas">
+                            <ul class="pagination pagination-sm mb-0">
+                                {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_denuncia_actual %}&tipo_denuncia={{ tipo_denuncia_actual }}{% endif %}">&laquo; Primera</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_denuncia_actual %}&tipo_denuncia={{ tipo_denuncia_actual }}{% endif %}">Anterior</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">&laquo; Primera</span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link">Anterior</span>
+                                </li>
+                                {% endif %}
+                                
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_denuncia_actual %}&tipo_denuncia={{ tipo_denuncia_actual }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_denuncia_actual %}&tipo_denuncia={{ tipo_denuncia_actual }}{% endif %}">Siguiente</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ paginator.num_pages }}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_denuncia_actual %}&tipo_denuncia={{ tipo_denuncia_actual }}{% endif %}">Última &raquo;</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Siguiente</span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link">Última &raquo;</span>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

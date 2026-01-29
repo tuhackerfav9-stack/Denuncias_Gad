@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load permission_filters %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-people me-2"></i>
+                        {% if object %}Editar Grupo{% else %}Crear Grupo{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="." novalidate>
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-4">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                <i class="bi bi-card-text me-1"></i>Nombre del Grupo
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Asigna un nombre descriptivo para este grupo de usuarios.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-key me-1"></i>Permisos Asignados
+                            </label>
+
+                            {% with selected_ids=selected_ids %}
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#permisosModal">
+                                    <i class="bi bi-grid me-1"></i>Seleccionar por modelo
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="clearPermissions">
+                                    <i class="bi bi-eraser me-1"></i>Limpiar selección
+                                </button>
+                            </div>
+
+                            <!-- Chips de permisos seleccionados -->
+                            <div id="permisosSeleccionados" class="mb-2">
+                                {% for perm in form.permissions.field.queryset %}
+                                    {% if perm.id|stringformat:"s" in selected_ids %}
+                                        <span class="badge bg-info text-dark me-1 mb-1" data-perm-id="{{ perm.id }}">{{ perm|translate_permission }}</span>
+                                    {% endif %}
+                                {% empty %}
+                                {% endfor %}
+                            </div>
+
+                            <!-- Modal de permisos por modelo -->
+                            <div class="modal fade" id="permisosModal" tabindex="-1" aria-labelledby="permisosModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="permisosModalLabel">Seleccionar permisos por modelo</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                                <button class="btn btn-sm btn-outline-success" type="button" id="selectAllPerms">
+                                                    <i class="bi bi-check2-all me-1"></i>Seleccionar todo
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-warning" type="button" id="unselectAllPerms">
+                                                    <i class="bi bi-x-circle me-1"></i>Quitar todo
+                                                </button>
+                                            </div>
+
+                                            {% regroup form.permissions.field.queryset by content_type.model as permisos_por_modelo %}
+
+                                            <div class="accordion" id="accordionPermisos">
+                                                {% for grupo in permisos_por_modelo %}
+                                                {% with modelo=grupo.grouper %}
+                                                <div class="accordion-item">
+                                                    <h2 class="accordion-header" id="heading-{{ forloop.counter }}">
+                                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ forloop.counter }}" aria-expanded="false" aria-controls="collapse-{{ forloop.counter }}">
+                                                            {{ modelo|capfirst }}
+                                                        </button>
+                                                    </h2>
+                                                    <div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#accordionPermisos">
+                                                        <div class="accordion-body">
+                                                            <div class="row row-cols-1 row-cols-md-2 g-2">
+                                                                {% for perm in grupo.list %}
+                                                                <div class="col">
+                                                                    <div class="form-check">
+                                                                        <input class="form-check-input perm-checkbox" type="checkbox" value="{{ perm.id }}" id="perm-{{ perm.id }}" name="permissions" {% if perm.id|stringformat:"s" in selected_ids %}checked{% endif %}>
+                                                                        <label class="form-check-label" for="perm-{{ perm.id }}">{{ perm|translate_permission }}</label>
+                                                                    </div>
+                                                                </div>
+                                                                {% endfor %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endwith %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Listo</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% endwith %}
+
+                            {% if form.permissions.errors %}
+                                <div class="text-danger small mt-1">{{ form.permissions.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'web:grupo_list' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>
+                                {% if object %}Actualizar{% else %}Crear{% endif %} Grupo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Manejo de checkboxes y chips
+    (function() {
+        const chipsContainer = document.getElementById('permisosSeleccionados');
+        const checkboxes = document.querySelectorAll('.perm-checkbox');
+        const selectAllBtn = document.getElementById('selectAllPerms');
+        const unselectAllBtn = document.getElementById('unselectAllPerms');
+        const clearBtn = document.getElementById('clearPermissions');
+
+        function renderChips() {
+            chipsContainer.innerHTML = '';
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const label = document.querySelector(`label[for="${cb.id}"]`).innerText;
+                    const span = document.createElement('span');
+                    span.className = 'badge bg-info text-dark me-1 mb-1';
+                    span.dataset.permId = cb.value;
+                    span.textContent = label;
+                    chipsContainer.appendChild(span);
+                }
+            });
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', renderChips);
+        });
+
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', () => {
+                checkboxes.forEach(cb => cb.checked = true);
+                renderChips();
+            });
+        }
+
+        if (unselectAllBtn) {
+            unselectAllBtn.addEventListener('click', () => {
+                checkboxes.forEach(cb => cb.checked = false);
+                renderChips();
+            });
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                checkboxes.forEach(cb => cb.checked = false);
+                renderChips();
+            });
+        }
+
+        renderChips();
+    })();
+</script>
+{% endblock %}

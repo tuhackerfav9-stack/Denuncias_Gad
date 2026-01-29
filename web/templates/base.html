@@ -1,0 +1,518 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  {% block meta %}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}GAD Municipal de Salcedo{% endblock %}</title>
+
+  <!-- jQuery + Chartkick -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="{% static 'chartkick/Chart.bundle.js' %}"></script>
+  <script src="{% static 'chartkick/chartkick.js' %}"></script>
+
+  {{ form.media.css }}
+
+  <!-- Favicons -->
+  <link href="{% static 'assets/img/logo_web.png' %}" rel="icon" />
+  <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon" />
+
+  <!-- Vendor CSS -->
+  <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" />
+  <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet" />
+
+  <!-- IZITOAST -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- DATA TABLES -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.3.6/css/dataTables.dataTables.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.6/css/buttons.dataTables.css">
+
+  <style>
+    :root{
+      --app-bg: #0b1220;
+      --card: rgba(255,255,255,.92);
+      --glass: rgba(255,255,255,.08);
+      --glass-2: rgba(255,255,255,.12);
+      --border: rgba(255,255,255,.12);
+      --text: #0f172a;
+      --muted: rgba(15, 23, 42, .65);
+    }
+
+    body{
+      background:
+        radial-gradient(1200px 600px at 15% 0%, rgba(59,130,246,.35), transparent 60%),
+        radial-gradient(900px 500px at 100% 20%, rgba(99,102,241,.30), transparent 55%),
+        linear-gradient(180deg, #0b1220 0%, #070b14 100%);
+      min-height: 100vh;
+    }
+
+    /* Layout */
+    .app-shell{
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      /*min-height: 100vh;*/
+      height: 100vh;   /* NO min-height */
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar{
+      position: sticky;
+      top: 0;
+      /*height: 100vh;*/
+      padding: 18px 14px;
+      border-right: 1px solid var(--border);
+      background: rgba(15, 23, 42, .55);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+    }
+    .brand img{ width:40px; height:40px; object-fit:contain; }
+    .brand .title{ color:#fff; font-weight:800; line-height:1.1; }
+    .brand .subtitle{ color: rgba(255,255,255,.7); font-size: .85rem; }
+
+    .sidebar-card{
+      margin-top: 14px;
+      border-radius: 18px;
+      padding: 12px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+    }
+
+    .menu-search{
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.14);
+      color: #fff;
+    }
+    .menu-search::placeholder{ color: rgba(255,255,255,.65); }
+
+    .navx{
+      margin-top: 10px;
+      display:flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .navx a, .navx button{
+      width: 100%;
+      text-decoration:none;
+      color: rgba(255,255,255,.85);
+      border-radius: 14px;
+      padding: 10px 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      transition: .18s ease;
+    }
+
+    .navx a:hover, .navx button:hover{
+      background: rgba(255,255,255,.08);
+      border-color: rgba(255,255,255,.14);
+      transform: translateY(-1px);
+    }
+
+    .navx .left{
+      display:flex; align-items:center; gap:10px;
+      min-width: 0;
+    }
+    .navx .left i{ font-size: 1.05rem; opacity: .95; }
+    .navx .left span{
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.1;
+    }
+
+    .navx .active{
+      background: rgba(59,130,246,.18);
+      border-color: rgba(59,130,246,.35);
+      box-shadow: 0 10px 30px rgba(59,130,246,.10);
+    }
+
+    .submenu{
+      margin-left: 10px;
+      margin-top: 6px;
+      padding-left: 8px;
+      border-left: 1px dashed rgba(255,255,255,.18);
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .submenu a{
+      padding: 9px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.10);
+      font-size: .92rem;
+    }
+    .submenu a:hover{
+      background: rgba(255,255,255,.08);
+    }
+
+    /* Main */
+    .main{
+      padding: 18px 18px 26px 18px;
+      overflow-y: auto;
+      height: 100vh;
+    }
+
+    .topbar{
+      border-radius: 18px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(18px);
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      gap: 10px;
+    }
+
+    .topbar .crumb{
+      color: rgba(255,255,255,.8);
+      font-weight: 600;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .content-wrap{
+      margin-top: 14px;
+      border-radius: 22px;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.25);
+      box-shadow: 0 18px 60px rgba(0,0,0,.25);
+      padding: 18px;
+    }
+
+    /* Floating action button */
+    .fab{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 1050;
+      width: 54px;
+      height: 54px;
+      border-radius: 999px;
+      border: 0;
+      background: #2563eb;
+      color: #fff;
+      box-shadow: 0 18px 40px rgba(37,99,235,.35);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition: .15s ease;
+    }
+    .fab:hover{ transform: translateY(-2px); background:#1d4ed8; }
+
+    /* Better tables inside cards */
+    .table thead th{ white-space: nowrap; }
+    .card{ border-radius: 18px; }
+    .card-header{ border-top-left-radius: 18px; border-top-right-radius: 18px; }
+
+    /* Mobile */
+    @media (max-width: 992px){
+      .app-shell{ grid-template-columns: 1fr; }
+      .sidebar{
+        position: fixed;
+        left: -340px;
+        width: 320px;
+        z-index: 1200;
+        transition: .22s ease;
+      }
+      .sidebar.open{ left: 0; }
+      .backdrop{
+        display:none;
+        position: fixed;
+        inset: 0;
+        z-index: 1100;
+        background: rgba(0,0,0,.45);
+        backdrop-filter: blur(2px);
+      }
+      .backdrop.show{ display:block; }
+    }
+  </style>
+  {% endblock %}
+</head>
+
+<body>
+  <div class="app-shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <img src="{% static 'assets/img/logo_web.png' %}" alt="Logo">
+        <div class="min-w-0">
+          <div class="title text-truncate">GAD Salcedo</div>
+          <div class="subtitle text-truncate">Panel · {{ user.get_full_name|default:user.username }}</div>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent text-white border-0"><i class="bi bi-search"></i></span>
+          <input id="menuSearch" type="text" class="form-control menu-search" placeholder="Buscar menú...">
+        </div>
+
+        <div class="navx" id="navx">
+          {% for menu in menus_principales %}
+            {% if menu.submenus_list %}
+              <button type="button" class="menu-toggle" data-menu="{{ menu.id }}">
+                <div class="left">
+                  {% if menu.icono %}<i class="{{ menu.icono }}"></i>{% else %}<i class="bi bi-circle"></i>{% endif %}
+                  <span>{{ menu.nombre }}</span>
+                </div>
+                <i class="bi bi-chevron-down"></i>
+              </button>
+
+              <div class="submenu" data-submenu="{{ menu.id }}">
+                {% for submenu in menu.submenus_list %}
+                  <a href="{{ submenu.url }}">
+                    <div class="left">
+                      {% if submenu.icono %}<i class="{{ submenu.icono }}"></i>{% else %}<i class="bi bi-dot"></i>{% endif %}
+                      <span>{{ submenu.nombre }}</span>
+                    </div>
+                    <i class="bi bi-arrow-right-short"></i>
+                  </a>
+                {% endfor %}
+              </div>
+            {% else %}
+              <a href="{{ menu.url }}">
+                <div class="left">
+                  {% if menu.icono %}<i class="{{ menu.icono }}"></i>{% else %}<i class="bi bi-circle"></i>{% endif %}
+                  <span>{{ menu.nombre }}</span>
+                </div>
+                <i class="bi bi-arrow-right-short"></i>
+              </a>
+            {% endif %}
+          {% endfor %}
+
+          {% if user.is_superuser %}
+            <a href="{% url 'web:menu_list' %}">
+              <div class="left">
+                <i class="bi bi-list-nested"></i>
+                <span>Menús</span>
+              </div>
+              <i class="bi bi-shield-lock"></i>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="sidebar-card d-flex gap-2">
+        <a href="{% url 'web:dashboard' %}" class="btn btn-primary w-100">
+          <i class="bi bi-speedometer2 me-1"></i> Dashboard
+        </a>
+        <form method="post" action="{% url 'web:logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-light">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </form>
+      </div>
+    </aside>
+
+    <!-- Mobile backdrop -->
+    <div class="backdrop" id="backdrop"></div>
+
+    <!-- Main -->
+    <main class="main">
+
+      <!-- Topbar -->
+      <div class="topbar">
+        <div class="crumb">
+          <button class="btn btn-outline-light d-lg-none" id="openSidebar">
+            <i class="bi bi-list"></i>
+          </button>
+          <span><i class="bi bi-stars"></i> Sistema de Denuncias</span>
+        </div>
+
+        <div class="dropdown">
+          <a href="#" class="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle me-1"></i>
+            {{ user.username }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+            <li><h6 class="dropdown-header text-truncate" style="max-width: 240px;">{{ user.email }}</h6></li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#quickActionsModal">
+                <i class="bi bi-lightning-charge me-2"></i>Acciones rápidas
+              </button>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form method="post" action="{% url 'web:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="dropdown-item text-danger">
+                  <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+                </button>
+              </form>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="content-wrap">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <!-- FAB (ventana flotante) -->
+  <button class="fab" data-bs-toggle="modal" data-bs-target="#quickActionsModal" title="Acciones rápidas">
+    <i class="bi bi-lightning-charge fs-5"></i>
+  </button>
+
+  <!-- MODAL: Ventana flotante Acciones rápidas -->
+  <div class="modal fade" id="quickActionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-lightning-charge me-2 text-primary"></i>Acciones rápidas</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12 col-md-6 col-lg-3">
+              <a class="btn btn-outline-primary w-100" href="{% url 'web:departamento_list' %}">
+                <i class="bi bi-building me-1"></i>Departamentos
+              </a>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+              <a class="btn btn-outline-primary w-100" href="{% url 'web:funcionario_list' %}">
+                <i class="bi bi-people me-1"></i>Funcionarios
+              </a>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+              <a class="btn btn-outline-primary w-100" href="{% url 'web:webuser_list' %}">
+                <i class="bi bi-person-vcard me-1"></i>Usuarios Web
+              </a>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+              <a class="btn btn-primary w-100" href="{% url 'web:webuser_create' %}">
+                <i class="bi bi-plus-circle me-1"></i>Crear Usuario
+              </a>
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="text-muted small">
+              Tip: usa el buscador del menú para encontrar módulos rápido.
+            </div>
+            <button class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              <i class="bi bi-check2-circle me-1"></i>Listo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor JS -->
+  {{ form.media.js }}
+  <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+  <!-- IZITOAST -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <!-- DATA TABLES -->
+  <script src="https://cdn.datatables.net/2.3.6/js/dataTables.js"></script>
+  <script src="https://cdn.datatables.net/buttons/3.2.6/js/dataTables.buttons.js"></script>
+  <script src="https://cdn.datatables.net/buttons/3.2.6/js/buttons.dataTables.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/3.2.6/js/buttons.html5.min.js"></script>
+
+  <script>
+    // iziToast mensajes django
+    {% if messages %}
+      {% for message in messages %}
+        iziToast.{% if message.tags %}{{ message.tags }}{% else %}show{% endif %}({
+          title: "Notificación",
+          message: "{{ message }}",
+          position: "bottomRight",
+          timeout: 3000,
+          layout: 2,
+          balloon: true,
+        });
+      {% endfor %}
+    {% endif %}
+  </script>
+
+  <script>
+    // Datatables
+    $(document).ready(function () {
+      $('.datatable').DataTable({
+        dom: 'Bfrtip',
+        buttons: ['copyHtml5','excelHtml5','csvHtml5','pdfHtml5']
+      });
+    });
+  </script>
+
+  <script>
+    // Sidebar accordion
+    document.querySelectorAll('.menu-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.menu;
+        const box = document.querySelector(`.submenu[data-submenu="${id}"]`);
+        const icon = btn.querySelector('.bi-chevron-down');
+        const isOpen = box.style.display === 'flex';
+        box.style.display = isOpen ? 'none' : 'flex';
+        icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+      });
+    });
+
+    // Buscar menú
+    const input = document.getElementById('menuSearch');
+    const nav = document.getElementById('navx');
+    input?.addEventListener('input', () => {
+      const q = input.value.toLowerCase().trim();
+      nav.querySelectorAll('a, button').forEach(el => {
+        const text = el.innerText.toLowerCase();
+        // Mostrar/ocultar items
+        el.style.display = text.includes(q) ? '' : 'none';
+      });
+      // submenus: si el padre está oculto, ocultar también el contenedor
+      nav.querySelectorAll('.submenu').forEach(sm => {
+        const anyVisible = Array.from(sm.querySelectorAll('a')).some(a => a.style.display !== 'none');
+        sm.style.display = anyVisible ? 'flex' : 'none';
+      });
+    });
+
+    // Mobile sidebar
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('backdrop');
+    const openBtn = document.getElementById('openSidebar');
+
+    function openSidebar(){
+      sidebar.classList.add('open');
+      backdrop.classList.add('show');
+    }
+    function closeSidebar(){
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('show');
+    }
+    openBtn?.addEventListener('click', openSidebar);
+    backdrop?.addEventListener('click', closeSidebar);
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

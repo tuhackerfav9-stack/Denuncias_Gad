@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+
+<div class="container-fluid mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-{% if object %}pencil-square{% else %}person-plus{% endif %} me-2"></i>
+            {% if object %}Editar funcionario{% else %}Crear funcionario{% endif %}
+          </h5>
+        </div>
+
+        <div class="card-body">
+          <form method="post" id="funcionarioForm" action="." novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+              </div>
+            {% endif %}
+
+            <!-- =========================
+                 USUARIO (tabla usuarios UUID)
+                 ========================= -->
+            <div class="mb-3">
+                {{ form.usuario|as_crispy_field }}
+                {% if object %}
+                    <div class="form-text text-muted">
+                    ⚠️ En edición no se puede cambiar el usuario UUID porque rompe el vínculo del funcionario.
+                    </div>
+                {% endif %}
+                </div>
+
+                <div class="mb-3">
+                {{ form.web_user|as_crispy_field }}
+                <div class="form-text text-muted">
+                    Este usuario es el que inicia sesión en la web (tabla auth_user).
+                </div>
+                </div>
+
+
+            <!-- =========================
+                 WEB USER (auth_user int) - SOLO SI EXISTE EN EL FORM
+                 ========================= -->
+            {% if form.web_user %}
+              <div class="mb-3">
+                <label for="{{ form.web_user.id_for_label }}" class="form-label fw-bold">
+                  <i class="bi bi-person-check me-1"></i>WebUser (auth_user - Login Django)
+                </label>
+                {{ form.web_user }}
+                {% if form.web_user.errors %}
+                  <div class="text-danger small">{{ form.web_user.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text text-muted">
+                  Este usuario es el que inicia sesión en la web (tabla <b>auth_user</b>).
+                </div>
+              </div>
+            {% endif %}
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.cedula.id_for_label }}" class="form-label fw-bold">Cédula</label>
+                {{ form.cedula }}
+                {% if form.cedula.errors %}
+                  <div class="text-danger small">{{ form.cedula.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.telefono.id_for_label }}" class="form-label fw-bold">Teléfono</label>
+                {{ form.telefono }}
+                {% if form.telefono.errors %}
+                  <div class="text-danger small">{{ form.telefono.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.nombres.id_for_label }}" class="form-label fw-bold">Nombres</label>
+                {{ form.nombres }}
+                {% if form.nombres.errors %}
+                  <div class="text-danger small">{{ form.nombres.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.apellidos.id_for_label }}" class="form-label fw-bold">Apellidos</label>
+                {{ form.apellidos }}
+                {% if form.apellidos.errors %}
+                  <div class="text-danger small">{{ form.apellidos.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.departamento.id_for_label }}" class="form-label fw-bold">Departamento</label>
+                {{ form.departamento }}
+                {% if form.departamento.errors %}
+                  <div class="text-danger small">{{ form.departamento.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.cargo.id_for_label }}" class="form-label fw-bold">Cargo</label>
+                {{ form.cargo }}
+                {% if form.cargo.errors %}
+                  <div class="text-danger small">{{ form.cargo.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="mb-3 form-check">
+              {{ form.activo }}
+              <label for="{{ form.activo.id_for_label }}" class="form-check-label">
+                <i class="bi bi-check-circle me-1"></i>Funcionario activo
+              </label>
+              {% if form.activo.errors %}
+                <div class="text-danger small">{{ form.activo.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+              <a href="{% url 'web:funcionario_list' %}" class="btn btn-outline-secondary me-md-2">
+                <i class="bi bi-arrow-left me-1"></i>Cancelar
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i>
+                {% if object %}Actualizar{% else %}Crear{% endif %}
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const form = document.getElementById("funcionarioForm");
+  const cedulaInput = document.getElementById("id_cedula");
+  const telefonoInput = document.getElementById("id_telefono");
+  const usuarioSelect = document.getElementById("id_usuario");
+
+  // ✅ En edición bloquea usuario UUID (no romper vínculo)
+  const isEdit = {{ object.pk|default:"null" }};
+  if (isEdit && usuarioSelect) {
+    usuarioSelect.setAttribute("disabled", "disabled");
+
+    // al deshabilitar, no se envía: clon hidden para mandar el mismo UUID
+    const hidden = document.createElement("input");
+    hidden.type = "hidden";
+    hidden.name = usuarioSelect.name;
+    hidden.value = usuarioSelect.value;
+    form.appendChild(hidden);
+  }
+
+  function setInvalid(el, msg) {
+    el.classList.add("is-invalid");
+    let fb = el.parentElement.querySelector(".invalid-feedback");
+    if (!fb) {
+      fb = document.createElement("div");
+      fb.className = "invalid-feedback";
+      el.parentElement.appendChild(fb);
+    }
+    fb.textContent = msg;
+  }
+
+  function clearInvalid(el) {
+    el.classList.remove("is-invalid");
+    const fb = el.parentElement.querySelector(".invalid-feedback");
+    if (fb) fb.remove();
+  }
+
+  function validateCedula() {
+    if (!cedulaInput) return true;
+    const v = (cedulaInput.value || "").trim();
+    if (!/^\d{10}$/.test(v)) {
+      setInvalid(cedulaInput, "La cédula debe tener 10 dígitos numéricos.");
+      return false;
+    }
+    clearInvalid(cedulaInput);
+    return true;
+  }
+
+  function validateTelefono() {
+    if (!telefonoInput) return true;
+    const v = (telefonoInput.value || "").trim();
+    if (v && !/^\d{7,15}$/.test(v)) {
+      setInvalid(telefonoInput, "El teléfono debe contener solo dígitos (7 a 15).");
+      return false;
+    }
+    clearInvalid(telefonoInput);
+    return true;
+  }
+
+  cedulaInput && cedulaInput.addEventListener("input", validateCedula);
+  telefonoInput && telefonoInput.addEventListener("input", validateTelefono);
+
+  form.addEventListener("submit", function (e) {
+    const ok = validateCedula() && validateTelefono();
+    if (!ok) e.preventDefault();
+  });
+})();
+</script>
+
+{% endblock %}

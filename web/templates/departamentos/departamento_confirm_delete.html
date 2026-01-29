@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+
+                    <p class="mb-4">¿Está seguro de que desea eliminar el siguiente departamento?</p>
+
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-building me-2"></i>{{ object.nombre }}
+                            </h6>
+                            <p class="card-text mb-1">
+                                <strong>ID:</strong> #{{ object.pk }}
+                            </p>
+                            <p class="card-text mb-1">
+                                <strong>Estado:</strong>
+                                {% if object.activo %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </p>
+                            <p class="card-text mb-1">
+                                <strong>Fecha de Creación:</strong> {{ object.created_at|date:"d/m/Y H:i" }}
+                            </p>
+                            {% with funcionarios_count=object.funcionarios_set.count %}
+                            <p class="card-text mb-0">
+                                <strong>Funcionarios asignados:</strong> {{ funcionarios_count }}
+                                {% if funcionarios_count > 0 %}
+                                <span class="text-warning">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                    ¡Este departamento tiene funcionarios asignados!
+                                </span>
+                                {% endif %}
+                            </p>
+                            {% endwith %}
+                        </div>
+                    </div>
+
+                    {% with funcionarios_count=object.funcionarios_set.count %}
+                    {% if funcionarios_count > 0 %}
+                    <div class="alert alert-danger mt-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>¡Advertencia!</strong> Este departamento tiene {{ funcionarios_count }} funcionario(s) asignado(s).
+                        Al eliminarlo, estos funcionarios quedarán sin departamento asignado.
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'web:departamento_detail' object.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-2"></i>Sí, Eliminar Departamento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-trash me-2"></i>Eliminar Denuncia
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-exclamation-octagon display-1 text-danger opacity-50"></i>
+                    </div>
+                    <p class="lead text-center">¿Está seguro que desea eliminar esta denuncia?</p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle me-2"></i><strong>Atención:</strong> Esta acción es irreversible y eliminará también toda la evidencia, historial y respuestas asociadas.
+                    </div>
+                    
+                    <dl class="row bg-light p-3 rounded">
+                        <dt class="col-sm-4 text-end">ID:</dt>
+                        <dd class="col-sm-8 text-break">{{ object.id }}</dd>
+                        
+                        <dt class="col-sm-4 text-end">Ciudadano:</dt>
+                        <dd class="col-sm-8">{{ object.ciudadano.nombres }} {{ object.ciudadano.apellidos }}</dd>
+                        
+                        <dt class="col-sm-4 text-end">Tipo:</dt>
+                        <dd class="col-sm-8">{{ object.tipo_denuncia.nombre }}</dd>
+                    </dl>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'web:denuncia_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-2"></i>Confirmar Eliminación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

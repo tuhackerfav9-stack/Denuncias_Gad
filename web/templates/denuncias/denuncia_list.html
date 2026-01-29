@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-megaphone me-2"></i>Gestión de Denuncias
+                </h1>
+            </div>
+            <!-- Filtros de búsqueda -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <form method="get" class="row g-3 align-items-end">
+                        <div class="col-md-2">
+                            <label class="form-label">Estado</label>
+                            <select name="estado" class="form-select" onchange="this.form.submit()">
+                                <option value="">Todos</option>
+                                <option value="pendiente" {% if estado_actual == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                                <option value="en_proceso" {% if estado_actual == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+                                <option value="resuelto" {% if estado_actual == 'resuelto' %}selected{% endif %}>Resuelto</option>
+                                <option value="rechazado" {% if estado_actual == 'rechazado' %}selected{% endif %}>Rechazado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Tipo</label>
+                            <select name="tipo" class="form-select" onchange="this.form.submit()">
+                                <option value="">Todos</option>
+                                {% for t in tipos_denuncia %}
+                                    <option value="{{ t.id }}" {% if tipo_actual == t.id|stringformat:"s" %}selected{% endif %}>{{ t.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Departamento</label>
+                            <select name="departamento" class="form-select" onchange="this.form.submit()">
+                                <option value="">Todos</option>
+                                {% for d in departamentos %}
+                                    <option value="{{ d.id }}" {% if departamento_actual == d.id|stringformat:"s" %}selected{% endif %}>{{ d.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Funcionario</label>
+                            <select name="funcionario" class="form-select" onchange="this.form.submit()">
+                                <option value="">Todos</option>
+                                {% for f in funcionarios %}
+                                    <option value="{{ f.id }}" {% if funcionario_actual == f.id|stringformat:"s" %}selected{% endif %}>{{ f.nombres }} {{ f.apellidos }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Buscar</label>
+                            <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Nombre, cédula o descripción">
+                        </div>
+                        <div class="col-md-1 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary w-100" title="Aplicar filtros"><i class="bi bi-search"></i></button>
+                            <a href="{% url 'web:denuncia_list' %}" class="btn btn-secondary" title="Limpiar filtros"><i class="bi bi-x-circle"></i></a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 {% if denuncias %}datatable{% endif %}">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Ciudadano</th>
+                                    <th>Departamento</th>
+                                    <th>Estado</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for denuncia in denuncias %}
+                                <tr>
+                                    <td>{{ denuncia.created_at|date:"d/m/Y" }}<br><small class="text-muted">{{ denuncia.created_at|date:"H:i" }}</small></td>
+                                    <td>{{ denuncia.tipo_denuncia.nombre }}</td>
+                                    <td>
+                                        <div class="fw-bold">{{ denuncia.ciudadano.nombres }} {{ denuncia.ciudadano.apellidos }}</div>
+                                        <small class="text-muted">{{ denuncia.ciudadano.cedula }}</small>
+                                    </td>
+                                    <td>
+                                        {% if denuncia.asignado_departamento %}
+                                            <span class="badge bg-info text-dark">{{ denuncia.asignado_departamento.nombre }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Sin asignar</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if denuncia.estado == 'pendiente' %}
+                                            <span class="badge bg-warning text-dark">Pendiente</span>
+                                        {% elif denuncia.estado == 'en_proceso' %}
+                                            <span class="badge bg-primary">En Proceso</span>
+                                        {% elif denuncia.estado == 'resuelto' %}
+                                            <span class="badge bg-success">Resuelto</span>
+                                        {% elif denuncia.estado == 'rechazado' %}
+                                            <span class="badge bg-danger">Rechazado</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ denuncia.estado }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'web:denuncia_detail' denuncia.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalles completo">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% if denuncia.estado != 'resuelto' %}
+                                            
+                                            <a href="{% url 'web:denuncia_update' denuncia.pk %}" class="btn btn-sm btn-outline-warning" title="Gestionar">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="bi bi-inbox fa-2x mb-2"></i>
+                                            <p>No hay denuncias registradas</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Paginación -->
+                {% if is_paginated %}
+                <div class="card-footer bg-white border-top-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted small">
+                            Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ paginator.count }} registros
+                        </div>
+                        <nav aria-label="Navegación de páginas">
+                            <ul class="pagination pagination-sm mb-0">
+                                {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if departamento_actual %}&departamento={{ departamento_actual }}{% endif %}{% if funcionario_actual %}&funcionario={{ funcionario_actual }}{% endif %}{% if q %}&q={{ q }}{% endif %}">&laquo; Primera</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if departamento_actual %}&departamento={{ departamento_actual }}{% endif %}{% if funcionario_actual %}&funcionario={{ funcionario_actual }}{% endif %}{% if q %}&q={{ q }}{% endif %}">Anterior</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">&laquo; Primera</span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link">Anterior</span>
+                                </li>
+                                {% endif %}
+                                
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if departamento_actual %}&departamento={{ departamento_actual }}{% endif %}{% if funcionario_actual %}&funcionario={{ funcionario_actual }}{% endif %}{% if q %}&q={{ q }}{% endif %}">{{ num }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if departamento_actual %}&departamento={{ departamento_actual }}{% endif %}{% if funcionario_actual %}&funcionario={{ funcionario_actual }}{% endif %}{% if q %}&q={{ q }}{% endif %}">Siguiente</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ paginator.num_pages }}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if departamento_actual %}&departamento={{ departamento_actual }}{% endif %}{% if funcionario_actual %}&funcionario={{ funcionario_actual }}{% endif %}{% if q %}&q={{ q }}{% endif %}">Última &raquo;</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Siguiente</span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link">Última &raquo;</span>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pencil-square me-2"></i>Gestionar Denuncia
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action=".">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.estado.id_for_label }}" class="form-label fw-bold">Estado</label>
+                                {{ form.estado }}
+                                {% if form.estado.errors %}
+                                    <div class="text-danger small">{{ form.estado.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                             <div class="col-md-6 mb-3">
+                                <label for="{{ form.tipo_denuncia.id_for_label }}" class="form-label fw-bold">Tipo</label>
+                                {{ form.tipo_denuncia }}
+                                {% if form.tipo_denuncia.errors %}
+                                    <div class="text-danger small">{{ form.tipo_denuncia.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.descripcion.id_for_label }}" class="form-label fw-bold">Descripción</label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.errors %}
+                                <div class="text-danger small">{{ form.descripcion.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <hr class="my-4">
+                        <h6 class="mb-3"><i class="bi bi-person-badge me-2"></i>Asignación</h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.asignado_departamento.id_for_label }}" class="form-label">Departamento</label>
+                                {{ form.asignado_departamento }}
+                                {% if form.asignado_departamento.errors %}
+                                    <div class="text-danger small">{{ form.asignado_departamento.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.asignado_funcionario.id_for_label }}" class="form-label">Funcionario</label>
+                                {{ form.asignado_funcionario }}
+                                {% if form.asignado_funcionario.errors %}
+                                    <div class="text-danger small">{{ form.asignado_funcionario.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h6 class="mb-3"><i class="bi bi-geo-alt me-2"></i>Ubicación</h6>
+                         <div class="mb-3">
+                            <label for="{{ form.direccion_texto.id_for_label }}" class="form-label">Dirección</label>
+                            {{ form.direccion_texto }}
+                        </div>
+                         <div class="mb-3">
+                            <label for="{{ form.referencia.id_for_label }}" class="form-label">Referencia</label>
+                            {{ form.referencia }}
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'web:denuncia_list' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>
+                                Actualizar Denuncia
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

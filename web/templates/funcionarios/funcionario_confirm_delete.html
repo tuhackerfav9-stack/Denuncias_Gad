@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+
+                    <p class="mb-4">¿Está seguro de que desea eliminar al siguiente funcionario?</p>
+
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-person-circle me-2"></i>{{ object.nombres }} {{ object.apellidos }}
+                            </h6>
+                            <p class="card-text mb-1">
+                                <strong>ID:</strong> #{{ object.pk }}
+                            </p>
+                            <p class="card-text mb-1">
+                                <!-- <strong>Usuario:</strong> {{ object.web_user.username }} -->
+                                <strong>Usuario:</strong> {{ object.usuario.username }}
+                            </p>
+                            <p class="card-text mb-1">
+                                <strong>Cédula:</strong> {{ object.cedula }}
+                            </p>
+                            <p class="card-text mb-1">
+                                <strong>Cargo:</strong> {% if object.cargo %}{{ object.cargo }}{% else %}No especificado{% endif %}
+                            </p>
+                            <p class="card-text mb-1">
+                                <strong>Departamento:</strong>
+                                {% if object.departamento %}{{ object.departamento.nombre }}{% else %}Sin asignar{% endif %}
+                            </p>
+                            <p class="card-text mb-0">
+                                <strong>Estado:</strong>
+                                {% if object.activo %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'web:funcionario_detail' object.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-2"></i>Sí, Eliminar Funcionario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.alert {
+    border-radius: 0.375rem;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+</style>
+{% endblock %}

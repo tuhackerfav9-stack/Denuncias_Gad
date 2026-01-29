@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-question-circle me-2"></i>
+                        {% if object %}Editar FAQ{% else %}Crear FAQ{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action=".">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.pregunta.id_for_label }}" class="form-label">
+                                <i class="bi bi-chat-left-text me-1"></i>Pregunta
+                            </label>
+                            {{ form.pregunta }}
+                            {% if form.pregunta.errors %}
+                                <div class="text-danger small">{{ form.pregunta.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.respuesta.id_for_label }}" class="form-label">
+                                <i class="bi bi-chat-right-text me-1"></i>Respuesta
+                            </label>
+                            {{ form.respuesta }}
+                            {% if form.respuesta.errors %}
+                                <div class="text-danger small">{{ form.respuesta.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            {{ form.visible }}
+                            <label for="{{ form.visible.id_for_label }}" class="form-check-label">
+                                <i class="bi bi-eye me-1"></i>Visible
+                            </label>
+                            {% if form.visible.errors %}
+                                <div class="text-danger small">{{ form.visible.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'web:faq_list' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>
+                                {% if object %}Actualizar{% else %}Guardar{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

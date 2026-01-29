@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Error 404</title>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="" name="description" />
+    <meta content="" name="keywords" />
+
+    <!-- Favicons -->
+    <link href="{% static 'assets/img/logo_web.png' %}" rel="icon" />
+    <link
+      href="{% static 'assets/img/apple-touch-icon.png' %}"
+      rel="apple-touch-icon"
+    />
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Vendor CSS Files -->
+    <link
+      href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}"
+      rel="stylesheet"
+    />
+    <link
+      href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}"
+      rel="stylesheet"
+    />
+    <link href="{% static 'assets/vendor/aos/aos.css' %}" rel="stylesheet" />
+    <link
+      href="{% static 'assets/vendor/glightbox/css/glightbox.min.css' %}"
+      rel="stylesheet"
+    />
+    <link
+      href="{% static 'assets/vendor/swiper/swiper-bundle.min.css' %}"
+      rel="stylesheet"
+    />
+
+    <!-- Main CSS File -->
+    <link href="{% static 'assets/css/main.css' %}" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container-fluid mt-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-6 text-center">
+          <div class="card shadow-lg border-dark">
+            <div class="card-body p-5">
+              <div class="mb-4">
+                <i
+                  class="bi bi-exclamation-triangle-fill"
+                  style="font-size: 5rem; color: #6c757d"
+                ></i>
+              </div>
+              <h1 class="card-title text-dark mb-3">500</h1>
+              <h4 class="mb-3">Error del Servidor</h4>
+              <p class="card-text text-muted mb-4">
+                Se ha producido un error inesperado en el servidor. El equipo
+                técnico ha sido notificado. Por favor, intenta más tarde.
+              </p>
+              <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <a
+                  href="{% url 'web:departamento_list' %}"
+                  class="btn btn-primary me-md-2"
+                >
+                  <i class="bi bi-house me-2"></i>Volver al Inicio
+                </a>
+                <a
+                  href="mailto:soporte@denuncias.gad"
+                  class="btn btn-outline-secondary"
+                >
+                  <i class="bi bi-envelope me-2"></i>Contactar Soporte
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12 col-lg-6 mx-auto">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Eliminación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <p class="mb-3">¿Está seguro de que desea eliminar la siguiente asignación?</p>
+                    
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">Tipo de Denuncia:</dt>
+                                <dd class="col-sm-7">{{ asignacion.tipo_denuncia.nombre }}</dd>
+                                
+                                <dt class="col-sm-5">Departamento:</dt>
+                                <dd class="col-sm-7">{{ asignacion.departamento.nombre }}</dd>
+                                
+                                <dt class="col-sm-5">Fecha de Creación:</dt>
+                                <dd class="col-sm-7">{{ asignacion.created_at|date:"d/m/Y H:i" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Al eliminar esta asignación, el sistema no sabrá automáticamente qué departamento debe atender 
+                        las denuncias de tipo <strong>{{ asignacion.tipo_denuncia.nombre }}</strong>.
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'web:tipo_denuncia_departamento_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-2"></i>Sí, eliminar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

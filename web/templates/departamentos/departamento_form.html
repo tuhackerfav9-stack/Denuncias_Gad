@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-{% if object %}pencil{% else %}plus-circle{% endif %} me-2"></i>
+                        {% if object %}Editar{% else %}Crear{% endif %} Departamento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action=".">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                <i class="bi bi-building me-1"></i>Nombre del Departamento
+                            </label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}
+                                <div class="text-danger small">{{ form.nombre.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Ingrese el nombre completo del departamento</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.activo }}
+                                <label for="{{ form.activo.id_for_label }}" class="form-check-label">
+                                    <i class="bi bi-check-circle me-1"></i>Departamento Activo
+                                </label>
+                            </div>
+                            {% if form.activo.errors %}
+                                <div class="text-danger small">{{ form.activo.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Marque esta casilla si el departamento está activo</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.color_hex.id_for_label }}" class="form-label">
+                                <i class="bi bi-palette me-1"></i>Color del Departamento
+                            </label>
+                            <div class="col-md-4">
+                                {{ form.color_hex }}
+                            </div>
+                            {% if form.color_hex.errors %}
+                                <div class="text-danger small">{{ form.color_hex.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Seleccione un color representativo para el departamento</div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'web:departamento_list' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>
+                                {% if object %}Actualizar{% else %}Crear{% endif %} Departamento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

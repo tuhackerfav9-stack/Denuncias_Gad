@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-people me-2"></i>Lista de Usuarios Web
+                </h1>
+                <a href="{% url 'web:webuser_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Agregar Usuario
+                </a>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Usuario</th>
+                                    <th>Correo</th>
+                                    <th>Nombre</th>
+                                    <th>Apellido</th>
+                                    <th>Activo</th>
+                                    <th>Funcionario</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in webusers %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.first_name }}</td>
+                                    <td>{{ user.last_name }}</td>
+                                    <td>
+                                        {% if user.is_active %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% with func=user.funcionarios_set.first %}
+                                            {% if func %}
+                                                {{ func.nombres }} {{ func.apellidos }}
+                                                {% if func.cargo %}
+                                                    <br><small class="text-muted">{{ func.cargo }}</small>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted fst-italic">No asignado</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'web:webuser_detail' user.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'web:webuser_update' user.pk %}" class="btn btn-sm btn-outline-warning" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{% url 'web:webuser_delete' user.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="return confirm('¿Está seguro de eliminar este usuario?')">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="bi bi-people fa-2x mb-2"></i>
+                                            <p>No hay usuarios registrados</p>
+                                            <a href="{% url 'web:webuser_create' %}" class="btn btn-primary btn-sm">
+                                                <i class="bi bi-plus-circle me-1"></i>Agregar el primero
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
