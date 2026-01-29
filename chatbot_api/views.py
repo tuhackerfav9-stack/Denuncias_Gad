@@ -204,7 +204,7 @@ def _extract_fields_from_text(text: str):
     if m:
         out["referencia"] = m.group(1).strip()
 
-    # ✅ si el usuario dice "dirección:" lo guardamos en referencia
+    #   si el usuario dice "dirección:" lo guardamos en referencia
     m = _re_dir.search(text)
     if m:
         out["referencia"] = m.group(1).strip()
@@ -469,7 +469,7 @@ class ChatbotMessageView(APIView):
             )
 
             if r.get("ok"):
-                msg_ok = f"✅ Denuncia enviada. ID: {r['denuncia_id']}"
+                msg_ok = f"  Denuncia enviada. ID: {r['denuncia_id']}"
                 ChatMensajes.objects.create(
                     id=uuid.uuid4(),
                     conversacion_id=conv_id,
@@ -569,7 +569,7 @@ class ChatbotMessageView(APIView):
         client = _client()
         history = _to_openai_messages(conv_id)
 
-        # ✅ Solo pasamos borrador_id si existe (regla de instrucciones)
+        #   Solo pasamos borrador_id si existe (regla de instrucciones)
         if borr is not None:
             history.append({"role": "user", "content": f"(contexto interno: borrador_id={borr.id})"})
         else:
@@ -597,7 +597,7 @@ class ChatbotMessageView(APIView):
                 except Exception:
                     args = {}
 
-                # ✅ seguridad extra: si no hay borrador, no permitimos update/finalize aunque el modelo lo intente
+                #   seguridad extra: si no hay borrador, no permitimos update/finalize aunque el modelo lo intente
                 if borr is None and name in ("update_borrador", "finalizar_denuncia"):
                     result = {"error": "sin_borrador"}
                 else:

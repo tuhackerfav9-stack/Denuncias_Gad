@@ -58,7 +58,7 @@ def enviar_codigo_reset(correo: str, codigo: str, minutos: int = 10) -> bool:
 
 
 def enviar_codigo_registro(correo: str, codigo: str, minutos: int = 10) -> bool:
-    asunto = "✅ Verificación de correo - Denuncias GAD Salcedo"
+    asunto = " Verificación de correo - Denuncias GAD Salcedo"
 
     texto_plano = (
         "Hola 👋\n\n"
