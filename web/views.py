@@ -6,14 +6,16 @@ import re
 import uuid
 from datetime import timedelta
 
+
+from django.db.models.functions import TruncDate, TruncWeek, TruncMonth
 from django.conf import settings
-from django.contrib.auth.decorators import login_required  # ✅ QUITÉ permission_required (ya no lo usamos para db.xxx)
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin  # ✅ QUITÉ PermissionRequiredMixin
+from django.contrib.auth.decorators import login_required  #  QUITÉ permission_required (ya no lo usamos para db.xxx)
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin  #  QUITÉ PermissionRequiredMixin
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import LoginView
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Q
-from django.db.models.functions import TruncMonth, TruncWeek
+#from django.db.models.functions import TruncMonth, TruncWeek
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -223,47 +225,71 @@ def api_respuestas_denuncia(request, denuncia_id):
 
     return JsonResponse({"success": True, "respuestas": data})
 
-# =========================================
-# Dashboard (KPIs + Charts)
-# =========================================
+
 @login_required
 def dashboard_view(request):
-    funcionario = get_funcionario_from_web_user(request.user)
-    if not funcionario:
-        return render(request, "errors/403.html", status=403)
+    user = request.user
 
-    current_user_department = getattr(funcionario, "departamento", None)
-
+    # =========================
+    # 1) Querysets base
+    # =========================
     denuncias_qs = Denuncias.objects.all()
     funcionarios_qs = Funcionarios.objects.all()
     departamentos_qs = Departamentos.objects.all()
 
-    # Si el funcionario tiene departamento: filtrar dashboard al depto
-    if current_user_department:
-        denuncias_qs = denuncias_qs.filter(asignado_departamento=current_user_department)
-        funcionarios_qs = funcionarios_qs.filter(departamento=current_user_department)
-        departamentos_qs = departamentos_qs.filter(pk=current_user_department.pk)
+    # =========================
+    # 2) Control de acceso / filtro por rol
+    # =========================
+    if user.is_superuser:
+        # SUPERADMIN (TICS) ve TODO
+        current_user_department = None
+    else:
+        # Funcionario normal: necesita existir y tener depto
+        funcionario = get_funcionario_from_web_user(user)
+        if not funcionario:
+            return render(request, "errors/403.html", status=403)
 
+        current_user_department = getattr(funcionario, "departamento", None)
+
+        if current_user_department:
+            denuncias_qs = denuncias_qs.filter(asignado_departamento=current_user_department)
+            funcionarios_qs = funcionarios_qs.filter(departamento=current_user_department)
+            departamentos_qs = departamentos_qs.filter(pk=current_user_department.pk)
+        else:
+            # Si no tiene depto, no debería ver nada (o puedes permitirle ver "sin asignar")
+            denuncias_qs = denuncias_qs.none()
+            funcionarios_qs = funcionarios_qs.none()
+            departamentos_qs = departamentos_qs.none()
+
+    # =========================
+    # 3) Fechas
+    # =========================
     fecha_hace_30_dias = timezone.now() - timedelta(days=30)
     fecha_hace_7_dias = timezone.now() - timedelta(days=7)
 
+    # =========================
+    # 4) KPIs
+    # =========================
     total_denuncias = denuncias_qs.count()
     denuncias_este_mes = denuncias_qs.filter(created_at__gte=fecha_hace_30_dias).count()
 
     denuncias_pendientes = denuncias_qs.filter(estado="pendiente").count()
     denuncias_en_proceso = denuncias_qs.filter(estado="en_proceso").count()
+
+    # OJO: tu estado en BD es "resuelta"
     denuncias_resueltas = denuncias_qs.filter(estado="resuelta").count()
 
+    # =========================
+    # 5) Charts
+    # =========================
     chart_kpi2 = ColumnChart(
-        {
-            "Pendientes": denuncias_pendientes,
-            "En Proceso": denuncias_en_proceso,
-            "Resueltas": denuncias_resueltas,
-        },
+        {"Pendientes": denuncias_pendientes, "En Proceso": denuncias_en_proceso, "Resueltas": denuncias_resueltas},
         title="Denuncias por estado",
         download={"filename": "chart_kpi2"},
     )
 
+    # Ciudadanos: si quieres que también se filtre por depto para funcionario, déjalo así
+    # (si quieres global para todos, usa Ciudadanos.objects.all())
     total_ciudadanos = Ciudadanos.objects.count()
     ciudadanos_este_mes = Ciudadanos.objects.filter(created_at__gte=fecha_hace_30_dias).count()
 
@@ -280,50 +306,22 @@ def dashboard_view(request):
         .annotate(count=Count("id"))
         .order_by("-count")[:5]
     )
+
     chart_kpi7 = PieChart(
-        {item["tipo_denuncia__nombre"]: item["count"] for item in denuncias_por_tipo if item["tipo_denuncia__nombre"]},
+        {i["tipo_denuncia__nombre"]: i["count"] for i in denuncias_por_tipo if i["tipo_denuncia__nombre"]},
         title="Denuncias por tipo",
-        download={"filename": "chart_kpi7"},
         donut=True,
+        download={"filename": "chart_kpi7"},
     )
 
-    #denuncias_ultima_semana = (
-    #    denuncias_qs.filter(created_at__gte=fecha_hace_7_dias)
-    #    .extra({"dia": "DATE(created_at)"})
-    #    .values("dia")
-    #    .annotate(count=Count("id"))
-    #    .order_by("dia")
-    #)
-    #kpi9_chart_data = {item["dia"].strftime("%Y-%m-%d"): item["count"] for item in denuncias_ultima_semana if item["dia"]}
-    #chart_kpi9 = LineChart(
-    #    kpi9_chart_data,
-    #    title="Denuncias en la última semana",
-    #    xtitle="Día",
-    #    ytitle="Cantidad",
-    #    download={"filename": "chart_kpi9"},
-    #)
-    
-    denuncias_ultima_semana = (
-        denuncias_qs.filter(created_at__gte=fecha_hace_7_dias)
-        .annotate(dia=TruncDate("created_at"))
-        .values("dia")
-        .annotate(count=Count("id"))
-        .order_by("dia")
-    )
-
-    kpi9_chart_data = {
-        item["dia"].strftime("%Y-%m-%d"): item["count"]
-        for item in denuncias_ultima_semana
-        if item["dia"]
-    }
-
-
+    # Por departamento
     denuncias_por_departamento_data = (
         denuncias_qs.filter(asignado_departamento__isnull=False)
         .values("asignado_departamento__nombre", "asignado_departamento__color_hex")
         .annotate(count=Count("id"))
         .order_by("-count")
     )
+
     dept_data = {}
     dept_colors = []
     for item in denuncias_por_departamento_data:
@@ -338,11 +336,13 @@ def dashboard_view(request):
         colors=dept_colors,
     )
 
+    # Top ciudadanos
     ciudadanos_top_data = (
         denuncias_qs.values("ciudadano__nombres", "ciudadano__apellidos")
         .annotate(count=Count("id"))
         .order_by("-count")[:10]
     )
+
     chart_ciudadanos_top = BarChart(
         {f"{i['ciudadano__nombres']} {i['ciudadano__apellidos']}": i["count"] for i in ciudadanos_top_data},
         title="Ciudadanos con más Denuncias (Top 10)",
@@ -350,12 +350,15 @@ def dashboard_view(request):
         ytitle="Ciudadano",
     )
 
+    # Semana / Mes
     denuncias_semana_data = (
-        denuncias_qs.annotate(semana=TruncWeek("created_at"))
+        denuncias_qs.filter(created_at__gte=fecha_hace_30_dias)
+        .annotate(semana=TruncWeek("created_at"))
         .values("semana")
         .annotate(count=Count("id"))
-        .order_by("semana")[:3]
+        .order_by("semana")
     )
+
     chart_denuncias_semana = LineChart(
         {i["semana"].strftime("%Y-%m-%d"): i["count"] for i in denuncias_semana_data if i["semana"]},
         title="Denuncias por Semana",
@@ -365,11 +368,13 @@ def dashboard_view(request):
     )
 
     denuncias_mes_data = (
-        denuncias_qs.annotate(mes=TruncMonth("created_at"))
+        denuncias_qs.filter(created_at__gte=fecha_hace_30_dias)
+        .annotate(mes=TruncMonth("created_at"))
         .values("mes")
         .annotate(count=Count("id"))
-        .order_by("mes")[:5]
+        .order_by("mes")
     )
+
     chart_denuncias_mes = LineChart(
         {i["mes"].strftime("%Y-%m"): i["count"] for i in denuncias_mes_data if i["mes"]},
         title="Denuncias por Mes",
@@ -385,8 +390,13 @@ def dashboard_view(request):
 
     tasa_resolucion = (denuncias_resueltas / total_denuncias) * 100 if total_denuncias > 0 else 0
 
-    # Para mapa (limitar)
-    denuncias_mapa = denuncias_qs.select_related("ciudadano", "tipo_denuncia", "asignado_departamento")[:100]
+    # =========================
+    # 6) Mapa (orden y limite)
+    # =========================
+    denuncias_mapa = (
+        denuncias_qs.select_related("ciudadano", "tipo_denuncia", "asignado_departamento")
+        .order_by("-created_at")[:100]
+    )
 
     context = {
         "total_denuncias": total_denuncias,
@@ -403,6 +413,8 @@ def dashboard_view(request):
         "promedio_denuncias_depto": round(promedio_denuncias_depto, 2),
         "tasa_resolucion": round(tasa_resolucion, 1),
         "denuncias_mapa": denuncias_mapa,
+        "denuncias_por_tipo": denuncias_por_tipo,                 # 👈 para la lista del template
+        "departamentos_con_denuncias": list(denuncias_por_departamento_data[:10]),  # 👈 si lo usas como lista
         "chart_denuncias_departamento": chart_denuncias_departamento,
         "chart_ciudadanos_top": chart_ciudadanos_top,
         "chart_denuncias_semana": chart_denuncias_semana,
@@ -410,8 +422,8 @@ def dashboard_view(request):
         "chart_estado_denuncias": chart_estado_denuncias,
         "chart_kpi2": chart_kpi2,
         "chart_kpi7": chart_kpi7,
-       # "chart_kpi9": chart_kpi9,
     }
+
     return render(request, "dashboard.html", context)
 
 
@@ -579,81 +591,6 @@ class FaqDetailView(FuncionarioRequiredMixin, DetailView):
     context_object_name = "faq"
     login_url = "web:login"
 
-
-# =========================================
-# Denuncias (funcionarios)
-# =========================================
-#  Cambio: de "db.*" a control por funcionario
-#class DenunciaListView(FuncionarioRequiredMixin, ListView):
-#    model = Denuncias
-#    template_name = "denuncias/denuncia_list.html"
-#    context_object_name = "denuncias"
-#    login_url = "web:login"
-#    ordering = ["-created_at"]
-#    paginate_by = 20
-#
-#    def get_queryset(self):
-#        qs = Denuncias.objects.select_related(
-#            "ciudadano", "tipo_denuncia", "asignado_departamento", "asignado_funcionario"
-#        )
-#
-#        funcionario = get_funcionario_from_web_user(self.request.user)
-#
-#        # superuser ve todo; funcionario ve asignadas a él o a sus asignaciones activas
-#        if self.request.user.is_superuser:
-#            pass
-#        elif funcionario:
-#            qs = qs.filter(
-#                Q(asignado_funcionario=funcionario)
-#                | Q(denunciaasignaciones__funcionario=funcionario, denunciaasignaciones__activo=True)
-#            ).distinct()
-#        else:
-#            return Denuncias.objects.none()
-#
-#        # filtros
-#        estado = self.request.GET.get("estado")
-#        if estado:
-#            qs = qs.filter(estado=estado)
-#
-#        tipo = self.request.GET.get("tipo")
-#        if tipo:
-#            qs = qs.filter(tipo_denuncia_id=tipo)
-#
-#        departamento = self.request.GET.get("departamento")
-#        if departamento:
-#            qs = qs.filter(asignado_departamento_id=departamento)
-#
-#        funcionario_get = self.request.GET.get("funcionario")
-#        if funcionario_get:
-#            qs = qs.filter(asignado_funcionario_id=funcionario_get)
-#
-#        q = self.request.GET.get("q")
-#        if q:
-#            qs = qs.filter(
-#                Q(ciudadano__nombres__icontains=q)
-#                | Q(ciudadano__apellidos__icontains=q)
-#                | Q(ciudadano__cedula__icontains=q)
-#                | Q(descripcion__icontains=q)
-#                | Q(referencia__icontains=q)
-#            )
-#
-#        return qs.order_by("-created_at")
-#
-#    def get_context_data(self, **kwargs):
-#        context = super().get_context_data(**kwargs)
-#        context.update(
-#            {
-#                "estado_actual": self.request.GET.get("estado", ""),
-#                "tipo_actual": self.request.GET.get("tipo", ""),
-#                "departamento_actual": self.request.GET.get("departamento", ""),
-#                "funcionario_actual": self.request.GET.get("funcionario", ""),
-#                "q": self.request.GET.get("q", ""),
-#                "tipos_denuncia": TiposDenuncia.objects.filter(activo=True),
-#                "departamentos": Departamentos.objects.filter(activo=True),
-#                "funcionarios": Funcionarios.objects.filter(activo=True),
-#            }
-#        )
-#        return context
 
 
 class DenunciaListView(FuncionarioRequiredMixin, ListView):

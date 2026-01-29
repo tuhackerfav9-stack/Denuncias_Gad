@@ -1,469 +1,266 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div class="container-fluid mt-5 mb-5">
-    <!-- Encabezado del Dashboard -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <h3 class="fw-bold mb-2">
-                <i class="bi bi-graph-up text-primary me-2"></i>Dashboard
-            </h3>
-            <p class="text-muted">Resumen de estadísticas del sistema de denuncias</p>
-        </div>
+<div class="row">
+  <div class="col-12 grid-margin">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h3 class="font-weight-bold mb-1">Dashboard</h3>
+        <p class="text-muted mb-0">Resumen del sistema de denuncias</p>
+      </div>
     </div>
-
-
-    <!-- Sección de Gráficos KPI -->
-    <div class="row mb-4">
-        <div class="col-md-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    {{ chart_estado_denuncias }}
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    {{ chart_denuncias_departamento }}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mb-4">
-        <div class="col-md-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    {{ chart_denuncias_semana }}
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    {{ chart_denuncias_mes }}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title text-muted mb-3">Ciudadanos con Más Denuncias (Top 10)</h5>
-                    {{ chart_ciudadanos_top }}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    {{ chart_kpi9}}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- KPI 1: Total de Denuncias -->
-    <div class="row g-4 mb-5">
-        <div class="col-md-6 col-lg-3">
-            <div class="card border-0 shadow-sm h-100 bg-light-primary">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="card-title text-muted small mb-3">Total de Denuncias</h6>
-                            <h2 class="fw-bold text-primary mb-1">{{ total_denuncias }}</h2>
-                            <p class="text-success small mb-0">
-                                <i class="bi bi-arrow-up"></i> {{ denuncias_este_mes }} este mes
-                            </p>
-                        </div>
-                        <i class="bi bi-file-earmark-text display-6 text-primary opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- KPI 2: Estados de Denuncias -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="mb-2">
-                        <small class="text-muted">Pendientes</small>
-                        <div class="progress" style="height: 6px;">
-                            <div class="progress-bar bg-warning" role="progressbar" style="width: {% widthratio denuncias_pendientes total_denuncias 100 %}%"></div>
-                        </div>
-                        <small class="text-dark fw-bold">{{ denuncias_pendientes }}</small>
-                    </div>
-                    <div class="mb-2">
-                        <small class="text-muted">En Proceso</small>
-                        <div class="progress" style="height: 6px;">
-                            <div class="progress-bar bg-info" role="progressbar" style="width: {% widthratio denuncias_en_proceso total_denuncias 100 %}%"></div>
-                        </div>
-                        <small class="text-dark fw-bold">{{ denuncias_en_proceso }}</small>
-                    </div>
-                    <div>
-                        <small class="text-muted">Resueltas</small>
-                        <div class="progress" style="height: 6px;">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio denuncias_resueltas total_denuncias 100 %}%"></div>
-                        </div>
-                        <small class="text-dark fw-bold">{{ denuncias_resueltas }}</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- KPI 3: Tasa de Resolución -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card border-0 shadow-sm h-100 bg-light-success">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="card-title text-muted small mb-3">Tasa de Resolución</h6>
-                            <h2 class="fw-bold text-success mb-1">{{ tasa_resolucion }}%</h2>
-                            <p class="text-muted small mb-0">De {{ total_denuncias }} denuncias</p>
-                        </div>
-                        <i class="bi bi-check-circle display-6 text-success opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- KPI 4: Usuarios del Sistema -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card border-0 shadow-sm h-100 bg-light-info">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="card-title text-muted small mb-3">Usuarios Activos</h6>
-                            <h2 class="fw-bold text-info mb-1">{{ funcionarios_activos }}</h2>
-                            <p class="text-muted small mb-0">De {{ total_funcionarios }} funcionarios</p>
-                        </div>
-                        <i class="bi bi-people display-6 text-info opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Segunda fila de KPIs -->
-    <div class="row g-4 mb-5">
-        <!-- KPI 5: Ciudadanos -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card border-0 shadow-sm h-100 bg-light-warning">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="card-title text-muted small mb-3">Total de Ciudadanos</h6>
-                            <h2 class="fw-bold text-warning mb-1">{{ total_ciudadanos }}</h2>
-                            <p class="text-warning small mb-0">
-                                <i class="bi bi-arrow-up"></i> {{ ciudadanos_este_mes }} este mes
-                            </p>
-                        </div>
-                        <i class="bi bi-person display-6 text-warning opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- KPI 6: Departamentos -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card border-0 shadow-sm h-100 bg-light-danger">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="card-title text-muted small mb-3">Departamentos Activos</h6>
-                            <h2 class="fw-bold text-danger mb-1">{{ departamentos_activos }}</h2>
-                            <p class="text-muted small mb-0">De {{ total_departamentos }} total</p>
-                        </div>
-                        <i class="bi bi-building display-6 text-danger opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- KPI 7: Promedio de denuncias por departamento -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="card-title text-muted small mb-3">Promedio Denuncias/Depto</h6>
-                    <h2 class="fw-bold text-primary mb-1">{{ promedio_denuncias_depto }}</h2>
-                    <p class="text-muted small mb-0">Distribución por departamento</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- KPI 8: Cumplimiento -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="card-title text-muted small mb-3">Disponibilidad Sistema</h6>
-                    <h2 class="fw-bold text-success mb-1">99.9%</h2>
-                    <p class="text-success small mb-0">
-                        <i class="bi bi-check-circle"></i> Operando normalmente
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Mapa de Denuncias -->
-    <div class="row g-4 mb-5">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-light border-bottom">
-                    <h5 class="mb-0">
-                        <i class="bi bi-geo-alt-fill me-2 text-danger"></i>Mapa de Denuncias
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                    <div id="map" style="height: 500px; width: 100%;"></div>
-                </div>
-                <div class="card-footer bg-light">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Mostrando las últimas {{ denuncias_mapa|length }} denuncias registradas con ubicación geográfica
-                    </small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Gráficos y Análisis Detallado -->
-    <div class="row g-4 mb-5">
-        <!-- Denuncias por Tipo -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-light border-bottom">
-                    <h5 class="mb-0">
-                        <i class="bi bi-pie-chart me-2 text-primary"></i>Denuncias por Tipo
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if denuncias_por_tipo %}
-                    <div class="list-group list-group-flush">
-                        {% for item in denuncias_por_tipo %}
-                        <div class="list-group-item px-0 py-3 border-bottom last">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="fw-bold">{{ item.tipo_denuncia__nombre }}</span>
-                                <span class="badge bg-primary rounded-pill">{{ item.count }}</span>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar" role="progressbar" 
-                                     style="width: {% widthratio item.count total_denuncias 100 %}%"></div>
-                            </div>
-                            <small class="text-muted">
-                                {% widthratio item.count total_denuncias 100 %}% del total
-                            </small>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="alert alert-info mb-0">
-                        <i class="bi bi-info-circle me-2"></i>No hay denuncias registradas
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Departamentos con más Denuncias -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-light border-bottom">
-                    <h5 class="mb-0">
-                        <i class="bi bi-building me-2 text-success"></i>Departamentos con Más Denuncias
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if departamentos_con_denuncias %}
-                    <div class="list-group list-group-flush">
-                        {% for item in departamentos_con_denuncias %}
-                        <div class="list-group-item px-0 py-3 border-bottom last">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="fw-bold">{{ item.asignado_departamento__nombre }}</span>
-                                <span class="badge bg-success rounded-pill">{{ item.count }}</span>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-success" role="progressbar" 
-                                     style="width: {% widthratio item.count total_denuncias 100 %}%"></div>
-                            </div>
-                            <small class="text-muted">
-                                {% widthratio item.count total_denuncias 100 %}% del total
-                            </small>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="alert alert-info mb-0">
-                        <i class="bi bi-info-circle me-2"></i>No hay departamentos con denuncias asignadas
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Acciones Rápidas -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-lightning-charge me-2"></i>Acciones Rápidas
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row g-2">
-                        <div class="col-12 col-sm-6 col-lg-3">
-                            <a href="{% url 'web:departamento_list' %}" class="btn btn-outline-primary w-100">
-                                <i class="bi bi-building me-1"></i>Ver Departamentos
-                            </a>
-                        </div>
-                        <div class="col-12 col-sm-6 col-lg-3">
-                            <a href="{% url 'web:funcionario_list' %}" class="btn btn-outline-primary w-100">
-                                <i class="bi bi-people me-1"></i>Ver Funcionarios
-                            </a>
-                        </div>
-                        <div class="col-12 col-sm-6 col-lg-3">
-                            <a href="{% url 'web:webuser_list' %}" class="btn btn-outline-primary w-100">
-                                <i class="bi bi-person-badge me-1"></i>Gestionar Usuarios
-                            </a>
-                        </div>
-                        <div class="col-12 col-sm-6 col-lg-3">
-                            <a href="{% url 'web:webuser_create' %}" class="btn btn-primary w-100">
-                                <i class="bi bi-plus-circle me-1"></i>Crear Usuario
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+  </div>
 </div>
 
-<style>
-    .bg-light-primary {
-        background-color: rgba(13, 110, 253, 0.1);
-    }
-    .bg-light-success {
-        background-color: rgba(25, 135, 84, 0.1);
-    }
-    .bg-light-info {
-        background-color: rgba(23, 162, 184, 0.1);
-    }
-    .bg-light-warning {
-        background-color: rgba(255, 193, 7, 0.1);
-    }
-    .bg-light-danger {
-        background-color: rgba(220, 53, 69, 0.1);
-    }
-</style>
+<!-- KPIs (Skydash cards) -->
+<div class="row">
+  <div class="col-md-6 col-xl-3 grid-margin stretch-card">
+    <div class="card card-tale">
+      <div class="card-body">
+        <p class="mb-2">Total de Denuncias</p>
+        <p class="fs-30 mb-1">{{ total_denuncias }}</p>
+        <p class="mb-0 text-white-50">Este mes: {{ denuncias_este_mes }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-xl-3 grid-margin stretch-card">
+    <div class="card card-dark-blue">
+      <div class="card-body">
+        <p class="mb-2">Pendientes</p>
+        <p class="fs-30 mb-1">{{ denuncias_pendientes }}</p>
+        <p class="mb-0 text-white-50">Por revisar</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-xl-3 grid-margin stretch-card">
+    <div class="card card-light-blue">
+      <div class="card-body">
+        <p class="mb-2">En Proceso</p>
+        <p class="fs-30 mb-1">{{ denuncias_en_proceso }}</p>
+        <p class="mb-0 text-white-50">Atendiéndose</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-xl-3 grid-margin stretch-card">
+    <div class="card card-light-danger">
+      <div class="card-body">
+        <p class="mb-2">Resueltas</p>
+        <p class="fs-30 mb-1">{{ denuncias_resueltas }}</p>
+        <p class="mb-0 text-white-50">Cerradas</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="row">
+  <div class="col-lg-6 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <p class="card-title mb-3">Denuncias por Estado</p>
+        {{ chart_estado_denuncias }}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <p class="card-title mb-3">Denuncias por Departamento</p>
+        {{ chart_denuncias_departamento }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-6 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <p class="card-title mb-3">Denuncias por Semana</p>
+        {{ chart_denuncias_semana }}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <p class="card-title mb-3">Denuncias por Mes</p>
+        {{ chart_denuncias_mes }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <p class="card-title mb-3">Ciudadanos con más denuncias (Top 10)</p>
+        {{ chart_ciudadanos_top }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        {{ chart_kpi9 }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Listas (tipo y departamentos) -->
+<div class="row">
+  <div class="col-lg-6 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <p class="card-title mb-3">Denuncias por Tipo</p>
+
+        {% if denuncias_por_tipo %}
+          {% for item in denuncias_por_tipo %}
+            <div class="d-flex justify-content-between">
+              <span class="font-weight-bold">{{ item.tipo_denuncia__nombre }}</span>
+              <span class="badge badge-primary">{{ item.count }}</span>
+            </div>
+            <div class="progress progress-md mt-2 mb-3">
+              <div class="progress-bar bg-primary" role="progressbar"
+                   style="width: {% widthratio item.count total_denuncias 100 %}%">
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="alert alert-info mb-0">No hay denuncias registradas.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <p class="card-title mb-3">Departamentos con más Denuncias</p>
+
+        {% if departamentos_con_denuncias %}
+          {% for item in departamentos_con_denuncias %}
+            <div class="d-flex justify-content-between">
+              <span class="font-weight-bold">{{ item.asignado_departamento__nombre }}</span>
+              <span class="badge badge-success">{{ item.count }}</span>
+            </div>
+            <div class="progress progress-md mt-2 mb-3">
+              <div class="progress-bar bg-success" role="progressbar"
+                   style="width: {% widthratio item.count total_denuncias 100 %}%">
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="alert alert-info mb-0">No hay departamentos con denuncias asignadas.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAPA -->
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <p class="card-title mb-2">Mapa de Denuncias</p>
+        <p class="text-muted mb-3">Mostrando las últimas {{ denuncias_mapa|length }} denuncias con ubicación</p>
+        <div id="map" style="height: 500px; width: 100%; border-radius: 12px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-// Definir initMap en el scope global
 window.initMap = function() {
-    // Centro del mapa (Ecuador - coordenadas aproximadas de Salcedo)
-    const center = { lat: -0.9333, lng: -78.6 };
-    
-    // Crear el mapa
-    const map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 13,
-        center: center,
-        mapTypeId: 'roadmap',
-        styles: [
-            {
-                featureType: 'poi',
-                elementType: 'labels',
-                stylers: [{ visibility: 'off' }]
-            }
-        ]
+  const center = { lat: -0.9333, lng: -78.6 };
+
+  const map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 13,
+    center: center,
+    mapTypeId: 'roadmap',
+    styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }]}]
+  });
+
+  const bounds = new google.maps.LatLngBounds();
+
+  const estadoIconos = {
+    'pendiente': 'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
+    'en_proceso': 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+    'resuelto': 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+  };
+
+  const denuncias = [
+    {% for denuncia in denuncias_mapa %}
+    {
+      id: {{ denuncia.id }},
+      lat: parseFloat("{{ denuncia.latitud|default:'0' }}"),
+      lng: parseFloat("{{ denuncia.longitud|default:'0' }}"),
+      descripcion: "{{ denuncia.descripcion|truncatechars:80|escapejs }}",
+      tipo: "{{ denuncia.tipo_denuncia.nombre|escapejs }}",
+      estado: "{{ denuncia.estado }}",
+      ciudadano: "{{ denuncia.ciudadano.nombres|escapejs }} {{ denuncia.ciudadano.apellidos|escapejs }}",
+      departamento: "{% if denuncia.asignado_departamento %}{{ denuncia.asignado_departamento.nombre|escapejs }}{% else %}Sin asignar{% endif %}",
+      fecha: "{{ denuncia.created_at|date:'d/m/Y H:i' }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  denuncias.forEach(d => {
+    if (!d.lat || !d.lng) return;
+
+    const position = { lat: d.lat, lng: d.lng };
+
+    const marker = new google.maps.Marker({
+      position,
+      map,
+      title: d.tipo,
+      icon: estadoIconos[d.estado] || 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
     });
-    
-    // Crear un objeto de límites para ajustar el zoom automáticamente
-    const bounds = new google.maps.LatLngBounds();
-    
-    // Iconos por estado
-    const estadoIconos = {
-        'pendiente': 'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
-        'en_proceso': 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-        'resuelto': 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+
+    const badge = (st) => {
+      if (st === 'resuelto') return 'success';
+      if (st === 'en_proceso') return 'info';
+      return 'warning';
     };
-    
-    // Denuncias desde el backend
-    const denuncias = [
-        {% for denuncia in denuncias_mapa %}
-        {
-            id: {{ denuncia.id }},
-            lat: parseFloat("{{ denuncia.latitud|default:'0' }}"),
-            lng: parseFloat("{{ denuncia.longitud|default:'0' }}"),
-            descripcion: "{{ denuncia.descripcion|truncatechars:80|escapejs }}",
-            tipo: "{{ denuncia.tipo_denuncia.nombre|escapejs }}",
-            estado: "{{ denuncia.estado }}",
-            ciudadano: "{{ denuncia.ciudadano.nombres|escapejs }} {{ denuncia.ciudadano.apellidos|escapejs }}",
-            departamento: "{% if denuncia.asignado_departamento %}{{ denuncia.asignado_departamento.nombre|escapejs }}{% else %}Sin asignar{% endif %}",
-            fecha: "{{ denuncia.created_at|date:'d/m/Y H:i' }}"
-        }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ];
-    
-    // Agregar marcadores
-    denuncias.forEach(denuncia => {
-        const position = { lat: denuncia.lat, lng: denuncia.lng };
-        
-        const marker = new google.maps.Marker({
-            position: position,
-            map: map,
-            title: denuncia.tipo,
-            icon: estadoIconos[denuncia.estado] || 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
-            animation: google.maps.Animation.DROP
-        });
-        
-        // Ventana de información
-        const infoWindow = new google.maps.InfoWindow({
-            content: `
-                <div style="max-width: 300px;">
-                    <h6 class="fw-bold mb-2">${denuncia.tipo}</h6>
-                    <p class="mb-2 small"><strong>Descripción:</strong> ${denuncia.descripcion}</p>
-                    <p class="mb-1 small"><strong>Estado:</strong> 
-                        <span class="badge bg-${denuncia.estado === 'resuelto' ? 'success' : denuncia.estado === 'en_proceso' ? 'info' : 'warning'}">
-                            ${denuncia.estado.replace('_', ' ')}
-                        </span>
-                    </p>
-                    <p class="mb-1 small"><strong>Ciudadano:</strong> ${denuncia.ciudadano}</p>
-                    <p class="mb-1 small"><strong>Departamento:</strong> ${denuncia.departamento}</p>
-                    <p class="mb-2 small"><strong>Fecha:</strong> ${denuncia.fecha}</p>
-                    <a href="/web/denuncias/${denuncia.id}/" class="btn btn-sm btn-primary" target="_blank">
-                        <i class="bi bi-eye"></i> Ver detalles
-                    </a>
-                </div>
-            `
-        });
-        
-        marker.addListener('click', () => {
-            infoWindow.open(map, marker);
-        });
-        
-        // Extender los límites
-        bounds.extend(position);
+
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="max-width: 320px;">
+          <h6 style="margin:0 0 8px 0;"><b>${d.tipo}</b></h6>
+          <p style="margin:0 0 6px 0;"><b>Descripción:</b> ${d.descripcion}</p>
+          <p style="margin:0 0 6px 0;"><b>Estado:</b> <span class="badge badge-${badge(d.estado)}">${d.estado.replace('_',' ')}</span></p>
+          <p style="margin:0 0 6px 0;"><b>Ciudadano:</b> ${d.ciudadano}</p>
+          <p style="margin:0 0 6px 0;"><b>Departamento:</b> ${d.departamento}</p>
+          <p style="margin:0 0 10px 0;"><b>Fecha:</b> ${d.fecha}</p>
+          <a href="/web/denuncias/${d.id}/" class="btn btn-sm btn-primary" target="_blank">Ver detalles</a>
+        </div>`
     });
-    
-    // Ajustar el mapa para mostrar todos los marcadores
-    if (denuncias.length > 0) {
-        map.fitBounds(bounds);
-        
-        // Evitar zoom excesivo si hay un solo marcador
-        const listener = google.maps.event.addListener(map, 'idle', () => {
-            if (map.getZoom() > 16) map.setZoom(16);
-            google.maps.event.removeListener(listener);
-        });
-    }
+
+    marker.addListener('click', () => infoWindow.open(map, marker));
+    bounds.extend(position);
+  });
+
+  if (denuncias.length > 0) {
+    map.fitBounds(bounds);
+    const listener = google.maps.event.addListener(map, 'idle', () => {
+      if (map.getZoom() > 16) map.setZoom(16);
+      google.maps.event.removeListener(listener);
+    });
+  }
 };
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDFFwwfbAcTQH432AY6w8CwRgwf2VBvWUI&callback=initMap" async defer></script>
-{% endblock %}
 
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDFFwwfbAcTQH432AY6w8CwRgwf2VBvWUI&callback=initMap" async defer></script>
+
+{% endblock %}
