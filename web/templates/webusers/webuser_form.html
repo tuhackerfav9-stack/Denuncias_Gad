@@ -4,8 +4,8 @@
     <div class="row justify-content-center">
         <div class="col-lg-6">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">
+                <div class="card-header bg-info">
+                    <h5 class="card-title mb-0 text-white">
                         <i class="bi bi-person-plus me-2"></i>
                         {% if object %}Editar{% else %}Crear{% endif %} Usuario Web
                     </h5>
@@ -138,7 +138,7 @@
 
                             {% with selected_ids=form.user_permissions.value %}
                             <div class="d-flex flex-wrap gap-2 mb-2">
-                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#permisosModal">
+                                <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#permisosModal">
                                     <i class="bi bi-grid me-1"></i>Seleccionar por modelo
                                 </button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="clearPermissions">
@@ -206,7 +206,7 @@
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Listo</button>
+                                            <button type="button" class="btn btn-info" data-bs-dismiss="modal">Listo</button>
                                         </div>
                                     </div>
                                 </div>
@@ -251,7 +251,7 @@
                             <a href="{% url 'web:webuser_list' %}" class="btn btn-outline-secondary me-md-2">
                                 <i class="bi bi-arrow-left me-1"></i>Cancelar
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-info text-white">
                                 <i class="bi bi-check-circle me-1"></i>
                                 {% if object %}Actualizar{% else %}Crear{% endif %} Usuario
                             </button>

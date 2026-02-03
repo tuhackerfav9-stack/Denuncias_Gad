@@ -10,7 +10,7 @@
     <!-- Información del Funcionario -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card shadow-sm bg-primary text-white">
+            <div class="card shadow-sm bg-info text-white">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-md-8">
@@ -23,7 +23,7 @@
                             </p>
                         </div>
                         <div class="col-md-4 text-md-end">
-                            <span class="badge bg-light text-primary fs-6">
+                            <span class="badge bg-light text-info fs-6">
                                 <i class="bi bi-megaphone me-1"></i>{{ total_denuncias }} Denuncias Asignadas
                             </span>
                         </div>
@@ -49,14 +49,14 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card shadow-sm border-primary">
+            <div class="card shadow-sm border-info">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-1">En Proceso</h6>
-                            <h3 class="mb-0 text-primary">{{ denuncias_en_proceso }}</h3>
+                            <h3 class="mb-0 text-info">{{ denuncias_en_proceso }}</h3>
                         </div>
-                        <i class="bi bi-gear-fill fs-1 text-primary opacity-50"></i>
+                        <i class="bi bi-gear-fill fs-1 text-info opacity-50"></i>
                     </div>
                 </div>
             </div>
@@ -129,7 +129,7 @@
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover table-striped mb-0">
-                            <thead class="table-dark">
+                            <thead class="table-light">
                                 <tr>
                                     <th>ID</th>
                                     <th>Fecha</th>
@@ -171,7 +171,7 @@
                                                 <i class="bi bi-clock me-1"></i>Pendiente
                                             </span>
                                         {% elif denuncia.estado == 'en_proceso' %}
-                                            <span class="badge bg-primary">
+                                            <span class="badge bg-info">
                                                 <i class="bi bi-arrow-repeat me-1"></i>En Proceso
                                             </span>
                                         {% elif denuncia.estado == 'resuelto' %}
@@ -185,7 +185,7 @@
                                     <td class="text-center align-middle">
                                         <div class="btn-group" role="group">
                                             {% if denuncia.estado != 'resuelto' %}
-                                            <a href="{% url 'web:denuncia_detail' denuncia.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalles completo">
+                                            <a href="{% url 'web:denuncia_detail' denuncia.pk %}" class="btn btn-sm btn-outline-info" title="Ver detalles completo">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <a href="{% url 'web:denuncia_update' denuncia.pk %}" class="btn btn-sm btn-outline-warning" title="Gestionar">

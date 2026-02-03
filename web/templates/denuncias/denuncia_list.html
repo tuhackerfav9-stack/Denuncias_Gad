@@ -1,192 +1,252 @@
 {% extends 'base.html' %}
 {% block content %}
+
+<style>
+/*  Para que el paginado siempre quede bien abajo y no parezca dentro de la tabla */
+.denuncias-card{
+  min-height: 70vh;      /* ajusta si quieres */
+  display: flex;
+  flex-direction: column;
+}
+.denuncias-card .card-body{
+  flex: 1;
+}
+</style>
+
 <div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0">
-                    <i class="bi bi-megaphone me-2"></i>Gestión de Denuncias
-                </h1>
+  <div class="row">
+    <div class="col-12">
+
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+          <i class="bi bi-megaphone me-2"></i>Gestión de Denuncias
+        </h1>
+      </div>
+
+      <!-- Filtros -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <form method="get" class="row g-3 align-items-end">
+
+            <div class="col-md-2">
+              <label class="form-label">Estado</label>
+              <select name="estado" class="form-select" onchange="this.form.submit()">
+                <option value="" {% if not estado_actual %}selected{% endif %}>Todos</option>
+                <option value="pendiente"  {% if estado_actual == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                <option value="en_proceso" {% if estado_actual == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+                <option value="resuelta"   {% if estado_actual == 'resuelta' %}selected{% endif %}>Resuelta</option>
+              </select>
             </div>
-            <!-- Filtros de búsqueda -->
-            <div class="card shadow-sm mb-3">
-                <div class="card-body">
-                    <form method="get" class="row g-3 align-items-end">
-                        <div class="col-md-2">
-                            <label class="form-label">Estado</label>
-                            <select name="estado" class="form-select" onchange="this.form.submit()">
-                                <option value="">Todos</option>
-                                <option value="pendiente" {% if estado_actual == 'pendiente' %}selected{% endif %}>Pendiente</option>
-                                <option value="en_proceso" {% if estado_actual == 'en_proceso' %}selected{% endif %}>En Proceso</option>
-                                <option value="resuelto" {% if estado_actual == 'resuelto' %}selected{% endif %}>Resuelto</option>
-                                <option value="rechazado" {% if estado_actual == 'rechazado' %}selected{% endif %}>Rechazado</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Tipo</label>
-                            <select name="tipo" class="form-select" onchange="this.form.submit()">
-                                <option value="">Todos</option>
-                                {% for t in tipos_denuncia %}
-                                    <option value="{{ t.id }}" {% if tipo_actual == t.id|stringformat:"s" %}selected{% endif %}>{{ t.nombre }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Departamento</label>
-                            <select name="departamento" class="form-select" onchange="this.form.submit()">
-                                <option value="">Todos</option>
-                                {% for d in departamentos %}
-                                    <option value="{{ d.id }}" {% if departamento_actual == d.id|stringformat:"s" %}selected{% endif %}>{{ d.nombre }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Funcionario</label>
-                            <select name="funcionario" class="form-select" onchange="this.form.submit()">
-                                <option value="">Todos</option>
-                                {% for f in funcionarios %}
-                                    <option value="{{ f.id }}" {% if funcionario_actual == f.id|stringformat:"s" %}selected{% endif %}>{{ f.nombres }} {{ f.apellidos }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Buscar</label>
-                            <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Nombre, cédula o descripción">
-                        </div>
-                        <div class="col-md-1 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary w-100" title="Aplicar filtros"><i class="bi bi-search"></i></button>
-                            <a href="{% url 'web:denuncia_list' %}" class="btn btn-secondary" title="Limpiar filtros"><i class="bi bi-x-circle"></i></a>
-                        </div>
-                    </form>
-                </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Tipo</label>
+              <select name="tipo" class="form-select" onchange="this.form.submit()">
+                <option value="" {% if not tipo_actual %}selected{% endif %}>Todos</option>
+                {% for t in tipos_denuncia %}
+                  <option value="{{ t.id }}" {% if tipo_actual == t.id|stringformat:"s" %}selected{% endif %}>
+                    {{ t.nombre }}
+                  </option>
+                {% endfor %}
+              </select>
             </div>
-            <div class="card shadow-sm">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped mb-0 {% if denuncias %}datatable{% endif %}">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Tipo</th>
-                                    <th>Ciudadano</th>
-                                    <th>Departamento</th>
-                                    <th>Estado</th>
-                                    <th class="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for denuncia in denuncias %}
-                                <tr>
-                                    <td>{{ denuncia.created_at|date:"d/m/Y" }}<br><small class="text-muted">{{ denuncia.created_at|date:"H:i" }}</small></td>
-                                    <td>{{ denuncia.tipo_denuncia.nombre }}</td>
-                                    <td>
-                                        <div class="fw-bold">{{ denuncia.ciudadano.nombres }} {{ denuncia.ciudadano.apellidos }}</div>
-                                        <small class="text-muted">{{ denuncia.ciudadano.cedula }}</small>
-                                    </td>
-                                    <td>
-                                        {% if denuncia.asignado_departamento %}
-                                            <span class="badge bg-info text-dark">{{ denuncia.asignado_departamento.nombre }}</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">Sin asignar</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if denuncia.estado == 'pendiente' %}
-                                            <span class="badge bg-warning text-dark">Pendiente</span>
-                                        {% elif denuncia.estado == 'en_proceso' %}
-                                            <span class="badge bg-primary">En Proceso</span>
-                                        {% elif denuncia.estado == 'resuelto' %}
-                                            <span class="badge bg-success">Resuelto</span>
-                                        {% elif denuncia.estado == 'rechazado' %}
-                                            <span class="badge bg-danger">Rechazado</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">{{ denuncia.estado }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <div class="btn-group" role="group">
-                                            <a href="{% url 'web:denuncia_detail' denuncia.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalles completo">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            {% if denuncia.estado != 'resuelto' %}
-                                            
-                                            <a href="{% url 'web:denuncia_update' denuncia.pk %}" class="btn btn-sm btn-outline-warning" title="Gestionar">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center py-4">
-                                        <div class="text-muted">
-                                            <i class="bi bi-inbox fa-2x mb-2"></i>
-                                            <p>No hay denuncias registradas</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Paginación -->
-                {% if is_paginated %}
-                <div class="card-footer bg-white border-top-0">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="text-muted small">
-                            Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ paginator.count }} registros
-                        </div>
-                        <nav aria-label="Navegación de páginas">
-                            <ul class="pagination pagination-sm mb-0">
-                                {% if page_obj.has_previous %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page=1{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if departamento_actual %}&departamento={{ departamento_actual }}{% endif %}{% if funcionario_actual %}&funcionario={{ funcionario_actual }}{% endif %}{% if q %}&q={{ q }}{% endif %}">&laquo; Primera</a>
-                                </li>
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if departamento_actual %}&departamento={{ departamento_actual }}{% endif %}{% if funcionario_actual %}&funcionario={{ funcionario_actual }}{% endif %}{% if q %}&q={{ q }}{% endif %}">Anterior</a>
-                                </li>
-                                {% else %}
-                                <li class="page-item disabled">
-                                    <span class="page-link">&laquo; Primera</span>
-                                </li>
-                                <li class="page-item disabled">
-                                    <span class="page-link">Anterior</span>
-                                </li>
-                                {% endif %}
-                                
-                                {% for num in page_obj.paginator.page_range %}
-                                    {% if page_obj.number == num %}
-                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if departamento_actual %}&departamento={{ departamento_actual }}{% endif %}{% if funcionario_actual %}&funcionario={{ funcionario_actual }}{% endif %}{% if q %}&q={{ q }}{% endif %}">{{ num }}</a></li>
-                                    {% endif %}
-                                {% endfor %}
-                                
-                                {% if page_obj.has_next %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if departamento_actual %}&departamento={{ departamento_actual }}{% endif %}{% if funcionario_actual %}&funcionario={{ funcionario_actual }}{% endif %}{% if q %}&q={{ q }}{% endif %}">Siguiente</a>
-                                </li>
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ paginator.num_pages }}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if departamento_actual %}&departamento={{ departamento_actual }}{% endif %}{% if funcionario_actual %}&funcionario={{ funcionario_actual }}{% endif %}{% if q %}&q={{ q }}{% endif %}">Última &raquo;</a>
-                                </li>
-                                {% else %}
-                                <li class="page-item disabled">
-                                    <span class="page-link">Siguiente</span>
-                                </li>
-                                <li class="page-item disabled">
-                                    <span class="page-link">Última &raquo;</span>
-                                </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
-                {% endif %}
+
+            <div class="col-md-2">
+              <label class="form-label">Departamento</label>
+              <select name="departamento" class="form-select" onchange="this.form.submit()">
+                <option value="" {% if not departamento_actual %}selected{% endif %}>Todos</option>
+                {% for d in departamentos %}
+                  <option value="{{ d.id }}" {% if departamento_actual == d.id|stringformat:"s" %}selected{% endif %}>
+                    {{ d.nombre }}
+                  </option>
+                {% endfor %}
+              </select>
             </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Funcionario</label>
+              <select name="funcionario" class="form-select" onchange="this.form.submit()">
+                <option value="" {% if not funcionario_actual %}selected{% endif %}>Todos</option>
+                {% for f in funcionarios %}
+                  <option value="{{ f.id }}" {% if funcionario_actual == f.id|stringformat:"s" %}selected{% endif %}>
+                    {{ f.nombres }} {{ f.apellidos }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Buscar</label>
+              <input type="text" name="q" value="{{ q|default:'' }}" class="form-control"
+                     placeholder="Nombre, cédula, referencia o descripción">
+            </div>
+
+            <div class="col-md-1 d-flex gap-2">
+              <button type="submit" class="btn btn-info text-white" title="Aplicar filtros">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                  <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                </svg>
+              </button>
+
+              <!--  Limpiar filtros 100% seguro (no submit, no estados raros) -->
+              <button type="button" class="btn btn-secondary" title="Limpiar filtros"
+                      onclick="window.location.href='{% url 'web:denuncia_list' %}'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16">
+                  <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41m-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9"/>
+                  <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5 5 0 0 0 8 3M3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9z"/>
+                </svg>
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="card shadow-sm denuncias-card">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Ciudadano</th>
+                  <th>Departamento</th>
+                  <th>Estado</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for denuncia in denuncias %}
+                  <tr>
+                    <td>
+                      {{ denuncia.created_at|date:"d/m/Y" }}
+                      <br>
+                      <small class="text-muted">{{ denuncia.created_at|date:"H:i" }}</small>
+                    </td>
+
+                    <td>{{ denuncia.tipo_denuncia.nombre }}</td>
+
+                    <td>
+                      <div class="fw-bold">{{ denuncia.ciudadano.nombres }} {{ denuncia.ciudadano.apellidos }}</div>
+                      <small class="text-muted">{{ denuncia.ciudadano.cedula }}</small>
+                    </td>
+
+                    <td>
+                      {% if denuncia.asignado_departamento %}
+                        <span class="badge bg-info text-white">{{ denuncia.asignado_departamento.nombre }}</span>
+                      {% else %}
+                        <span class="badge bg-secondary">Sin asignar</span>
+                      {% endif %}
+                    </td>
+
+                    <td>
+                      {% if denuncia.estado == 'pendiente' %}
+                        <span class="badge bg-warning text-dark">Pendiente</span>
+                      {% elif denuncia.estado == 'en_proceso' %}
+                        <span class="badge bg-info text-white">En Proceso</span>
+                      {% elif denuncia.estado == 'resuelta' %}
+                        <span class="badge bg-success">Resuelta</span>
+                      {% else %}
+                        <span class="badge bg-secondary">{{ denuncia.estado }}</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center align-middle">
+                      <div class="btn-group" role="group">
+                        <!--  conservamos filtros al volver desde detail/update -->
+                        <a href="{% url 'web:denuncia_detail' denuncia.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                           class="btn btn-sm btn-outline-info"
+                           title="Ver detalles">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                          </svg>
+                        </a>
+
+                        {% if denuncia.estado == 'resuelta' %}
+                           <a href="{% url 'web:denuncia_pdf' denuncia.pk %}"
+                              class="btn btn-sm btn-outline-danger"
+                              title="Descargar PDF">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                  fill="currentColor" class="bi bi-file-earmark-pdf" viewBox="0 0 16 16">
+                                <path d="M5.523 12.424q.21-.124.459-.238.25-.114.548-.207.297-.092.634-.158.338-.066.721-.066.484 0 .829.086.345.085.576.25.23.164.345.402.114.237.114.552 0 .332-.114.58-.115.248-.345.414-.23.165-.576.248-.345.082-.829.082-.393 0-.721-.066-.337-.066-.634-.158-.298-.093-.548-.207-.249-.114-.459-.238zm1.18-.847q-.328 0-.563.077v.98q.236.078.563.078.392 0 .61-.139.219-.14.219-.43 0-.29-.219-.43-.218-.136-.61-.136z"/>
+                                <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
+                              </svg>
+                            </a>
+                        {% endif %}
+                        </div>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="6" class="text-center py-4">
+                      <div class="text-muted">
+                        <i class="bi bi-inbox fa-2x mb-2"></i>
+                        <p>No hay denuncias registradas</p>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Paginación -->
+        {% if is_paginated %}
+          <div class="card-footer bg-white border-top-0">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="text-muted small">
+                Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ paginator.count }} registros
+              </div>
+
+              <nav aria-label="Navegación de páginas">
+                <ul class="pagination pagination-sm mb-0">
+
+                  {% if page_obj.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page=1{% if querystring %}&{{ querystring }}{% endif %}">&laquo; Primera</a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">Anterior</a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled"><span class="page-link">&laquo; Primera</span></li>
+                    <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+                  {% endif %}
+
+                  {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                      <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                      <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if querystring %}&{{ querystring }}{% endif %}">{{ num }}</a>
+                      </li>
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if page_obj.has_next %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">Siguiente</a>
+                    </li>
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ paginator.num_pages }}{% if querystring %}&{{ querystring }}{% endif %}">Última &raquo;</a>
+                    </li>
+                  {% else %}
+                    <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+                    <li class="page-item disabled"><span class="page-link">Última &raquo;</span></li>
+                  {% endif %}
+
+                </ul>
+              </nav>
+            </div>
+          </div>
+        {% endif %}
+
+      </div>
+
     </div>
+  </div>
 </div>
+
 {% endblock %}

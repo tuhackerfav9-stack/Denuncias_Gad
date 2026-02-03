@@ -4,8 +4,8 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card shadow-sm">
-                <div class="card-header bg-info text-white">
-                    <h5 class="card-title mb-0">
+                <div class="card-header bg-info ">
+                    <h5 class="card-title mb-0 text-white">
                         <i class="bi bi-person me-2"></i>Detalle de Usuario Web
                     </h5>
                 </div>
@@ -62,7 +62,7 @@
                         </label>
                         <div>
                             {% for group in groups %}
-                                <span class="badge bg-primary">{{ group.name }}</span>
+                                <span class="badge bg-info">{{ group.name }}</span>
                             {% endfor %}
                         </div>
                     </div>

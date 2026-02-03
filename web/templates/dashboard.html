@@ -180,32 +180,40 @@
     </div>
   </div>
 </div>
-
 <script>
-window.initMap = function() {
-  const center = { lat: -0.9333, lng: -78.6 };
+window.initMap = function () {
 
-  const map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 13,
-    center: center,
-    mapTypeId: 'roadmap',
-    styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }]}]
+  // Centro por defecto: Salcedo (ajústalo si quieres)
+  const SALCEDO_CENTER = { lat: -1.0664793, lng: -78.5999933 };
+  const DEFAULT_ZOOM = 13;
+
+  const mapEl = document.getElementById("map");
+  if (!mapEl) return;
+
+  const map = new google.maps.Map(mapEl, {
+    zoom: DEFAULT_ZOOM,
+    center: SALCEDO_CENTER,
+    mapTypeId: "roadmap",
+    styles: [{ featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }]
   });
 
   const bounds = new google.maps.LatLngBounds();
 
   const estadoIconos = {
-    'pendiente': 'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
-    'en_proceso': 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-    'resuelto': 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+    pendiente: "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
+    en_proceso: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+    resuelto: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+    rechazado: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
   };
 
+  // OJO: aquí NO ponemos defaults. Si no hay lat/lng, va vacío y se filtra.
   const denuncias = [
     {% for denuncia in denuncias_mapa %}
     {
-      id: {{ denuncia.id }},
-      lat: parseFloat("{{ denuncia.latitud|default:'0' }}"),
-      lng: parseFloat("{{ denuncia.longitud|default:'0' }}"),
+      id: "{{ denuncia.id }}",
+      // si viene null/blank, queda "" y parseFloat da NaN (y lo filtramos)
+      lat: parseFloat("{{ denuncia.latitud|default_if_none:'' }}"),
+      lng: parseFloat("{{ denuncia.longitud|default_if_none:'' }}"),
       descripcion: "{{ denuncia.descripcion|truncatechars:80|escapejs }}",
       tipo: "{{ denuncia.tipo_denuncia.nombre|escapejs }}",
       estado: "{{ denuncia.estado }}",
@@ -216,30 +224,63 @@ window.initMap = function() {
     {% endfor %}
   ];
 
-  denuncias.forEach(d => {
-    if (!d.lat || !d.lng) return;
+  function isValidCoord(lat, lng) {
+    // NaN o undefined
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
 
+    // 0,0 (típico de "no tengo ubicación")
+    if (lat === 0 && lng === 0) return false;
+
+    // rangos válidos
+    if (lat < -90 || lat > 90) return false;
+    if (lng < -180 || lng > 180) return false;
+
+    return true;
+  }
+
+  const badge = (st) => {
+    if (st === "resuelto") return "success";
+    if (st === "en_proceso") return "info";
+    if (st === "rechazado") return "danger";
+    return "warning";
+  };
+
+  // Filtramos solo denuncias georreferenciadas reales
+  const denunciasValidas = denuncias.filter(d => isValidCoord(d.lat, d.lng));
+
+  // Si NO hay denuncias válidas → queda centrado en Salcedo, y aviso
+  if (denunciasValidas.length === 0) {
+    // opcional: aviso bonito
+    if (window.iziToast) {
+      iziToast.info({
+        title: "Mapa",
+        message: "No hay denuncias con ubicación (lat/lng) válida para mostrar.",
+        position: "topRight",
+        timeout: 3500
+      });
+    } else {
+      console.warn("No hay denuncias con coordenadas válidas.");
+    }
+    return;
+  }
+
+  // Pintamos markers
+  denunciasValidas.forEach(d => {
     const position = { lat: d.lat, lng: d.lng };
 
     const marker = new google.maps.Marker({
       position,
       map,
       title: d.tipo,
-      icon: estadoIconos[d.estado] || 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+      icon: estadoIconos[d.estado] || "http://maps.google.com/mapfiles/ms/icons/purple-dot.png"
     });
-
-    const badge = (st) => {
-      if (st === 'resuelto') return 'success';
-      if (st === 'en_proceso') return 'info';
-      return 'warning';
-    };
 
     const infoWindow = new google.maps.InfoWindow({
       content: `
         <div style="max-width: 320px;">
           <h6 style="margin:0 0 8px 0;"><b>${d.tipo}</b></h6>
           <p style="margin:0 0 6px 0;"><b>Descripción:</b> ${d.descripcion}</p>
-          <p style="margin:0 0 6px 0;"><b>Estado:</b> <span class="badge badge-${badge(d.estado)}">${d.estado.replace('_',' ')}</span></p>
+          <p style="margin:0 0 6px 0;"><b>Estado:</b> <span class="badge bg-${badge(d.estado)}">${(d.estado || "").replace("_"," ")}</span></p>
           <p style="margin:0 0 6px 0;"><b>Ciudadano:</b> ${d.ciudadano}</p>
           <p style="margin:0 0 6px 0;"><b>Departamento:</b> ${d.departamento}</p>
           <p style="margin:0 0 10px 0;"><b>Fecha:</b> ${d.fecha}</p>
@@ -247,17 +288,18 @@ window.initMap = function() {
         </div>`
     });
 
-    marker.addListener('click', () => infoWindow.open(map, marker));
+    marker.addListener("click", () => infoWindow.open(map, marker));
     bounds.extend(position);
   });
 
-  if (denuncias.length > 0) {
-    map.fitBounds(bounds);
-    const listener = google.maps.event.addListener(map, 'idle', () => {
-      if (map.getZoom() > 16) map.setZoom(16);
-      google.maps.event.removeListener(listener);
-    });
-  }
+  // Ajustar vista a bounds
+  map.fitBounds(bounds);
+
+  // limitar zoom máximo
+  const listener = google.maps.event.addListener(map, "idle", () => {
+    if (map.getZoom() > 16) map.setZoom(16);
+    google.maps.event.removeListener(listener);
+  });
 };
 </script>
 

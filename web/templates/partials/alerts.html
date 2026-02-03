@@ -1,0 +1,29 @@
+{# web/templates/partials/alerts.html #}
+{% if messages %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      {% for message in messages %}
+        (function () {
+          const tag = "{{ message.tags|default:'' }}";
+          const text = "{{ message|escapejs }}";
+
+
+          // Map Django tags -> iziToast types
+          let type = "info";
+          if (tag.includes("success")) type = "success";
+          else if (tag.includes("error") || tag.includes("danger")) type = "error";
+          else if (tag.includes("warning")) type = "warning";
+
+          iziToast[type]({
+            title: (type === "success" ? "Éxito" : type === "error" ? "Error" : type === "warning" ? "Aviso" : "Info"),
+            message: text,
+            position: "topRight",
+            timeout: 3500,
+            close: true,
+            progressBar: true,
+          });
+        })();
+      {% endfor %}
+    });
+  </script>
+{% endif %}

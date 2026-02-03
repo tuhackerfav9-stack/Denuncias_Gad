@@ -15,7 +15,7 @@ from .views import (
 
     FuncionariosListView, FuncionariosCreateView, FuncionariosDetailView, FuncionariosUpdateView, FuncionariosDeleteView,
     DepartamentosListView, DepartamentosCreateView, DepartamentosDetailView, DepartamentosUpdateView, DepartamentosDeleteView,
-    WebUserListView, WebUserCreateView, WebUserDetailView, WebUserUpdateView, WebUserDeleteView,
+    WebUserListView, WebUserCreateView, WebUserDetailView, WebUserUpdateView, WebUserDeleteView,denuncia_pdf,
 )
 
 app_name = "web"
@@ -40,6 +40,7 @@ urlpatterns = [
     path("denuncias/<uuid:pk>/respuestas/create/", crear_respuesta_denuncia, name="denuncia_respuesta_create"),
     path("denuncias/<uuid:pk>/update/", DenunciaUpdateView.as_view(), name="denuncia_update"),
     path("denuncias/<uuid:pk>/delete/", DenunciaDeleteView.as_view(), name="denuncia_delete"),
+     path("denuncia/<uuid:pk>/pdf/", denuncia_pdf, name="denuncia_pdf"),
 
     # Funcionarios
     path("funcionarios/", FuncionariosListView.as_view(), name="funcionario_list"),

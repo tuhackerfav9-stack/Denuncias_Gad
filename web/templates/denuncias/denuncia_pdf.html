@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .box {
+      border: 1px solid #333;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Denuncia #{{ denuncia.id }}</h1>
+
+<div class="box">
+  <strong>Ciudadano:</strong>
+  {{ denuncia.ciudadano.nombres }} {{ denuncia.ciudadano.apellidos }} <br>
+
+  <strong>Cédula:</strong> {{ denuncia.ciudadano.cedula }} <br>
+  <strong>Tipo:</strong> {{ denuncia.tipo_denuncia.nombre }} <br>
+  <strong>Estado:</strong> {{ denuncia.estado }} <br>
+  <strong>Fecha:</strong> {{ denuncia.created_at|date:"d/m/Y H:i" }}
+</div>
+
+<div class="box">
+  <strong>Descripción:</strong><br>
+  {{ denuncia.descripcion }}
+</div>
+
+</body>
+</html>

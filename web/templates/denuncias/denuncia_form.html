@@ -1,95 +1,193 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container-fluid mt-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-pencil-square me-2"></i>Gestionar Denuncia
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <form method="post" action=".">
-                        {% csrf_token %}
-                        {% if form.non_field_errors %}
-                            <div class="alert alert-danger" role="alert">
-                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                {% for error in form.non_field_errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-xl-10">
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.estado.id_for_label }}" class="form-label fw-bold">Estado</label>
-                                {{ form.estado }}
-                                {% if form.estado.errors %}
-                                    <div class="text-danger small">{{ form.estado.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                             <div class="col-md-6 mb-3">
-                                <label for="{{ form.tipo_denuncia.id_for_label }}" class="form-label fw-bold">Tipo</label>
-                                {{ form.tipo_denuncia }}
-                                {% if form.tipo_denuncia.errors %}
-                                    <div class="text-danger small">{{ form.tipo_denuncia.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.descripcion.id_for_label }}" class="form-label fw-bold">Descripción</label>
-                            {{ form.descripcion }}
-                            {% if form.descripcion.errors %}
-                                <div class="text-danger small">{{ form.descripcion.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-
-                        <hr class="my-4">
-                        <h6 class="mb-3"><i class="bi bi-person-badge me-2"></i>Asignación</h6>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.asignado_departamento.id_for_label }}" class="form-label">Departamento</label>
-                                {{ form.asignado_departamento }}
-                                {% if form.asignado_departamento.errors %}
-                                    <div class="text-danger small">{{ form.asignado_departamento.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.asignado_funcionario.id_for_label }}" class="form-label">Funcionario</label>
-                                {{ form.asignado_funcionario }}
-                                {% if form.asignado_funcionario.errors %}
-                                    <div class="text-danger small">{{ form.asignado_funcionario.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-                        <h6 class="mb-3"><i class="bi bi-geo-alt me-2"></i>Ubicación</h6>
-                         <div class="mb-3">
-                            <label for="{{ form.direccion_texto.id_for_label }}" class="form-label">Dirección</label>
-                            {{ form.direccion_texto }}
-                        </div>
-                         <div class="mb-3">
-                            <label for="{{ form.referencia.id_for_label }}" class="form-label">Referencia</label>
-                            {{ form.referencia }}
-                        </div>
-
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                            <a href="{% url 'web:denuncia_list' %}" class="btn btn-outline-secondary me-md-2">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save me-1"></i>
-                                Actualizar Denuncia
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
+        <div>
+          <h1 class="h4 mb-1">
+            <i class="bi bi-pencil-square me-2 text-info"></i> Denuncia
+          </h1>
+          <div class="text-muted small">
+            Actualiza estado, asignación y datos de ubicación de forma ordenada.
+          </div>
         </div>
+
+        <div class="text-md-end">
+          <div class="small text-muted">ID</div>
+          <div class="fw-semibold text-break">{{ denuncia.id }}</div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+          <div class="row g-3 align-items-center">
+
+            <div class="col-md-5">
+              <div class="small text-muted">Ciudadano</div>
+              <div class="fw-semibold">
+                {{ denuncia.ciudadano.nombres }} {{ denuncia.ciudadano.apellidos }}
+              </div>
+              <div class="text-muted small">{{ denuncia.ciudadano.cedula }}</div>
+            </div>
+
+            <div class="col-md-3">
+              <div class="small text-muted">Tipo</div>
+              <span class="badge rounded-pill bg-info text-white">
+                {{ denuncia.tipo_denuncia.nombre }}
+              </span>
+            </div>
+
+            <div class="col-md-4">
+              <div class="small text-muted">Estado actual</div>
+              {% if denuncia.estado == 'pendiente' %}
+                <span class="badge rounded-pill bg-warning text-dark">Pendiente</span>
+              {% elif denuncia.estado == 'en_proceso' %}
+                <span class="badge rounded-pill bg-primary">En Proceso</span>
+              {% elif denuncia.estado == 'resuelta' %}
+                <span class="badge rounded-pill bg-success">Resuelta</span>
+              {% else %}
+                <span class="badge rounded-pill bg-secondary">{{ denuncia.estado }}</span>
+              {% endif %}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-header bg-info text-white">
+          <div class="d-flex align-items-center justify-content-between">
+            <h5 class="card-title mb-0 text-white">
+              <i class="bi bi-gear me-2"></i>Edición de la denuncia
+            </h5>
+
+            {# si vienes de la lista con filtros, Cancelar vuelve exacto #}
+            <a href="{{ return_url|default:request.META.HTTP_REFERER|default:''|default_if_none:'' }}{% if not return_url and not request.META.HTTP_REFERER %}{% url 'web:denuncia_list' %}{% endif %}"
+               class="btn btn-sm btn-light">
+              <i class="bi bi-arrow-left me-1"></i>Volver
+            </a>
+          </div>
+        </div>
+
+        <div class="card-body">
+
+          <form method="post" action=".">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+              </div>
+            {% endif %}
+
+           
+            <div class="p-3 rounded bg-light border mb-3">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-clipboard-check text-info"></i>
+                <div class="fw-semibold">Estado y Tipo</div>
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="{{ form.estado.id_for_label }}" class="form-label fw-bold">Estado</label>
+                  {{ form.estado }}
+                  {% if form.estado.errors %}
+                    <div class="text-danger small mt-1">{{ form.estado.errors.0 }}</div>
+                  {% else %}
+                    <div class="text-muted small mt-1">Define el avance de atención.</div>
+                  {% endif %}
+                </div>
+
+                <div class="col-md-6">
+                  <label for="{{ form.tipo_denuncia.id_for_label }}" class="form-label fw-bold">Tipo</label>
+                  {{ form.tipo_denuncia }}
+                  {% if form.tipo_denuncia.errors %}
+                    <div class="text-danger small mt-1">{{ form.tipo_denuncia.errors.0 }}</div>
+                  {% else %}
+                    <div class="text-muted small mt-1">Clasificación de la denuncia.</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.descripcion.id_for_label }}" class="form-label fw-bold">
+                <i class="bi bi-card-text me-1 text-info"></i>Descripción
+              </label>
+              {{ form.descripcion }}
+              {% if form.descripcion.errors %}
+                <div class="text-danger small mt-1">{{ form.descripcion.errors.0 }}</div>
+              {% else %}
+                <div class="text-muted small mt-1">Sé claro y concreto para facilitar la gestión.</div>
+              {% endif %}
+            </div>
+
+            <div class="p-3 rounded bg-light border mb-3">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-person-badge text-info"></i>
+                <div class="fw-semibold">Asignación</div>
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="{{ form.asignado_departamento.id_for_label }}" class="form-label fw-bold">Departamento</label>
+                  {{ form.asignado_departamento }}
+                  {% if form.asignado_departamento.errors %}
+                    <div class="text-danger small mt-1">{{ form.asignado_departamento.errors.0 }}</div>
+                  {% endif %}
+                </div>
+
+                <div class="col-md-6">
+                  <label for="{{ form.asignado_funcionario.id_for_label }}" class="form-label fw-bold">Funcionario</label>
+                  {{ form.asignado_funcionario }}
+                  {% if form.asignado_funcionario.errors %}
+                    <div class="text-danger small mt-1">{{ form.asignado_funcionario.errors.0 }}</div>
+                  {% else %}
+                    <div class="text-muted small mt-1">Opcional: asignación directa.</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded bg-light border mb-4">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-geo-alt text-info"></i>
+                <div class="fw-semibold">Ubicación</div>
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="{{ form.direccion_texto.id_for_label }}" class="form-label fw-bold">Dirección</label>
+                  {{ form.direccion_texto }}
+                </div>
+
+                <div class="col-md-6">
+                  <label for="{{ form.referencia.id_for_label }}" class="form-label fw-bold">Referencia</label>
+                  {{ form.referencia }}
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex flex-column flex-md-row justify-content-end gap-2">
+              <a href="{{ return_url|default:request.META.HTTP_REFERER|default:''|default_if_none:'' }}{% if not return_url and not request.META.HTTP_REFERER %}{% url 'web:denuncia_list' %}{% endif %}"
+                 class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle me-1"></i>Cancelar
+              </a>
+
+              <button type="submit" class="btn btn-info text-white">
+                <i class="bi bi-save me-1"></i>Guardar cambios
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+      </div>
+
     </div>
+  </div>
 </div>
 {% endblock %}

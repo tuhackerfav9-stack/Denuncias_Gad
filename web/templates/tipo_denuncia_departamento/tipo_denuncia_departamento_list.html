@@ -7,15 +7,17 @@
                 <h1 class="h3 mb-0">
                     <i class="bi bi-diagram-3 me-2"></i>Asignación Tipo Denuncia - Departamento
                 </h1>
-                <a href="{% url 'web:tipo_denuncia_departamento_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle me-2"></i>Nueva Asignación
+                <a href="{% url 'web:tipo_denuncia_departamento_create' %}" class="btn btn-info text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
+</svg> Nueva Asignación
                 </a>
             </div>
             <div class="card shadow-sm">
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover table-striped mb-0">
-                            <thead class="table-dark">
+                            <thead class="table-light">
                                 <tr>
                                     <th>#</th>
                                     <th>Tipo de Denuncia</th>
@@ -49,7 +51,7 @@
                                     <td>{{ asignacion.created_at|date:"d/m/Y H:i" }}</td>
                                     <td class="text-center">
                                         <div class="btn-group" role="group">
-                                            <a href="{% url 'web:tipo_denuncia_departamento_detail' asignacion.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                                            <a href="{% url 'web:tipo_denuncia_departamento_detail' asignacion.pk %}" class="btn btn-sm btn-outline-info" title="Ver detalles">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <a href="{% url 'web:tipo_denuncia_departamento_update' asignacion.pk %}" class="btn btn-sm btn-outline-warning" title="Editar">
@@ -66,8 +68,10 @@
                                     <td colspan="7" class="text-center py-5">
                                         <i class="bi bi-inbox fs-1 text-muted"></i>
                                         <p class="text-muted mt-3">No hay asignaciones de tipos de denuncia a departamentos registradas</p>
-                                        <a href="{% url 'web:tipo_denuncia_departamento_create' %}" class="btn btn-primary">
-                                            <i class="bi bi-plus-circle me-2"></i>Crear primera asignación
+                                        <a href="{% url 'web:tipo_denuncia_departamento_create' %}" class="btn btn-info text-white">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
+</svg> Crear primera asignación
                                         </a>
                                     </td>
                                 </tr>

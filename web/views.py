@@ -54,7 +54,7 @@ from .forms import (
     FuncionarioForm,
     GrupoForm,
     MenuForm,
-    PermissionRequiredMixin as CustomPermissionRequiredMixin,  # ✅ lo dejamos para auth.* (grupos/users/menus)
+    PermissionRequiredMixin as CustomPermissionRequiredMixin,  #  lo dejamos para auth.* (grupos/users/menus)
     TipoDenunciaDepartamentoForm,
     TiposDenunciaForm,
     WebUserForm,
@@ -108,7 +108,7 @@ def get_web_user_name_from_funcionario(funcionario) -> str:
     return "No asignado"
 
 
-# ✅ NUEVO: Mixin para permitir SOLO funcionarios (o superuser)
+#  NUEVO: Mixin para permitir SOLO funcionarios (o superuser)
 class FuncionarioRequiredMixin(LoginRequiredMixin):
     login_url = "web:login"
 
@@ -216,7 +216,7 @@ def api_respuestas_denuncia(request, denuncia_id):
             "mensaje": r.mensaje,
             "fecha": r.created_at.isoformat() if r.created_at else None,
             "funcionario": {
-                "id": str(func.pk) if func else None,   # ✅ usar pk
+                "id": str(func.pk) if func else None,   #  usar pk
                 "nombre": getattr(func, "nombres", "") if func else "",
                 "apellido": getattr(func, "apellidos", "") if func else "",
             }
@@ -260,7 +260,7 @@ def dashboard_view(request):
             denuncias_qs = denuncias_qs.none()
             funcionarios_qs = funcionarios_qs.none()
             departamentos_qs = departamentos_qs.none()
-
+    
     # =========================
     # 3) Fechas
     # =========================
@@ -425,6 +425,7 @@ def dashboard_view(request):
     }
 
     return render(request, "dashboard.html", context)
+    
 
 
 # =========================================
@@ -542,7 +543,7 @@ class MenuDeleteView(LoginRequiredMixin, SuperUserRequiredMixin, DeleteView):
 # =========================================
 # FAQ
 # =========================================
-# ✅ Cambio: de "db.*" a control por funcionario (NO existe permiso db.*)
+#  Cambio: de "db.*" a control por funcionario (NO existe permiso db.*)
 class FaqListView(FuncionarioRequiredMixin, ListView):
     model = Faq
     template_name = "faqs/faq_list.html"
@@ -601,6 +602,9 @@ class DenunciaListView(FuncionarioRequiredMixin, ListView):
     ordering = ["-created_at"]
     paginate_by = 20
 
+    def _is_admin(self, user):
+        return user.is_superuser or user.groups.filter(name="TICS_ADMIN").exists()
+
     def get_queryset(self):
         qs = Denuncias.objects.select_related(
             "ciudadano", "tipo_denuncia", "asignado_departamento", "asignado_funcionario"
@@ -609,44 +613,36 @@ class DenunciaListView(FuncionarioRequiredMixin, ListView):
         user = self.request.user
         funcionario = get_funcionario_from_web_user(user)
 
-        # 1) superuser ve todo
-        if user.is_superuser:
+        #  base por rol
+        if self._is_admin(user):
             base = qs
-
-        # 2) TICS_ADMIN ve todo (si quieres)
-        elif user.groups.filter(name="TICS_ADMIN").exists():
-            base = qs
-
-        # 3) funcionario normal: solo su departamento
         elif funcionario and funcionario.departamento_id:
-            base = qs.filter(asignado_departamento=funcionario.departamento)
-
+            base = qs.filter(asignado_departamento_id=funcionario.departamento_id)
         else:
-            return Denuncias.objects.none()
+            return qs.none()
 
-        # ---- filtros (los tuyos)
-        estado = self.request.GET.get("estado")
+        #  filtros
+        estado = self.request.GET.get("estado", "").strip()
         if estado:
             base = base.filter(estado=estado)
 
-        tipo = self.request.GET.get("tipo")
+        tipo = self.request.GET.get("tipo", "").strip()
         if tipo:
             base = base.filter(tipo_denuncia_id=tipo)
 
-        departamento = self.request.GET.get("departamento")
+        departamento = self.request.GET.get("departamento", "").strip()
         if departamento:
-            # opcional: si no es superuser/TICS_ADMIN, bloquear filtro a otros deptos
-            if user.is_superuser or user.groups.filter(name="TICS_ADMIN").exists():
+            # admin puede filtrar cualquier depto
+            if self._is_admin(user):
                 base = base.filter(asignado_departamento_id=departamento)
-            else:
-                # ignora filtro malicioso
-                pass
-
-        funcionario_get = self.request.GET.get("funcionario")
+            # funcionario normal no puede “ver otros”
+            # (ignoramos el filtro si intenta otro)
+        
+        funcionario_get = self.request.GET.get("funcionario", "").strip()
         if funcionario_get:
             base = base.filter(asignado_funcionario_id=funcionario_get)
 
-        q = self.request.GET.get("q")
+        q = self.request.GET.get("q", "").strip()
         if q:
             base = base.filter(
                 Q(ciudadano__nombres__icontains=q)
@@ -655,9 +651,45 @@ class DenunciaListView(FuncionarioRequiredMixin, ListView):
                 | Q(descripcion__icontains=q)
                 | Q(referencia__icontains=q)
             )
-        
-    
+
         return base.distinct().order_by("-created_at")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        user = self.request.user
+        funcionario = get_funcionario_from_web_user(user)
+        is_admin = self._is_admin(user)
+
+        #  combos (limitados por rol)
+        context["tipos_denuncia"] = TiposDenuncia.objects.filter(activo=True).order_by("nombre")
+
+        if is_admin:
+            context["departamentos"] = Departamentos.objects.filter(activo=True).order_by("nombre")
+            context["funcionarios"] = Funcionarios.objects.filter(activo=True).order_by("nombres")
+        else:
+            if funcionario and funcionario.departamento_id:
+                context["departamentos"] = Departamentos.objects.filter(id=funcionario.departamento_id, activo=True)
+                context["funcionarios"] = Funcionarios.objects.filter(
+                    departamento_id=funcionario.departamento_id, activo=True
+                ).order_by("nombres")
+            else:
+                context["departamentos"] = Departamentos.objects.none()
+                context["funcionarios"] = Funcionarios.objects.none()
+
+        #  valores actuales (para que se mantengan al refrescar)
+        context["estado_actual"] = self.request.GET.get("estado", "")
+        context["tipo_actual"] = self.request.GET.get("tipo", "")
+        context["departamento_actual"] = self.request.GET.get("departamento", "")
+        context["funcionario_actual"] = self.request.GET.get("funcionario", "")
+        context["q"] = self.request.GET.get("q", "")
+
+        #  querystring seguro (SIN page) para paginación
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        context["querystring"] = params.urlencode()
+
+        return context
 
             
 from django.http import Http404
@@ -728,6 +760,11 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
 
         return context
 
+from django.contrib import messages
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.urls import reverse_lazy
+from django.shortcuts import render
+from django.utils import timezone
 
 class DenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateView):
     model = Denuncias
@@ -737,8 +774,6 @@ class DenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateView)
     success_url = reverse_lazy("web:denuncia_list")
     login_url = "web:login"
 
-
-    
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
         user = request.user
@@ -747,20 +782,50 @@ class DenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateView)
             return super().dispatch(request, *args, **kwargs)
 
         funcionario = get_funcionario_from_web_user(request.user)
-        # superuser pasa aunque no tenga funcionario
         if not (request.user.is_superuser or funcionario):
             return render(request, "errors/403.html", status=403)
-
-        current_user_department = getattr(funcionario, "departamento", None) if funcionario else None
-
-        #funcionario = get_funcionario_from_web_user(user)
-        #if not funcionario or not funcionario.departamento_id:
-        #    return render(request, "errors/403.html", status=403)
 
         if obj.asignado_departamento_id != funcionario.departamento_id:
             return render(request, "errors/403.html", status=403)
 
         return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # ✅ Para volver exacto a donde estabas (lista con filtros/página)
+        next_url = self.request.GET.get("next")
+        if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={self.request.get_host()}):
+            context["return_url"] = next_url
+        else:
+            # si entraste con ?estado=...&page=... lo usamos como retorno a la lista
+            if self.request.GET:
+                params = self.request.GET.copy()
+                params.pop("next", None)
+                qs = params.urlencode()
+                if qs:
+                    context["return_url"] = f"{reverse_lazy('web:denuncia_list')}?{qs}"
+                else:
+                    context["return_url"] = reverse_lazy("web:denuncia_list")
+            else:
+                context["return_url"] = reverse_lazy("web:denuncia_list")
+
+        return context
+
+    def get_success_url(self):
+        # ✅ Al guardar, vuelve con filtros/página si venían
+        next_url = self.request.GET.get("next")
+        if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={self.request.get_host()}):
+            return next_url
+
+        if self.request.GET:
+            params = self.request.GET.copy()
+            params.pop("next", None)
+            qs = params.urlencode()
+            if qs:
+                return f"{reverse_lazy('web:denuncia_list')}?{qs}"
+
+        return str(self.success_url)
 
     def form_valid(self, form):
         form.instance.updated_at = timezone.now()
@@ -777,6 +842,7 @@ class DenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateView)
                 denuncia_id=self.object.id,
             )
 
+        messages.success(self.request, "✅ Denuncia actualizada correctamente.")
         return super().form_valid(form)
 
 
@@ -787,7 +853,7 @@ class DenunciaDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, DeleteView)
     login_url = "web:login"
 
 
-# ✅ Cambio: quitamos @permission_required("db....") y validamos funcionario
+#  Cambio: quitamos @permission_required("db....") y validamos funcionario
 @login_required
 def crear_respuesta_denuncia(request, pk):
     funcionario = get_funcionario_from_web_user(request.user)
@@ -890,10 +956,10 @@ class TipoDenunciaDepartamentoListView(FuncionarioRequiredMixin, ListView):
     context_object_name = "items"
     login_url = "web:login"
     paginate_by = 15
-    ordering = ["-id"]
+    ordering = ["-created_at"]
 
-    def get_queryset(self):
-        return TipoDenunciaDepartamento.objects.select_related("tipo_denuncia", "departamento").order_by("-id")
+def get_queryset(self):
+    return TipoDenunciaDepartamento.objects.select_related("tipo_denuncia", "departamento").order_by("-created_at")
 
 
 class TipoDenunciaDepartamentoCreateView(CrudMessageMixin, FuncionarioRequiredMixin, CreateView):
@@ -929,7 +995,7 @@ class TipoDenunciaDepartamentoDeleteView(CrudMessageMixin, FuncionarioRequiredMi
 # =========================================
 # Tipos de Denuncia
 # =========================================
-# ✅ Cambio: db.* -> FuncionarioRequiredMixin
+#  Cambio: db.* -> FuncionarioRequiredMixin
 class TiposDenunciaListView(FuncionarioRequiredMixin, ListView):
     model = TiposDenuncia
     template_name = "tipos_denuncia/tipos_denuncia_list.html"
@@ -984,7 +1050,7 @@ def llm_response(request, denuncia_id):
     if not client:
         return JsonResponse({"success": False, "error": "Servicio de IA no configurado (falta OPENAI_API_KEY)"}, status=503)
 
-    # ✅ proteger: solo funcionarios/superuser
+    #  proteger: solo funcionarios/superuser
     funcionario = get_funcionario_from_web_user(request.user)
     if not (request.user.is_superuser or funcionario):
         return JsonResponse({"success": False, "error": "No autorizado"}, status=403)
@@ -1057,7 +1123,7 @@ def resolver_denuncia(request, denuncia_id):
     if not client:
         return JsonResponse({"success": False, "error": "Servicio de IA no configurado (falta OPENAI_API_KEY)"}, status=503)
 
-    # ✅ proteger: solo funcionarios/superuser
+    #  proteger: solo funcionarios/superuser
     funcionario = get_funcionario_from_web_user(request.user)
     if not (request.user.is_superuser or funcionario):
         return render(request, "errors/403.html", status=403)
@@ -1153,7 +1219,7 @@ class FuncionariosCreateView(CrudMessageMixin, FuncionarioRequiredMixin, CreateV
     login_url = "web:login"
 
     def form_valid(self, form):
-        messages.success(self.request, "✅ Funcionario creado correctamente.")
+        messages.success(self.request, " Funcionario creado correctamente.")
         return super().form_valid(form)
 
 
@@ -1170,10 +1236,10 @@ class FuncionariosUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateV
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # ✅ traer el auth_user correcto (entero) desde la tabla puente
+        #  traer el auth_user correcto (entero) desde la tabla puente
         link = (
             FuncionarioWebUser.objects
-            .select_related("web_user")  # ✅ NO "usuario"
+            .select_related("web_user")  #  NO "usuario"
             .filter(funcionario=self.object)
             .first()
         )
@@ -1183,7 +1249,7 @@ class FuncionariosUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateV
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
 
-        # ✅ Si tu form tiene un campo para auth_user (por ejemplo: web_user o usuario_web)
+        #  Si tu form tiene un campo para auth_user (por ejemplo: web_user o usuario_web)
         link = (
             FuncionarioWebUser.objects
             .select_related("web_user")
@@ -1194,7 +1260,7 @@ class FuncionariosUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateV
 
         # 1) Si el campo se llama web_user
         if "web_user" in form.fields:
-            form.fields["web_user"].initial = web_user_obj  # ✅ objeto User (id entero)
+            form.fields["web_user"].initial = web_user_obj  #  objeto User (id entero)
 
         # 2) Si por tu diseño lo llamaste "usuario" pero en realidad es auth_user
         # (esto evita que se le meta el UUID de Usuarios)
@@ -1209,7 +1275,7 @@ class FuncionariosUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateV
         return form
 
     def form_valid(self, form):
-        messages.success(self.request, "✅ Funcionario actualizado correctamente.")
+        messages.success(self.request, " Funcionario actualizado correctamente.")
         return super().form_valid(form)
 
 
@@ -1290,7 +1356,7 @@ class DepartamentosDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, Delete
 # =========================================
 # WEB USERS (Django auth_user CRUD)
 # =========================================
-# ✅ Estos se quedan con CustomPermissionRequiredMixin porque usan auth.* (EXISTE)
+#  Estos se quedan con CustomPermissionRequiredMixin porque usan auth.* (EXISTE)
 class WebUserListView(LoginRequiredMixin, CustomPermissionRequiredMixin, ListView):
     model = User
     template_name = "webusers/webuser_list.html"
@@ -1360,3 +1426,34 @@ class WebUserDeleteView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRe
     permission_required = "auth.delete_user"
     login_url = "web:login"
 
+
+
+
+from django.template.loader import render_to_string
+from django.http import HttpResponse, Http404
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from django.shortcuts import get_object_or_404
+
+def denuncia_pdf(request, pk):
+    denuncia = get_object_or_404(Denuncias, pk=pk)
+
+    if denuncia.estado != "resuelta":
+        raise Http404("La denuncia no está resuelta")
+
+    template = get_template("denuncias/denuncia_pdf.html")
+    html = template.render({"denuncia": denuncia})
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="denuncia_{denuncia.id}.pdf"'
+    )
+
+    pisa_status = pisa.CreatePDF(
+        html, dest=response, encoding="utf-8"
+    )
+
+    if pisa_status.err:
+        return HttpResponse("Error al generar PDF", status=500)
+
+    return response

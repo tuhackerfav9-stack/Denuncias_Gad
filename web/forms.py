@@ -98,31 +98,31 @@ class CrudMessageMixin:
 #                attrs={"class": "form-control"},
 #            ),
 #        }
+from django import forms
 from django.contrib.auth.models import Group
+from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
+from .models import Menus
 
 class MenuForm(forms.ModelForm):
     class Meta:
         model = Menus
         fields = ["nombre", "url", "icono", "padre", "orden", "permisos"]
         widgets = {
-            "nombre": forms.TextInput(attrs={"class": "form-control"}),
-            "url": forms.TextInput(attrs={"class": "form-control"}),
-            "icono": forms.TextInput(attrs={"class": "form-control"}),
+            "nombre": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Denuncias"}),
+            "url": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: web:denuncia_list"}),
+            "icono": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: bi bi-flag"}),
             "padre": ModelSelect2Widget(
                 model=Menus,
                 search_fields=["nombre__icontains"],
                 attrs={"class": "form-control"},
             ),
-            "orden": forms.NumberInput(attrs={"class": "form-control"}),
+            "orden": forms.NumberInput(attrs={"class": "form-control", "min": 0}),
             "permisos": ModelSelect2MultipleWidget(
                 model=Group,
                 search_fields=["name__icontains"],
                 attrs={"class": "form-control"},
             ),
         }
-
-
-
 
 
 # =========================

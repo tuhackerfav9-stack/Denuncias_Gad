@@ -31,6 +31,9 @@
   <!-- iziToast -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
+  <!-- mensajes alert globales 
+  <link rel="stylesheet" href="{% static 'assets/vendor/izitoast/iziToast.min.css' %}">
+ -->
   {% block extra_css %}{% endblock %}
 </head>
 
@@ -73,7 +76,7 @@
               <form method="post" action="{% url 'web:logout' %}">
                 {% csrf_token %}
                 <button type="submit" class="dropdown-item">
-                  <i class="ti-power-off text-primary"></i> Cerrar sesión
+                  <i class="ti-power-off text-info"></i> Cerrar sesión
                 </button>
               </form>
             </div>
@@ -102,34 +105,59 @@
           </li>
 
           <!-- Tus menús dinámicos -->
-          {% for menu in menus_principales %}
-            {% if menu.submenus_list %}
-              <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="collapse" href="#menu-{{ menu.id }}" aria-expanded="false">
-                  <i class="{% if menu.icono %}{{ menu.icono }}{% else %}icon-layout{% endif %} menu-icon"></i>
-                  <span class="menu-title">{{ menu.nombre }}</span>
-                  <i class="menu-arrow"></i>
-                </a>
+          <!-- Menús dinámicos (según roles/grupos) -->
+<!-- Menús dinámicos (según roles/grupos) -->
+{% for menu in menus_principales %}
+  {% with children=menu.children %}
+    {% if children %}
+      <li class="nav-item">
+        <a class="nav-link"
+           data-bs-toggle="collapse"
+           href="#menu-{{ menu.id }}"
+           aria-expanded="false"
+           aria-controls="menu-{{ menu.id }}">
+          <i class="{% if menu.icono %}{{ menu.icono }}{% else %}icon-layout{% endif %} menu-icon"></i>
+          <span class="menu-title">{{ menu.nombre }}</span>
+          <i class="menu-arrow"></i>
+        </a>
 
-                <div class="collapse" id="menu-{{ menu.id }}">
-                  <ul class="nav flex-column sub-menu">
-                    {% for submenu in menu.submenus_list %}
-                      <li class="nav-item">
-                        <a class="nav-link" href="{{ submenu.url }}">{{ submenu.nombre }}</a>
-                      </li>
-                    {% endfor %}
-                  </ul>
-                </div>
-              </li>
-            {% else %}
+        <div class="collapse" id="menu-{{ menu.id }}">
+          <ul class="nav flex-column sub-menu">
+            {% for submenu in children %}
               <li class="nav-item">
-                <a class="nav-link" href="{{ menu.url }}">
-                  <i class="{% if menu.icono %}{{ menu.icono }}{% else %}icon-grid-2{% endif %} menu-icon"></i>
-                  <span class="menu-title">{{ menu.nombre }}</span>
-                </a>
+                {% if submenu.url %}
+                  <a class="nav-link"
+                     href="{% if ':' in submenu.url %}{% url submenu.url %}{% else %}{{ submenu.url }}{% endif %}">
+                    {{ submenu.nombre }}
+                  </a>
+                {% else %}
+                  <span class="nav-link text-muted">{{ submenu.nombre }}</span>
+                {% endif %}
               </li>
-            {% endif %}
-          {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+      </li>
+    {% else %}
+      <li class="nav-item">
+        {% if menu.url %}
+          <a class="nav-link"
+             href="{% if ':' in menu.url %}{% url menu.url %}{% else %}{{ menu.url }}{% endif %}">
+            <i class="{% if menu.icono %}{{ menu.icono }}{% else %}icon-grid-2{% endif %} menu-icon"></i>
+            <span class="menu-title">{{ menu.nombre }}</span>
+          </a>
+        {% else %}
+          <a class="nav-link" href="javascript:void(0)">
+            <i class="{% if menu.icono %}{{ menu.icono }}{% else %}icon-grid-2{% endif %} menu-icon"></i>
+            <span class="menu-title">{{ menu.nombre }}</span>
+          </a>
+        {% endif %}
+      </li>
+    {% endif %}
+  {% endwith %}
+{% endfor %}
+
+
 
           {% if user.is_superuser %}
             <li class="nav-item">
@@ -171,7 +199,7 @@
   <!-- iziToast -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-  <!-- mensajes Django -->
+  <!-- mensajes Django 
   <script>
     {% if messages %}
       {% for message in messages %}
@@ -184,7 +212,13 @@
       {% endfor %}
     {% endif %}
   </script>
+-->
+  {% include "partials/alerts.html" %}
 
+  
   {% block extra_js %}{% endblock %}
+   <!-- <script src="{% static 'assets/vendor/izitoast/iziToast.min.js' %}"></script> -->
+
+
 </body>
 </html>

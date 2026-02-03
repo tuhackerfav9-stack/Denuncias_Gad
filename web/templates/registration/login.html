@@ -3,162 +3,189 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - Sistema de Denuncias</title>
-    <!-- Favicons -->
-    <link href="{% static 'assets/img/favicon.png' %}" rel="icon" />
-    <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon" />
+    <title>Ingreso al Sistema | GAD Salcedo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com" rel="preconnect" />
-    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" />
+    <!-- Bootstrap -->
+    <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
 
-    <!-- Vendor CSS Files -->
-    <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" />
-    <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet" />
-    <link href="{% static 'assets/vendor/aos/aos.css' %}" rel="stylesheet" />
-    <link href="{% static 'assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet" />
-    <link href="{% static 'assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet" />
+    <!-- iziToast -->
+    <link href="https://cdn.jsdelivr.net/npm/izitoast/dist/css/iziToast.min.css" rel="stylesheet">
 
-    <!-- Main CSS File -->
-    <link href="{% static 'assets/css/main.css' %}" rel="stylesheet" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        .form-control:focus {
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            background: 
+                linear-gradient(rgba(116, 116, 116, 0.95), rgba(116, 116, 116, 0.95)),
+                url("{% static 'assets/img/fondo_web.png' %}") center/cover no-repeat;
         }
-        .password-toggle {
-            cursor: pointer;
-            z-index: 10;
-            background: transparent;
+
+        .login-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 14px;
+            box-shadow: 0 25px 60px rgba(0,0,0,.25);
+            padding: 35px;
+            position: relative;
+        }
+
+        .login-decoration {
+            position: absolute;
+            top: -45px;
+            right: -35px;
+            width: 110px;
+            opacity: .9;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .btn-gad {
+            background-color: #0d6efd;
             border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            color: white;
+
         }
-        .password-toggle:hover {
+
+        .btn-gad:hover {
+            background-color: #0b5ed7;
+        }
+
+        .login-title {
             color: #0d6efd;
-        }
-        .input-group-text {
-            background-color: transparent;
+            font-weight: 600;
         }
     </style>
 </head>
-<body class="d-flex align-items-center justify-content-center min-vh-100 bg-light">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
+<body class="d-flex align-items-center justify-content-center">
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
+
+            <div class="login-card position-relative">
+
                 <div class="text-center mb-4">
-                     <!-- Optional: Add Logo Here -->
-                     <img src="{% static 'assets/img/logo_web.png' %}" alt="Logo" class="mb-3" style="max-width: 100px;">
+                    <h5 class="login-title d-flex align-items-center justify-content-center gap-2">
+                        <svg stroke="currentColor" fill="currentColor" stroke-width="0"
+                            viewBox="0 0 24 24"
+                            height="1.4em" width="1.4em"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10.1062 12.0046c0 1.5815-1.2842 2.8636-2.8685 2.8636-1.5842 0-2.8684-1.282-2.8684-2.8636 0-1.5815 1.2842-2.8635 2.8684-2.8635 1.5843 0 2.8685 1.2821 2.8685 2.8635zM7.2377 0C5.6536 0 4.3693 1.2817 4.3693 2.8628s1.2842 2.8629 2.8684 2.8629c1.5842 0 2.8685-1.2817 2.8685-2.8629C10.1062 1.2817 8.822 0 7.2377 0zm9.5246 18.2781c-1.5838 0-2.8677 1.2764-2.8677 2.8636 0 1.5763 1.2835 2.8583 2.8677 2.8583 1.5845 0 2.8684-1.282 2.8684-2.8583 0-1.5872-1.2843-2.8636-2.8684-2.8636zm-2.8685-6.2735c0-1.5815 1.2842-2.8635 2.8685-2.8635 1.5842 0 2.8684 1.282 2.8684 2.8635 0 1.5815-1.2842 2.8636-2.8684 2.8636-1.5843 0-2.8685-1.282-2.8685-2.8636zm.5 0c0 1.3033 1.0625 2.3636 2.3685 2.3636s2.3684-1.0603 2.3684-2.3636c0-1.3032-1.0624-2.3635-2.3684-2.3635s-2.3685 1.0603-2.3685 2.3635z"></path>
+                        </svg>
+                        Ingreso al Sistema
+                    </h5>
+
                 </div>
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-primary text-white text-center py-3">
-                        <h4 class="card-title mb-0 fw-bold">
-                            <i class="bi bi-shield-lock me-2"></i>Sistema de Denuncias
-                        </h4>
-                        <p class="mb-0 small opacity-75">Ingreso al sistema</p>
+
+                <form id="loginForm" method="post" novalidate>
+                    {% csrf_token %}
+
+                   <div class="mb-3">
+                        <label class="form-label">Usuario</label>
+                        <input 
+                            type="text"
+                            name="username"
+                            id="id_username"
+                            class="form-control"
+                            placeholder="Ingrese su usuario"
+                            required
+                        >
                     </div>
-                    <div class="card-body p-4">
-                        {% if form.non_field_errors %}
-                            <div class="alert alert-danger d-flex align-items-center" role="alert">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                <div>
-                                    {% for error in form.non_field_errors %}
-                                        <div>{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% endif %}
 
-                        <form method="post" action="." novalidate>
-                            {% csrf_token %}
-                            
-                            <div class="mb-3">
-                                <label for="{{ form.username.id_for_label }}" class="form-label fw-medium">
-                                    Usuario
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text text-muted"><i class="bi bi-person"></i></span>
-                                    {{ form.username }}
-                                </div>
-                                {% if form.username.errors %}
-                                    <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="{{ form.password.id_for_label }}" class="form-label fw-medium">
-                                    Contraseña
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text text-muted"><i class="bi bi-lock"></i></span>
-                                    {{ form.password }}
-                                    <button class="btn btn-outline-secondary border-start-0 border" type="button" id="togglePassword">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                </div>
-                                {% if form.password.errors %}
-                                    <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="mb-4 d-flex justify-content-between align-items-center">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="rememberMe" name="remember_me">
-                                    <label class="form-check-label small" for="rememberMe">
-                                        Recordarme
-                                    </label>
-                                </div>
-                                <a href="#" class="small text-decoration-none">¿Olvidaste tu contraseña?</a>
-                            </div>
-
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary py-2 fw-medium">
-                                    <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
-                                </button>
-                            </div>
-                        </form>
+                    <div class="mb-4">
+                        <label class="form-label">Contraseña</label>
+                        <div class="input-group">
+                            <input 
+                                type="password"
+                                name="password"
+                                id="id_password"
+                                class="form-control"
+                                placeholder="Ingrese su contraseña"
+                                required
+                            >
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="text-center mt-4">
-                    <p class="small text-muted">
-                        &copy; {% now "Y" %} GAD Municipal de Salcedo. Todos los derechos reservados.
-                    </p>
-                </div>
+
+
+                    <div class="d-grid">
+                        <button class="btn btn-gad" type="submit">
+                            <i class="bi bi-shield-lock"></i> Ingresar
+                        </button>
+                    </div>
+                </form>
+
             </div>
+
+            <p class="text-center text-white small mt-4">
+                © {% now "Y" %} GAD Municipal de Salcedo
+            </p>
+
         </div>
     </div>
+</div>
 
-    <!-- Bootstrap JS -->
-    <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-    
-    <script>
-        // Funcionalidad para mostrar/ocultar contraseña
-        document.getElementById('togglePassword').addEventListener('click', function(e) {
-            e.preventDefault();
-            const passwordInput = document.getElementById('{{ form.password.id_for_label }}');
-            const toggleIcon = this.querySelector('i');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleIcon.classList.remove('bi-eye');
-                toggleIcon.classList.add('bi-eye-slash');
-                this.title = 'Ocultar contraseña';
-            } else {
-                passwordInput.type = 'password';
-                toggleIcon.classList.remove('bi-eye-slash');
-                toggleIcon.classList.add('bi-eye');
-                this.title = 'Mostrar contraseña';
-            }
-        });
+<!-- JS -->
+<script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/izitoast/dist/js/iziToast.min.js"></script>
 
-        // Prevenir autocompletar de formularios sensibles en algunos navegadores
-        document.addEventListener('DOMContentLoaded', function() {
-            const passwordInput = document.getElementById('{{ form.password.id_for_label }}');
-            if (passwordInput) {
-                passwordInput.setAttribute('autocomplete', 'current-password');
-            }
+<script>
+    // Mostrar / ocultar contraseña
+    $("#togglePassword").on("click", function () {
+        const input = $("#id_password");
+        const icon = $(this).find("i");
+
+        if (input.attr("type") === "password") {
+            input.attr("type", "text");
+            icon.removeClass("bi-eye").addClass("bi-eye-slash");
+        } else {
+            input.attr("type", "password");
+            icon.removeClass("bi-eye-slash").addClass("bi-eye");
+        }
+    });
+
+    // Validación
+    $("#loginForm").validate({
+        rules: {
+            username: { required: true },
+            password: { required: true }
+        },
+        messages: {
+            username: "Ingrese su usuario",
+            password: "Ingrese su contraseña"
+        },
+        errorPlacement: function () {
+            iziToast.error({
+                title: 'Error',
+                message: 'Usuario y contraseña son obligatorios',
+                position: 'topRight'
+            });
+        }
+    });
+
+    {% if form.errors %}
+        iziToast.error({
+            title: 'Acceso denegado',
+            message: 'Usuario o contraseña incorrectos',
+            position: 'topRight'
         });
-    </script>
+    {% endif %}
+</script>
+
 </body>
 </html>
