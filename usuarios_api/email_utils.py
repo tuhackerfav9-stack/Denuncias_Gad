@@ -3,20 +3,29 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 
 
+#def _enviar_email_html(correo: str, asunto: str, texto_plano: str, html: str) -> bool:
+#    try:
+#        email = EmailMultiAlternatives(
+#            subject=asunto,
+#            body=texto_plano,
+#            from_email=settings.EMAIL_HOST_USER,
+#            to=[correo],
+#        )
+#        email.attach_alternative(html, "text/html")
+#        email.send()
+#        return True
+#    except Exception as e:
+#        print("❌ Error enviando correo:", e)
+#        return False
+from .gmail_api import send_gmail_html
+
 def _enviar_email_html(correo: str, asunto: str, texto_plano: str, html: str) -> bool:
-    try:
-        email = EmailMultiAlternatives(
-            subject=asunto,
-            body=texto_plano,
-            from_email=settings.EMAIL_HOST_USER,
-            to=[correo],
-        )
-        email.attach_alternative(html, "text/html")
-        email.send()
-        return True
-    except Exception as e:
-        print("❌ Error enviando correo:", e)
-        return False
+    return send_gmail_html(
+        to_email=correo,
+        subject=asunto,
+        text_body=texto_plano,
+        html_body=html,
+    )
 
 
 def enviar_codigo_reset(correo: str, codigo: str, minutos: int = 10) -> bool:
