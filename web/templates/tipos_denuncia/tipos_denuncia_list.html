@@ -28,7 +28,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for tipo in tipos_denuncia %}
+                               {% for tipo in tipos %}
+
                                 <tr>
                                     <td>{{ forloop.counter }}</td>
                                     <td><strong>{{ tipo.nombre }}</strong></td>

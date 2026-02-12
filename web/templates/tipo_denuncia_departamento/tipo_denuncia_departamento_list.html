@@ -29,7 +29,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for asignacion in asignaciones %}
+                                {% for asignacion in items %}
+
                                 <tr>
                                     <td>{{ forloop.counter }}</td>
                                     <td>{{ asignacion.tipo_denuncia.nombre }}</td>

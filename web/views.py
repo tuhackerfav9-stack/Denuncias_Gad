@@ -958,8 +958,8 @@ class TipoDenunciaDepartamentoListView(FuncionarioRequiredMixin, ListView):
     paginate_by = 15
     ordering = ["-created_at"]
 
-def get_queryset(self):
-    return TipoDenunciaDepartamento.objects.select_related("tipo_denuncia", "departamento").order_by("-created_at")
+    def get_queryset(self):
+        return TipoDenunciaDepartamento.objects.select_related("tipo_denuncia", "departamento").order_by("-created_at")
 
 
 class TipoDenunciaDepartamentoCreateView(CrudMessageMixin, FuncionarioRequiredMixin, CreateView):
