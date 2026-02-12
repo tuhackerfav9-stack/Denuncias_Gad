@@ -7,7 +7,7 @@
                 <div class="card-header bg-info">
                     <h5 class="mb-0 text-white">
                         <i class="bi bi-folder-fill me-2"></i>
-                        {% if tipo_denuncia %}Editar Tipo de Denuncia{% else %}Nuevo Tipo de Denuncia{% endif %}
+                        {% if object %}Editar Tipo de Denuncia{% else %}Nuevo Tipo de Denuncia{% endif %}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -78,7 +78,7 @@
                             </a>
                             <button type="submit" class="btn btn-info text-white">
                                 <i class="bi bi-check-circle me-2"></i>
-                                {% if tipo_denuncia %}Actualizar{% else %}Crear{% endif %}
+                                {% if object %}Actualizar{% else %}Crear{% endif %}
                             </button>
                         </div>
                     </form>
