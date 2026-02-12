@@ -31,6 +31,7 @@ from openai import OpenAI
 
 from db.models import (
     Ciudadanos,
+    Denuncia,
     DenunciaAsignaciones,
     DenunciaEvidencias,
     DenunciaFirmas,
@@ -1016,8 +1017,25 @@ class TiposDenunciaCreateView(CrudMessageMixin, FuncionarioRequiredMixin, Create
 class TiposDenunciaDetailView(FuncionarioRequiredMixin, DetailView):
     model = TiposDenuncia
     template_name = "tipos_denuncia/tipos_denuncia_detail.html"
-    context_object_name = "tipo"
+    context_object_name = "tipo_denuncia"
     login_url = "web:login"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        tipo = self.object
+
+        # Departamento asignado (por la tabla puente TipoDenunciaDepartamento)
+        rel = (TipoDenunciaDepartamento.objects
+               .select_related("departamento")
+               .filter(tipo_denuncia=tipo)
+               .first())
+        ctx["departamento_asignado"] = rel.departamento if rel else None
+
+        # Total de denuncias asociadas (AJUSTA el nombre del modelo/campo a tu sistema)
+        # Si tu modelo se llama Denuncia y el FK es tipo_denuncia:
+        ctx["total_denuncias"] = Denuncia.objects.filter(tipo_denuncia=tipo).count()
+
+        return ctx
 
 
 class TiposDenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateView):
