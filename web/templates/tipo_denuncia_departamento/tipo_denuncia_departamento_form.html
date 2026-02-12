@@ -7,7 +7,9 @@
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
                         <i class="bi bi-diagram-3 me-2"></i>
-                        {% if asignacion %}Editar Asignación{% else %}Nueva Asignación{% endif %}
+                       
+                        {% if object %}Editar Asignación{% else %}Nueva Asignación{% endif %}
+
                     </h5>
                 </div>
                 <div class="card-body">
@@ -61,7 +63,8 @@
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle me-2"></i>
-                                {% if asignacion %}Actualizar{% else %}Crear{% endif %}
+                               
+                                {% if object %}Actualizar{% else %}Crear{% endif %}
                             </button>
                         </div>
                     </form>

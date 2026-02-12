@@ -950,17 +950,19 @@ class MisDenunciasListView(LoginRequiredMixin, ListView):
 # =========================================
 # TipoDenuncia ↔ Departamento
 # =========================================
-# Cambio: db.* -> FuncionarioRequiredMixin
+
 class TipoDenunciaDepartamentoListView(FuncionarioRequiredMixin, ListView):
     model = TipoDenunciaDepartamento
     template_name = "tipo_denuncia_departamento/tipo_denuncia_departamento_list.html"
-    context_object_name = "items"
+    context_object_name = "asignaciones"  #  CAMBIO
     login_url = "web:login"
     paginate_by = 15
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        return TipoDenunciaDepartamento.objects.select_related("tipo_denuncia", "departamento").order_by("-created_at")
+        return (TipoDenunciaDepartamento.objects
+                .select_related("tipo_denuncia", "departamento")
+                .order_by("-created_at"))
 
 
 class TipoDenunciaDepartamentoCreateView(CrudMessageMixin, FuncionarioRequiredMixin, CreateView):
@@ -974,7 +976,7 @@ class TipoDenunciaDepartamentoCreateView(CrudMessageMixin, FuncionarioRequiredMi
 class TipoDenunciaDepartamentoDetailView(FuncionarioRequiredMixin, DetailView):
     model = TipoDenunciaDepartamento
     template_name = "tipo_denuncia_departamento/tipo_denuncia_departamento_detail.html"
-    context_object_name = "item"
+    context_object_name = "asignacion"  # CAMBIO
     login_url = "web:login"
 
 
@@ -989,9 +991,9 @@ class TipoDenunciaDepartamentoUpdateView(CrudMessageMixin, FuncionarioRequiredMi
 class TipoDenunciaDepartamentoDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, DeleteView):
     model = TipoDenunciaDepartamento
     template_name = "tipo_denuncia_departamento/tipo_denuncia_departamento_confirm_delete.html"
+    context_object_name = "asignacion"  #  AGREGA
     success_url = reverse_lazy("web:tipo_denuncia_departamento_list")
     login_url = "web:login"
-
 
 # =========================================
 # Tipos de Denuncia
