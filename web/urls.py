@@ -1,7 +1,7 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
 
-import views
+
 from .views import (
     TipoDenunciaDepartamentoCreateView, TipoDenunciaDepartamentoDeleteView, TipoDenunciaDepartamentoDetailView, TipoDenunciaDepartamentoListView, TipoDenunciaDepartamentoUpdateView, api_respuestas_denuncia, home_view, dashboard_view, CustomLoginView,
     get_user_data_ajax, llm_response, resolver_denuncia, crear_respuesta_denuncia,
@@ -17,7 +17,7 @@ from .views import (
 
     FuncionariosListView, FuncionariosCreateView, FuncionariosDetailView, FuncionariosUpdateView, FuncionariosDeleteView,
     DepartamentosListView, DepartamentosCreateView, DepartamentosDetailView, DepartamentosUpdateView, DepartamentosDeleteView,
-    WebUserListView, WebUserCreateView, WebUserDetailView, WebUserUpdateView, WebUserDeleteView,denuncia_pdf,
+    WebUserListView, WebUserCreateView, WebUserDetailView, WebUserUpdateView, WebUserDeleteView,denuncia_pdf, tomar_denuncia
 )
 
 app_name = "web"
@@ -34,6 +34,8 @@ urlpatterns = [
     path("api/user-data/<int:user_id>/", get_user_data_ajax, name="get_user_data"),
     path("api/generate-llm-response/<uuid:denuncia_id>/", llm_response, name="generate_llm_response"),
     path("resolver-denuncia/<uuid:denuncia_id>/", resolver_denuncia, name="resolver_denuncia"),
+    # ✅ SOLO SI LA USAS (AJAX)
+    path("denuncias/<uuid:denuncia_id>/tomar/", tomar_denuncia, name="tomar_denuncia"),
 
     # Denuncias
     path("denuncias/", DenunciaListView.as_view(), name="denuncia_list"),
@@ -44,8 +46,6 @@ urlpatterns = [
     path("denuncias/<uuid:pk>/delete/", DenunciaDeleteView.as_view(), name="denuncia_delete"),
     path("denuncia/<uuid:pk>/pdf/", denuncia_pdf, name="denuncia_pdf"),
    
-    path("denuncias/<uuid:denuncia_id>/tomar/", views.tomar_denuncia, name="tomar_denuncia"),
-    path("denuncias/<uuid:denuncia_id>/resolver/", views.resolver_denuncia, name="resolver_denuncia"),
 
 
 

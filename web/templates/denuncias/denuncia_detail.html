@@ -1,436 +1,527 @@
 {% extends 'base.html' %}
 {% block content %}
+
 <div class="container-fluid mt-4">
-    <!-- Header y acciones principales -->
-    <div class="card shadow-sm mb-4">
+
+  <!-- Header y acciones principales -->
+  <div class="card shadow-sm mb-4">
     <div class="card-body">
 
-        <div class="row align-items-center g-3">
+      <div class="row align-items-center g-3">
 
-            <!-- Info -->
-            <div class="col-lg-8">
-                <div class="d-flex align-items-center gap-2">
-                    <h1 class="h4 mb-0 text-gray-800">
-                        Denuncia
-                        <span class="text-muted">#{{ denuncia.id|truncatechars:8 }}</span>
-                    </h1>
+        <!-- Info -->
+        <div class="col-lg-8">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <h1 class="h4 mb-0 text-gray-800">
+              Denuncia
+              <span class="text-muted">#{{ denuncia.id|truncatechars:8 }}</span>
+            </h1>
 
-                    <span class="badge 
-                        {% if denuncia.estado == 'resuelta' %}
-                            bg-success
-                        {% else %}
-                            bg-warning text-dark
-                        {% endif %}
-                    ">
-                        {{ denuncia.estado|title }}
-                    </span>
-                </div>
+            <span class="badge
+              {% if denuncia.estado == 'resuelta' %}
+                bg-success
+              {% elif denuncia.estado == 'en_proceso' %}
+                bg-info text-white
+              {% else %}
+                bg-warning text-dark
+              {% endif %}
+            ">
+              {{ denuncia.estado|title }}
+            </span>
 
-                <small class="text-muted d-block mt-1">
-                    Creado el {{ denuncia.created_at|date:"d \d\e F, Y" }}
-                    a las {{ denuncia.created_at|date:"H:i" }}
-                </small>
-            </div>
+            {% if denuncia.asignado_departamento %}
+              <span class="badge bg-secondary">
+                {{ denuncia.asignado_departamento.nombre }}
+              </span>
+            {% else %}
+              <span class="badge bg-secondary">Sin departamento</span>
+            {% endif %}
+          </div>
 
-            <!-- Acciones -->
-            <div class="col-lg-4 text-lg-end">
-                <div class="btn-group" role="group">
+          <small class="text-muted d-block mt-1">
+            Creado el {{ denuncia.created_at|date:"d \\d\\e F, Y" }}
+            a las {{ denuncia.created_at|date:"H:i" }}
+          </small>
+        </div>
 
-                    <a href="{% url 'web:denuncia_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-1"></i>
-                        Volver
-                    </a>
+        <!-- Acciones -->
+        <div class="col-lg-4 text-lg-end">
 
-                    
-                </div>
+          <div class="btn-group" role="group">
+            <!-- ✅ Volver manteniendo filtros -->
+            <a href="{% url 'web:denuncia_list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+               class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i> Volver
+            </a>
+          </div>
 
-                {% if denuncia.estado != '' %}
-  {% if puede_responder %}
-    <form method="post"
-          action="{% url 'web:resolver_denuncia' denuncia.pk %}"
-          class="d-inline-block ms-2">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-info text-white">
-        <i class="bi bi-check-circle me-1"></i>
-        Resolver
-      </button>
-    </form>
-  {% else %}
-    <button type="button" class="btn btn-info text-white ms-2" disabled>
-      <i class="bi bi-check-circle me-1"></i>
-      Resolver
-    </button>
-  {% endif %}
-{% endif %}
-
-            </div>
+          <!-- ✅ Resolver (POST) -->
+          {% if denuncia.estado != 'resuelta' %}
+            {% if puede_responder %}
+              <form method="post"
+                    action="{% url 'web:resolver_denuncia' denuncia.id %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                    class="d-inline-block ms-2">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-info text-white">
+                  <i class="bi bi-check-circle me-1"></i> Resolver
+                </button>
+              </form>
+            {% else %}
+              <button type="button" class="btn btn-info text-white ms-2" disabled>
+                <i class="bi bi-check-circle me-1"></i> Resolver
+              </button>
+            {% endif %}
+          {% endif %}
 
         </div>
 
+      </div>
+
+      {% if not puede_responder and denuncia.asignado_funcionario %}
+        <div class="alert alert-warning mt-3 mb-0">
+          ⚠️ Esta denuncia ya está siendo atendida por
+          <strong>{{ denuncia.asignado_funcionario.nombres }} {{ denuncia.asignado_funcionario.apellidos }}</strong>.
+        </div>
+      {% endif %}
+
     </div>
-    
+  </div>
+
+  <div class="row">
+    <!-- Columna Izquierda -->
+    <div class="col-lg-8">
+
+      <!-- Detalles -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-white">
+          <h6 class="m-0 fw-bold text-info">
+            <i class="bi bi-file-text me-2"></i>Información Detallada
+          </h6>
+        </div>
+        <div class="card-body">
+
+          <div class="mb-4">
+            <label class="small text-muted text-uppercase fw-bold">Descripción</label>
+            <p class="lead mb-0">{{ denuncia.descripcion }}</p>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="small text-muted text-uppercase fw-bold">Tipo de Denuncia</label>
+              <p class="fw-bold mb-0">{{ denuncia.tipo_denuncia.nombre }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="small text-muted text-uppercase fw-bold">Referencia</label>
+              <p class="mb-0">{{ denuncia.referencia|default:"Sin referencia" }}</p>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="small text-muted text-uppercase fw-bold">Ubicación</label>
+            <div class="bg-light p-3 rounded">
+              <p class="mb-1">
+                <i class="bi bi-geo-alt me-2 text-danger"></i>
+                {{ denuncia.direccion_texto|default:"Dirección no especificada" }}
+              </p>
+              <small class="text-muted">
+                Coordenadas: {{ denuncia.latitud }}, {{ denuncia.longitud }}
+              </small>
+
+              {% if denuncia.latitud and denuncia.longitud %}
+                <div id="map-denuncia" class="mt-3 rounded" style="height: 320px;"></div>
+
+                <script>
+                  function initDenunciaMap() {
+                    const lat = parseFloat('{{ denuncia.latitud }}');
+                    const lng = parseFloat('{{ denuncia.longitud }}');
+                    if (isNaN(lat) || isNaN(lng)) return;
+
+                    const center = { lat: lat, lng: lng };
+                    const map = new google.maps.Map(document.getElementById('map-denuncia'), {
+                      zoom: 15,
+                      center: center,
+                      mapTypeId: google.maps.MapTypeId.ROADMAP,
+                      mapTypeControl: true,
+                      mapTypeControlOptions: {
+                        style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+                        mapTypeIds: [
+                          google.maps.MapTypeId.ROADMAP,
+                          google.maps.MapTypeId.SATELLITE,
+                          google.maps.MapTypeId.HYBRID,
+                          google.maps.MapTypeId.TERRAIN,
+                        ],
+                      },
+                      streetViewControl: true,
+                      fullscreenControl: true,
+                    });
+
+                    new google.maps.Marker({
+                      position: center,
+                      map: map,
+                      title: 'Ubicación de la denuncia',
+                    });
+                  }
+                </script>
+
+                <!-- OJO: tu key está aquí tal cual; si es real, lo ideal es moverlo a settings/env -->
+                <script async defer
+                  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDFFwwfbAcTQH432AY6w8CwRgwf2VBvWUI&callback=initDenunciaMap">
+                </script>
+              {% else %}
+                <div class="mt-2">
+                  <span class="badge bg-secondary">Sin coordenadas registradas</span>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Evidencias -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
+          <h6 class="m-0 fw-bold text-info">
+            <i class="bi bi-images me-2"></i>Evidencias y Archivos
+          </h6>
+          <span class="badge bg-secondary">{{ evidencias.count }}</span>
+        </div>
+
+        <div class="card-body">
+          {% if evidencias %}
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+              {% for evidencia in evidencias %}
+                <div class="col">
+                  <div class="card h-100 border-0 shadow-sm">
+                    {% if 'image' in evidencia.tipo or 'jpg' in evidencia.url_archivo or 'png' in evidencia.url_archivo or 'jpeg' in evidencia.url_archivo %}
+                      <img src="{{ evidencia.url_archivo }}" class="card-img-top rounded"
+                           alt="Evidencia" style="height:150px; object-fit:cover;">
+                    {% else %}
+                      <div class="card-body text-center bg-light rounded d-flex align-items-center justify-content-center" style="height:150px;">
+                        <i class="bi bi-file-earmark-text display-4 text-secondary"></i>
+                      </div>
+                    {% endif %}
+                    <div class="card-footer bg-white border-top-0">
+                      <small class="text-muted d-block text-truncate">
+                        {{ evidencia.nombre_archivo|default:"Archivo Adjunto" }}
+                      </small>
+                      <a href="{{ evidencia.url_archivo }}" target="_blank" class="btn btn-sm btn-outline-info mt-2 w-100">
+                        <i class="bi bi-download me-1"></i>Ver / Descargar
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted text-center py-3 mb-0">No hay evidencias adjuntas a esta denuncia.</p>
+          {% endif %}
+
+          {% if firma %}
+            <hr class="my-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-pen me-2"></i>Firma del Ciudadano</h6>
+            <div class="card border-0 bg-light" style="max-width:300px;">
+              <img src="{{ firma.firma_url }}" class="img-fluid" alt="Firma">
+              <div class="card-footer text-center bg-transparent">
+                <small class="text-muted">Firmado digitalmente</small>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Historial -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-white">
+          <h6 class="m-0 fw-bold text-info">
+            <i class="bi bi-clock-history me-2"></i>Línea de Tiempo
+          </h6>
+        </div>
+        <div class="card-body">
+
+          <ul class="list-group list-group-flush">
+            {% for evento in historial.object_list %}
+              <li class="list-group-item px-0">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1 text-info">{{ evento.estado_nuevo|title }}</h6>
+                  <small class="text-muted">{{ evento.created_at|date:"d/m/Y H:i" }}</small>
+                </div>
+
+                <p class="mb-1 small">
+                  De: <strong>{{ evento.estado_anterior|default:"Inicio" }}</strong>
+                  a <strong>{{ evento.estado_nuevo }}</strong>
+                </p>
+
+                {% if evento.comentario %}
+                  <div class="bg-light p-2 rounded small mt-1 border-start border-3 border-info">
+                    {{ evento.comentario }}
+                  </div>
+                {% endif %}
+
+                <small class="text-muted">
+                  <i class="bi bi-person me-1"></i>
+                  {% if evento.cambiado_por_funcionario %}
+                    {{ evento.cambiado_por_funcionario.nombres }} {{ evento.cambiado_por_funcionario.apellidos }}
+                  {% else %}
+                    Sistema / Ciudadano
+                  {% endif %}
+                </small>
+              </li>
+            {% empty %}
+              <li class="list-group-item text-center text-muted">No hay historial de cambios.</li>
+            {% endfor %}
+          </ul>
+
+          {% if historial.has_other_pages %}
+            <nav aria-label="Paginación del historial" class="mt-3">
+              <ul class="pagination pagination-sm justify-content-center mb-0">
+
+                {% comment %}
+                  ✅ Mantener parámetros actuales (filtros del detail) y cambiar solo historial_page
+                {% endcomment %}
+                {% if historial.has_previous %}
+                  <li class="page-item">
+                    <a class="page-link"
+                       href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|cut:'historial_page='|cut:'&historial_page=' }}{% endif %}{% if request.GET.urlencode %}&{% endif %}historial_page=1">
+                      Primera
+                    </a>
+                  </li>
+                  <li class="page-item">
+                    <a class="page-link"
+                       href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|cut:'historial_page='|cut:'&historial_page=' }}{% endif %}{% if request.GET.urlencode %}&{% endif %}historial_page={{ historial.previous_page_number }}">
+                      Anterior
+                    </a>
+                  </li>
+                {% endif %}
+
+                {% for num in historial_paginator.page_range %}
+                  {% if num == historial.number %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                  {% else %}
+                    <li class="page-item">
+                      <a class="page-link"
+                         href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|cut:'historial_page='|cut:'&historial_page=' }}{% endif %}{% if request.GET.urlencode %}&{% endif %}historial_page={{ num }}">
+                        {{ num }}
+                      </a>
+                    </li>
+                  {% endif %}
+                {% endfor %}
+
+                {% if historial.has_next %}
+                  <li class="page-item">
+                    <a class="page-link"
+                       href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|cut:'historial_page='|cut:'&historial_page=' }}{% endif %}{% if request.GET.urlencode %}&{% endif %}historial_page={{ historial.next_page_number }}">
+                      Siguiente
+                    </a>
+                  </li>
+                  <li class="page-item">
+                    <a class="page-link"
+                       href="?{% if request.GET.urlencode %}{{ request.GET.urlencode|cut:'historial_page='|cut:'&historial_page=' }}{% endif %}{% if request.GET.urlencode %}&{% endif %}historial_page={{ historial_paginator.num_pages }}">
+                      Última
+                    </a>
+                  </li>
+                {% endif %}
+
+              </ul>
+            </nav>
+          {% endif %}
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Columna Derecha -->
+    <div class="col-lg-4">
+
+      <!-- Ciudadano -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-info text-white">
+          <h6 class="m-0 fw-bold"><i class="bi bi-person me-2"></i>Ciudadano</h6>
+        </div>
+        <div class="card-body text-center">
+          {% if denuncia.ciudadano.foto_perfil_url %}
+            <img src="{{ denuncia.ciudadano.foto_perfil_url }}" class="rounded-circle mb-3" width="80" height="80" alt="Foto">
+          {% else %}
+            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3"
+                 style="width:80px; height:80px;">
+              <i class="bi bi-person display-4 text-secondary"></i>
+            </div>
+          {% endif %}
+
+          <h5 class="mb-1">{{ denuncia.ciudadano.nombres }} {{ denuncia.ciudadano.apellidos }}</h5>
+          <p class="text-muted mb-0">{{ denuncia.ciudadano.cedula }}</p>
+
+          <hr>
+
+          <div class="text-start">
+            <p class="mb-1"><i class="bi bi-telephone me-2"></i>{{ denuncia.ciudadano.telefono|default:"No registrado" }}</p>
+            <p class="mb-1">
+              <i class="bi bi-envelope me-2"></i>
+              {{ denuncia.ciudadano.usuario.correo|default:"No registrado" }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Asignación Actual -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-info text-white">
+          <h6 class="m-0 fw-bold"><i class="bi bi-briefcase me-2"></i>Asignación Actual</h6>
+        </div>
+
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="small text-muted text-uppercase fw-bold">Departamento</label>
+            {% if denuncia.asignado_departamento %}
+              <p class="h6 mb-0">{{ denuncia.asignado_departamento.nombre }}</p>
+            {% else %}
+              <p class="text-muted fst-italic mb-0">Sin asignar</p>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="small text-muted text-uppercase fw-bold">Funcionario</label>
+            {% if denuncia.asignado_funcionario %}
+              <p class="h6 mb-0">
+                {{ denuncia.asignado_funcionario.nombres }} {{ denuncia.asignado_funcionario.apellidos }}
+              </p>
+              <small class="text-muted">{{ denuncia.asignado_funcionario.cargo|default:"Sin cargo" }}</small>
+            {% else %}
+              <p class="text-muted fst-italic mb-0">Libre</p>
+            {% endif %}
+          </div>
+
+          {% if asignaciones %}
+            <hr>
+            <h6 class="small fw-bold text-muted mb-2">Historial de Asignaciones</h6>
+            <div style="max-height:200px; overflow-y:auto;">
+              {% for asig in asignaciones %}
+                <div class="d-flex align-items-start mb-2 small">
+                  <i class="bi bi-arrow-return-right me-2 mt-1"></i>
+                  <div>
+                    <span class="d-block fw-bold">{{ asig.funcionario.nombres }} {{ asig.funcionario.apellidos }}</span>
+                    <span class="text-muted">{{ asig.asignado_en|date:"d/m/Y" }}</span>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Comunicación -->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-white d-flex flex-wrap gap-2 align-items-center justify-content-between">
+          <h6 class="m-0 fw-bold text-info d-flex align-items-center">
+            <i class="bi bi-chat-dots me-2"></i>Comunicación
+          </h6>
+
+          {% if denuncia.estado != 'resuelta' %}
+            {% if puede_responder %}
+              <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-sm btn-outline-info" id="btnNuevaRespuesta">
+                  <i class="bi bi-plus-circle me-1"></i> Nueva respuesta
+                </button>
+
+                <button type="button" class="btn btn-sm btn-info text-white" id="btnRespuestaIA">
+                  <i class="bi bi-stars me-1"></i> Generar respuesta con IA
+                </button>
+              </div>
+            {% else %}
+              <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-sm btn-outline-info" disabled>Nueva respuesta</button>
+                <button type="button" class="btn btn-sm btn-info text-white" disabled>Generar respuesta con IA</button>
+              </div>
+            {% endif %}
+          {% endif %}
+        </div>
+
+        <div class="card-body bg-light" style="max-height:400px; overflow-y:auto;">
+          {% for respuesta in respuestas %}
+            <div class="d-flex mb-3 {% if respuesta.funcionario %}flex-row-reverse{% endif %}">
+              <div class="p-2 rounded {% if respuesta.funcionario %}bg-info text-white{% else %}bg-white border{% endif %}"
+                   style="max-width:80%;">
+                <p class="mb-1 small">{{ respuesta.mensaje }}</p>
+                <small class="{% if respuesta.funcionario %}text-white-50{% else %}text-muted{% endif %} d-block text-end"
+                       style="font-size:0.7rem;">
+                  {{ respuesta.created_at|date:"d M H:i" }}
+                  {% if respuesta.funcionario %}
+                    <br><i class="bi bi-person-fill"></i>
+                    {{ respuesta.funcionario.nombres|default:"Funcionario" }} {{ respuesta.funcionario.apellidos|default:"" }}
+                  {% endif %}
+                </small>
+              </div>
+            </div>
+          {% empty %}
+            <div class="text-center text-muted small py-4">
+              No hay mensajes registrados en este hilo.
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- Modal: Nueva Respuesta -->
+        <div class="modal fade" id="respuestaModal" tabindex="-1" aria-labelledby="respuestaModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+              <div class="modal-header">
+                <h5 class="modal-title" id="respuestaModalLabel">
+                  <i class="bi bi-chat-right-text me-2"></i>Nueva respuesta
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+
+              <form action="{% url 'web:denuncia_respuesta_create' denuncia.id %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                    method="post">
+                <div class="modal-body">
+                  {% csrf_token %}
+                  <div class="mb-3">
+                    <label for="respuestaMensaje" class="form-label">Mensaje</label>
+                    <textarea id="respuestaMensaje" name="mensaje" class="form-control" rows="4"
+                              placeholder="Escriba su respuesta aquí..." required></textarea>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                  <button type="submit" class="btn btn-info text-white">Enviar</button>
+                </div>
+              </form>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
 </div>
 
-
-    
-
-    <div class="row">
-        <!-- Columna Izquierda: Información Principal -->
-        <div class="col-lg-8">
-            <!-- Detalles de la Denuncia -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-white">
-                    <h6 class="m-0 font-weight-bold text-info"><i class="bi bi-file-text me-2"></i>Información Detallada</h6>
-                </div>
-                <div class="card-body">
-                    <div class="mb-4">
-                        <label class="small text-muted text-uppercase fw-bold">Descripción</label>
-                        <p class="lead">{{ denuncia.descripcion }}</p>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="small text-muted text-uppercase fw-bold">Tipo de Denuncia</label>
-                            <p class="fw-bold">{{ denuncia.tipo_denuncia.nombre }}</p>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="small text-muted text-uppercase fw-bold">Referencia</label>
-                            <p>{{ denuncia.referencia|default:"Sin referencia" }}</p>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="small text-muted text-uppercase fw-bold">Ubicación</label>
-                        <div class="bg-light p-3 rounded">
-                            <p class="mb-1"><i class="bi bi-geo-alt me-2 text-danger"></i>{{ denuncia.direccion_texto|default:"Dirección no especificada" }}</p>
-                            <small class="text-muted">Coordenadas: {{ denuncia.latitud }}, {{ denuncia.longitud }}</small>
-                            {% if denuncia.latitud and denuncia.longitud %}
-                            <div id="map-denuncia" class="mt-3 rounded" style="height: 320px;"></div>
-                            <script>
-                                function initDenunciaMap() {
-                                    const lat = parseFloat('{{ denuncia.latitud }}');
-                                    const lng = parseFloat('{{ denuncia.longitud }}');
-                                    if (isNaN(lat) || isNaN(lng)) return;
-
-                                    const center = { lat: lat, lng: lng };
-                                    const map = new google.maps.Map(document.getElementById('map-denuncia'), {
-                                        zoom: 15,
-                                        center: center,
-                                        mapTypeId: google.maps.MapTypeId.ROADMAP,
-                                        mapTypeControl: true,
-                                        mapTypeControlOptions: {
-                                            style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
-                                            mapTypeIds: [
-                                                google.maps.MapTypeId.ROADMAP,
-                                                google.maps.MapTypeId.SATELLITE,
-                                                google.maps.MapTypeId.HYBRID,
-                                                google.maps.MapTypeId.TERRAIN,
-                                            ],
-                                        },
-                                        streetViewControl: true,
-                                        fullscreenControl: true,
-                                    });
-
-                                    new google.maps.Marker({
-                                        position: center,
-                                        map: map,
-                                        title: 'Ubicación de la denuncia',
-                                    });
-                                }
-                            </script>
-                            <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDFFwwfbAcTQH432AY6w8CwRgwf2VBvWUI&callback=initDenunciaMap"></script>
-                            {% else %}
-                            <div class="mt-2">
-                                <span class="badge bg-secondary">Sin coordenadas registradas</span>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Evidencias -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold text-info"><i class="bi bi-images me-2"></i>Evidencias y Archivos</h6>
-                    <span class="badge bg-secondary">{{ evidencias.count }}</span>
-                </div>
-                <div class="card-body">
-                    {% if evidencias %}
-                    <div class="row row-cols-1 row-cols-md-3 g-4">
-                        {% for evidencia in evidencias %}
-                        <div class="col">
-                            <div class="card h-100 border-0 shadow-sm">
-                                {% if 'image' in evidencia.tipo or 'jpg' in evidencia.url_archivo or 'png' in evidencia.url_archivo %}
-                                    <img src="{{ evidencia.url_archivo }}" class="card-img-top rounded" alt="Evidencia" style="height: 150px; object-fit: cover;">
-                                {% else %}
-                                    <div class="card-body text-center bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;">
-                                        <i class="bi bi-file-earmark-text display-4 text-secondary"></i>
-                                    </div>
-                                {% endif %}
-                                <div class="card-footer bg-white border-top-0">
-                                    <small class="text-muted d-block text-truncate">{{ evidencia.nombre_archivo|default:"Archivo Adjunto" }}</small>
-                                    <a href="{{ evidencia.url_archivo }}" target="_blank" class="btn btn-sm btn-outline-info mt-2 w-100">
-                                        <i class="bi bi-download me-1"></i>Ver / Descargar
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                        <p class="text-muted text-center py-3">No hay evidencias adjuntas a esta denuncia.</p>
-                    {% endif %}
-
-                    {% if firma %}
-                        <hr class="my-4">
-                         <h6 class="font-weight-bold mb-3"><i class="bi bi-pen me-2"></i>Firma del Ciudadano</h6>
-                         <div class="card border-0 bg-light" style="max-width: 300px;">
-                            <img src="{{ firma.firma_url }}" class="img-fluid" alt="Firma">
-                            <div class="card-footer text-center bg-transparent">
-                                <small class="text-muted">Firmado digitalmente</small>
-                            </div>
-                         </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Historial -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-white">
-                    <h6 class="m-0 font-weight-bold text-info"><i class="bi bi-clock-history me-2"></i>Línea de Tiempo</h6>
-                </div>
-                <div class="card-body">
-                    <ul class="list-group list-group-flush">
-                        {% for evento in historial.object_list %}
-                        <li class="list-group-item px-0">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1 text-info">{{ evento.estado_nuevo|title }}</h6>
-                                <small class="text-muted">{{ evento.created_at|date:"d/m/Y H:i" }}</small>
-                            </div>
-                            <p class="mb-1 small">
-                                De: <strong>{{ evento.estado_anterior|default:"Inicio" }}</strong> a <strong>{{ evento.estado_nuevo }}</strong>
-                            </p>
-                            {% if evento.comentario %}
-                                <div class="bg-light p-2 rounded small mt-1 border-start border-3 border-info">
-                                    {{ evento.comentario }}
-                                </div>
-                            {% endif %}
-                            <small class="text-muted">
-                                <i class="bi bi-person me-1"></i>
-                                {% if evento.cambiado_por_funcionario %}
-                                    {{ evento.cambiado_por_funcionario.nombres }} {{ evento.cambiado_por_funcionario.apellidos }}
-                                {% else %}
-                                    Sistema / Ciudadano
-                                {% endif %}
-                            </small>
-                        </li>
-                        {% empty %}
-                        <li class="list-group-item text-center text-muted">No hay historial de cambios.</li>
-                        {% endfor %}
-                    </ul>
-                    
-                    <!-- Paginación del Historial -->
-                    {% if historial.has_other_pages %}
-                    <nav aria-label="Paginación del historial" class="mt-3">
-                        <ul class="pagination pagination-sm justify-content-center">
-                            {% if historial.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?historial_page=1">Primera</a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="?historial_page={{ historial.previous_page_number }}">Anterior</a>
-                            </li>
-                            {% endif %}
-                            
-                            {% for num in historial_paginator.page_range %}
-                                {% if num == historial.number %}
-                                <li class="page-item active">
-                                    <span class="page-link">{{ num }}</span>
-                                </li>
-                                {% else %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?historial_page={{ num }}">{{ num }}</a>
-                                </li>
-                                {% endif %}
-                            {% endfor %}
-                            
-                            {% if historial.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?historial_page={{ historial.next_page_number }}">Siguiente</a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="?historial_page={{ historial_paginator.num_pages }}">Última</a>
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Columna Derecha: Información Relacionada -->
-        <div class="col-lg-4">
-            <!-- Ciudadano -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-info text-white">
-                    <h6 class="m-0 font-weight-bold"><i class="bi bi-person me-2"></i>Ciudadano</h6>
-                </div>
-                <div class="card-body text-center">
-                    {% if denuncia.ciudadano.foto_perfil_url %}
-                        <img src="{{ denuncia.ciudadano.foto_perfil_url }}" class="rounded-circle mb-3" width="80" height="80" alt="Foto">
-                    {% else %}
-                        <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                            <i class="bi bi-person display-4 text-secondary"></i>
-                        </div>
-                    {% endif %}
-                    <h5>{{ denuncia.ciudadano.nombres }} {{ denuncia.ciudadano.apellidos }}</h5>
-                    <p class="text-muted mb-0">{{ denuncia.ciudadano.cedula }}</p>
-                    <hr>
-                    <div class="text-start">
-                        <p class="mb-1"><i class="bi bi-telephone me-2"></i>{{ denuncia.ciudadano.telefono|default:"No registrado" }}</p>
-                        <p class="mb-1"><i class="bi bi-envelope me-2"></i>{{ denuncia.ciudadano.usuario.correo }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Asignación Actual -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-info text-white">
-                     <h6 class="m-0 font-weight-bold"><i class="bi bi-briefcase me-2"></i>Asignación Actual</h6>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="small text-muted text-uppercase fw-bold">info</label>
-                        {% if denuncia.asignado_info %}
-                            <p class="h6">{{ denuncia.asignado_info.nombre }}</p>
-                        {% else %}
-                            <p class="text-muted fst-italic">Sin asignar</p>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label class="small text-muted text-uppercase fw-bold">Funcionario</label>
-                        {% if denuncia.asignado_funcionario %}
-                            <p class="h6">{{ denuncia.asignado_funcionario.nombres }} {{ denuncia.asignado_funcionario.apellidos }}</p>
-                            <small class="text-muted">{{ denuncia.asignado_funcionario.cargo|default:"Sin cargo" }}</small>
-                        {% else %}
-                            <p class="text-muted fst-italic">Sin asignar</p>
-                        {% endif %}
-                    </div>
-                    
-                    {% if asignaciones %}
-                    <hr>
-                    <h6 class="small font-weight-bold text-muted mb-2">Historial de Asignaciones</h6>
-                    <div style="max-height: 200px; overflow-y: auto;">
-                        {% for asig in asignaciones %}
-                        <div class="d-flex align-items-start mb-2 small">
-                            <i class="bi bi-arrow-return-right me-2 mt-1"></i>
-                            <div>
-                                <span class="d-block fw-bold">{{ asig.funcionario.nombres }} {{ asig.funcionario.apellidos }}</span>
-                                <span class="text-muted">{{ asig.asignado_en|date:"d/m/Y" }}</span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Chat / Respuestas -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-white d-flex flex-wrap gap-2 align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-info d-flex align-items-center">
-                        <i class="bi bi-chat-dots me-2"></i>
-                        Comunicación
-                    </h6>
-                    {% if not puede_responder and denuncia.asignado_funcionario %}
-  <div class="alert alert-warning mt-2 mb-0">
-    ⚠️ Esta denuncia ya está siendo atendida por
-    <strong>{{ denuncia.asignado_funcionario.nombres }} {{ denuncia.asignado_funcionario.apellidos }}</strong>.
-  </div>
-{% endif %}
-
-                    {% if denuncia.estado != '' %}
-  {% if puede_responder %}
-    <div class="d-flex flex-wrap gap-2">
-      <button type="button" class="btn btn-sm btn-outline-info" id="btnNuevaRespuesta">
-          <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
-</svg> Nueva respuesta
-      </button>
-
-      <button type="button" class="btn btn-sm btn-info text-white" id="btnRespuestaIA">
-        <path d="M7.657 6.247c.11-.33.576-.33.686 0l.645 1.937a2.89 2.89 0 0 0 1.829 1.828l1.936.645c.33.11.33.576 0 .686l-1.937.645a2.89 2.89 0 0 0-1.828 1.829l-.645 1.936a.361.361 0 0 1-.686 0l-.645-1.937a2.89 2.89 0 0 0-1.828-1.828l-1.937-.645a.361.361 0 0 1 0-.686l1.937-.645a2.89 2.89 0 0 0 1.828-1.828zM3.794 1.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387A1.73 1.73 0 0 0 4.593 5.69l-.387 1.162a.217.217 0 0 1-.412 0L3.407 5.69A1.73 1.73 0 0 0 2.31 4.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387A1.73 1.73 0 0 0 3.407 2.31zM10.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732L9.1 2.137a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
-</svg> Generar respuesta con IA
-      </button>
-    </div>
-  {% else %}
-    <div class="d-flex flex-wrap gap-2">
-      <button type="button" class="btn btn-sm btn-outline-info" disabled>Nueva respuesta</button>
-      <button type="button" class="btn btn-sm btn-info text-white" disabled>Generar respuesta con IA</button>
-    </div>
-  {% endif %}
-{% endif %}
-
-                </div>
-                
-                <div class="card-body bg-light" style="max-height: 400px; overflow-y: auto;">
-                    {% for respuesta in respuestas %}
-                    <div class="d-flex mb-3 {% if respuesta.funcionario %}flex-row-reverse{% endif %}">
-                         <div class="p-2 rounded {% if respuesta.funcionario %}bg-info text-white{% else %}bg-white border{% endif %}" style="max-width: 80%;">
-                            <p class="mb-1 small">{{ respuesta.mensaje }}</p>
-                            <small class="{% if respuesta.funcionario %}text-white-50{% else %}text-muted{% endif %} d-block text-end" style="font-size: 0.7rem;">
-                                {{ respuesta.created_at|date:"d M H:i" }}
-                                {% if respuesta.funcionario %}
-                                <br><i class="bi bi-person-fill"></i> Funcionario
-                                {% endif %}
-                            </small>
-                        </div>
-                    </div>
-                    {% empty %}
-                        <div class="text-center text-muted small py-4">
-                            No hay mensajes registrados en este hilo.
-                        </div>
-                    {% endfor %}
-                </div>
-
-                <!-- Modal: Nueva Respuesta -->
-                <div class="modal fade" id="respuestaModal" tabindex="-1" aria-labelledby="respuestaModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="respuestaModalLabel"><i class="bi bi-chat-right-text me-2"></i>Nueva respuesta</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <form action="{% url 'web:denuncia_respuesta_create' denuncia.id %}" method="post">
-                                <div class="modal-body">
-                                    {% csrf_token %}
-                                    <div class="mb-3">
-                                        <label for="respuestaMensaje" class="form-label">Mensaje</label>
-                                        <textarea id="respuestaMensaje" name="mensaje" class="form-control" rows="3" placeholder="Escriba su respuesta aquí..." required></textarea>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                                    <button type="submit" class="btn btn-info">Enviar</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-   <script>
+<script>
 document.addEventListener('DOMContentLoaded', function() {
   const iaBtn = document.getElementById('btnRespuestaIA');
   const nuevaBtn = document.getElementById('btnNuevaRespuesta');
   const textarea = document.getElementById('respuestaMensaje');
   const modalEl = document.getElementById('respuestaModal');
-  const modal = modalEl ? bootstrap.Modal.getOrCreateInstance(modalEl) : null;
+  const modal = (modalEl && window.bootstrap) ? bootstrap.Modal.getOrCreateInstance(modalEl) : null;
 
-  const csrfToken = '{{ csrf_token }}';
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  const csrfToken = getCookie('csrftoken');
 
   async function tomarDenuncia() {
     const resp = await fetch("{% url 'web:tomar_denuncia' denuncia.id %}", {
@@ -463,6 +554,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 2) IA -> tomar -> generar -> abrir modal con texto
   if (iaBtn && textarea && modal) {
+    const originalHtml = iaBtn.innerHTML;
+
     iaBtn.addEventListener('click', async function() {
       iaBtn.disabled = true;
       iaBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Generando...';
@@ -470,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const ok = await tomarDenuncia();
       if (!ok) {
         iaBtn.disabled = false;
-        iaBtn.innerHTML = '<i class="bi bi-stars"></i> Generar respuesta con IA';
+        iaBtn.innerHTML = originalHtml;
         return;
       }
 
@@ -489,7 +582,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return { response: text };
       })
       .then(data => {
-        textarea.value = (data && (data.response || data.message)) ? (data.response || data.message) : 'No se pudo generar la respuesta.';
+        textarea.value = (data && (data.response || data.message))
+          ? (data.response || data.message)
+          : 'No se pudo generar la respuesta.';
         modal.show();
       })
       .catch(err => {
@@ -499,7 +594,7 @@ document.addEventListener('DOMContentLoaded', function() {
       })
       .finally(() => {
         iaBtn.disabled = false;
-        iaBtn.innerHTML = '<i class="bi bi-stars"></i> Generar respuesta con IA';
+        iaBtn.innerHTML = originalHtml;
       });
     });
   }

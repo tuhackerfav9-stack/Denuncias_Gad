@@ -44,7 +44,6 @@ from db.models import (
     TipoDenunciaDepartamento,
     TiposDenuncia,
 )
-from django.db.models.functions import TruncDate
 
 from .forms import (
     CrudMessageMixin,
@@ -60,8 +59,6 @@ from .forms import (
     TiposDenunciaForm,
     WebUserForm,
 )
-from db.models import Funcionarios
-
 from .models import FuncionarioWebUser, Menus
 from web.utils.menus import build_menus_for_user
 from notificaciones.services import notificar_respuesta
@@ -81,37 +78,38 @@ api_key = getattr(settings, "OPENAI_API_KEY", None)
 client = OpenAI(api_key=api_key) if api_key else None
 
 
+# =========================================
+# ponerle funcioanrio a denuncia
+# =========================================
 
-
-# ========================================
-# tomar denuncia si esta libre
-# ========================================
 def tomar_denuncia_si_libre(denuncia, funcionario, motivo="Denuncia tomada para atención."):
     """
     Si la denuncia está libre -> la asigna al funcionario actual y registra historial/asignación.
     Si ya está asignada al mismo funcionario -> no hace nada.
-    Si está asignada a otro -> retorna False.
+    Si está asignada a otro -> bloquea.
     """
     if not funcionario:
         return False, "No autorizado"
 
-    # ya está tomada por otro
+    # Ya está tomada por otro
     if denuncia.asignado_funcionario_id and denuncia.asignado_funcionario_id != funcionario.id:
         nombre_otro = f"{denuncia.asignado_funcionario.nombres} {denuncia.asignado_funcionario.apellidos}"
         return False, f"Esta denuncia ya está siendo atendida por {nombre_otro}."
 
-    # si está libre, tomarla
+    # Si está libre, tomarla
     if not denuncia.asignado_funcionario_id:
         estado_anterior = denuncia.estado
 
         denuncia.asignado_funcionario = funcionario
-        # opcional: si quieres cambiar estado al tomar
-        if denuncia.estado == "pendiente":
+
+        # ✅ Cuando se toma por atención, pasa a en_proceso si aún no está resuelta/rechazada
+        if denuncia.estado in ["pendiente", "asignada", "en_revision"]:
             denuncia.estado = "en_proceso"
 
-        denuncia.save(update_fields=["asignado_funcionario", "estado"])
+        denuncia.updated_at = timezone.now()
+        denuncia.save(update_fields=["asignado_funcionario", "estado", "updated_at"])
 
-        # historial (siempre)
+        # Historial (siempre)
         DenunciaHistorial.objects.create(
             id=get_uuid(),
             estado_anterior=estado_anterior,
@@ -122,7 +120,7 @@ def tomar_denuncia_si_libre(denuncia, funcionario, motivo="Denuncia tomada para 
             denuncia_id=denuncia.id,
         )
 
-        # historial de asignaciones (si tienes esa tabla)
+        # Asignaciones (si existe tu tabla)
         DenunciaAsignaciones.objects.create(
             id=get_uuid(),
             denuncia=denuncia,
@@ -771,7 +769,7 @@ class DenunciaListView(FuncionarioRequiredMixin, ListView):
 
             
 from django.http import Http404
-
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 
 class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
     model = Denuncias
@@ -779,14 +777,18 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
     context_object_name = "denuncia"
     login_url = "web:login"
 
-    
+    def _is_admin(self, user):
+        return user.is_superuser or user.groups.filter(name="TICS_ADMIN").exists()
+
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
         user = self.request.user
 
-        if user.is_superuser or user.groups.filter(name="TICS_ADMIN").exists():
+        # Admin ve todo
+        if self._is_admin(user):
             return obj
 
+        # Funcionario solo ve su departamento
         funcionario = get_funcionario_from_web_user(user)
         if not funcionario or not funcionario.departamento_id:
             raise Http404("No autorizado")
@@ -796,66 +798,66 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
 
         return obj
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        denuncia = self.object
+        user = self.request.user
 
-def get_context_data(self, **kwargs):
-    context = super().get_context_data(**kwargs)
-    denuncia = self.object
+        # Asignaciones
+        context["asignaciones"] = (
+            DenunciaAsignaciones.objects.filter(denuncia=denuncia)
+            .select_related("funcionario")
+            .order_by("-asignado_en")
+        )
 
-    context["asignaciones"] = (
-        DenunciaAsignaciones.objects.filter(denuncia=denuncia)
-        .select_related("funcionario")
-        .order_by("-asignado_en")
-    )
+        # Evidencias
+        context["evidencias"] = DenunciaEvidencias.objects.filter(denuncia=denuncia).order_by("-created_at")
 
-    context["evidencias"] = DenunciaEvidencias.objects.filter(denuncia=denuncia).order_by("-created_at")
+        # Historial (paginado)
+        historial_queryset = (
+            DenunciaHistorial.objects.filter(denuncia=denuncia)
+            .select_related("cambiado_por_funcionario")
+            .order_by("-created_at")
+        )
+        paginator = Paginator(historial_queryset, 3)
+        page_number = self.request.GET.get("historial_page")
 
-    historial_queryset = (
-        DenunciaHistorial.objects.filter(denuncia=denuncia)
-        .select_related("cambiado_por_funcionario")
-        .order_by("-created_at")
-    )
-    paginator = Paginator(historial_queryset, 3)
-    page_number = self.request.GET.get("historial_page")
-    try:
-        historial_page = paginator.page(page_number)
-    except (PageNotAnInteger, EmptyPage):
-        historial_page = paginator.page(1)
+        try:
+            historial_page = paginator.page(page_number)
+        except (PageNotAnInteger, EmptyPage):
+            historial_page = paginator.page(1)
 
-    context["historial"] = historial_page
-    context["historial_paginator"] = paginator
+        context["historial"] = historial_page
+        context["historial_paginator"] = paginator
 
-    context["respuestas"] = (
-        DenunciaRespuestas.objects.filter(denuncia=denuncia)
-        .select_related("funcionario")
-        .order_by("-created_at")
-    )
+        # Respuestas
+        context["respuestas"] = (
+            DenunciaRespuestas.objects.filter(denuncia=denuncia)
+            .select_related("funcionario")
+            .order_by("-created_at")
+        )
 
-    # -------------------------
-    # Control de "toma" (lock)
-    # -------------------------
-    user = self.request.user
-    funcionario = get_funcionario_from_web_user(user)
+        # 🔒 Lock: puede responder?
+        funcionario = get_funcionario_from_web_user(user)
 
-    puede_responder = False
-    if user.is_superuser or user.groups.filter(name="TICS_ADMIN").exists():
-        puede_responder = True
-    else:
-        if funcionario:
-            if (not denuncia.asignado_funcionario_id) or (denuncia.asignado_funcionario_id == funcionario.id):
-                puede_responder = True
+        if self._is_admin(user):
+            puede_responder = True
+        else:
+            puede_responder = bool(
+                funcionario and (
+                    (not denuncia.asignado_funcionario_id) or (denuncia.asignado_funcionario_id == funcionario.id)
+                )
+            )
 
-    context["puede_responder"] = puede_responder
+        context["puede_responder"] = puede_responder
 
-    # -------------------------
-    # firma (OneToOne)
-    # -------------------------
-    try:
-        context["firma"] = denuncia.denunciafirmas
-    except DenunciaFirmas.DoesNotExist:
-        context["firma"] = None
+        # Firma OneToOne
+        try:
+            context["firma"] = denuncia.denunciafirmas
+        except DenunciaFirmas.DoesNotExist:
+            context["firma"] = None
 
-    return context
-
+        return context
 
 class DenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateView):
     model = Denuncias

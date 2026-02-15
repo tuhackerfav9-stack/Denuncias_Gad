@@ -2,9 +2,8 @@
 {% block content %}
 
 <style>
-/*  Para que el paginado siempre quede bien abajo y no parezca dentro de la tabla */
 .denuncias-card{
-  min-height: 70vh;      /* ajusta si quieres */
+  min-height: 70vh;
   display: flex;
   flex-direction: column;
 }
@@ -76,26 +75,26 @@
 
             <div class="col-md-3">
               <label class="form-label">Buscar</label>
-              <input type="text" name="q" value="{{ q|default:'' }}" class="form-control"
+              <input type="text"
+                     name="q"
+                     value="{{ q|default:'' }}"
+                     class="form-control"
                      placeholder="Nombre, cédula, referencia o descripción">
             </div>
 
             <div class="col-md-1 d-flex gap-2">
               <button type="submit" class="btn btn-info text-white" title="Aplicar filtros">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
-                  <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
-                </svg>
+                <i class="bi bi-search"></i>
               </button>
 
-              <!--  Limpiar filtros 100% seguro (no submit, no estados raros) -->
-              <button type="button" class="btn btn-secondary" title="Limpiar filtros"
+              <button type="button"
+                      class="btn btn-secondary"
+                      title="Limpiar filtros"
                       onclick="window.location.href='{% url 'web:denuncia_list' %}'">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16">
-                  <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41m-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9"/>
-                  <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5 5 0 0 0 8 3M3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9z"/>
-                </svg>
+                <i class="bi bi-arrow-repeat"></i>
               </button>
             </div>
+
           </form>
         </div>
       </div>
@@ -116,29 +115,36 @@
                   <th class="text-center">Acciones</th>
                 </tr>
               </thead>
+
               <tbody>
                 {% for denuncia in denuncias %}
                   <tr>
                     <td>
-                      {{ denuncia.created_at|date:"d/m/Y" }}
-                      <br>
+                      {{ denuncia.created_at|date:"d/m/Y" }}<br>
                       <small class="text-muted">{{ denuncia.created_at|date:"H:i" }}</small>
                     </td>
 
-                    <td>{{ denuncia.tipo_denuncia.nombre }}</td>
+                    <td>
+                      {{ denuncia.tipo_denuncia.nombre|default:"—" }}
+                    </td>
 
                     <td>
-                      <div class="fw-bold">{{ denuncia.ciudadano.nombres }} {{ denuncia.ciudadano.apellidos }}</div>
+                      <div class="fw-bold">
+                        {{ denuncia.ciudadano.nombres }} {{ denuncia.ciudadano.apellidos }}
+                      </div>
                       <small class="text-muted">{{ denuncia.ciudadano.cedula }}</small>
                     </td>
 
                     <td>
                       {% if denuncia.asignado_departamento %}
-                        <span class="badge bg-info text-white">{{ denuncia.asignado_departamento.nombre }}</span>
+                        <span class="badge bg-info text-white">
+                          {{ denuncia.asignado_departamento.nombre }}
+                        </span>
                       {% else %}
                         <span class="badge bg-secondary">Sin asignar</span>
                       {% endif %}
                     </td>
+
                     <td>
                       {% if denuncia.asignado_funcionario %}
                         <span class="badge bg-primary">
@@ -163,41 +169,38 @@
 
                     <td class="text-center align-middle">
                       <div class="btn-group" role="group">
-                        <!--  conservamos filtros al volver desde detail/update -->
-                        <a href="{% url 'web:denuncia_detail' denuncia.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+
+                        <!-- ✅ Mantener filtros/página al volver: usamos querystring SIN page -->
+                        <a href="{% url 'web:denuncia_detail' denuncia.pk %}{% if querystring %}?{{ querystring }}{% endif %}"
                            class="btn btn-sm btn-outline-info"
                            title="Ver detalles">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
-                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
-                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
-                          </svg>
+                          <i class="bi bi-eye"></i>
                         </a>
 
                         {% if denuncia.estado == 'resuelta' %}
-                           <a href="{% url 'web:denuncia_pdf' denuncia.pk %}"
-                              class="btn btn-sm btn-outline-danger"
-                              title="Descargar PDF">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                  fill="currentColor" class="bi bi-file-earmark-pdf" viewBox="0 0 16 16">
-                                <path d="M5.523 12.424q.21-.124.459-.238.25-.114.548-.207.297-.092.634-.158.338-.066.721-.066.484 0 .829.086.345.085.576.25.23.164.345.402.114.237.114.552 0 .332-.114.58-.115.248-.345.414-.23.165-.576.248-.345.082-.829.082-.393 0-.721-.066-.337-.066-.634-.158-.298-.093-.548-.207-.249-.114-.459-.238zm1.18-.847q-.328 0-.563.077v.98q.236.078.563.078.392 0 .61-.139.219-.14.219-.43 0-.29-.219-.43-.218-.136-.61-.136z"/>
-                                <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
-                              </svg>
-                            </a>
+                          <a href="{% url 'web:denuncia_pdf' denuncia.pk %}"
+                             class="btn btn-sm btn-outline-danger"
+                             title="Descargar PDF">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                          </a>
                         {% endif %}
-                        </div>
+
+                      </div>
                     </td>
                   </tr>
+
                 {% empty %}
                   <tr>
-                    <td colspan="6" class="text-center py-4">
+                    <td colspan="7" class="text-center py-4">
                       <div class="text-muted">
-                        <i class="bi bi-inbox fa-2x mb-2"></i>
-                        <p>No hay denuncias registradas</p>
+                        <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                        <p class="mb-0">No hay denuncias registradas con esos filtros.</p>
                       </div>
                     </td>
                   </tr>
                 {% endfor %}
               </tbody>
+
             </table>
           </div>
         </div>
@@ -205,7 +208,7 @@
         <!-- Paginación -->
         {% if is_paginated %}
           <div class="card-footer bg-white border-top-0">
-            <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
               <div class="text-muted small">
                 Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ paginator.count }} registros
               </div>
