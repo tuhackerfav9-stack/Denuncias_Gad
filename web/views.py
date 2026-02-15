@@ -5,7 +5,7 @@ import json
 import re
 import uuid
 from datetime import timedelta
-
+from django.db import transaction
 
 from django.db.models.functions import TruncDate, TruncWeek, TruncMonth
 from django.conf import settings
@@ -65,6 +65,8 @@ from db.models import Funcionarios
 from .models import FuncionarioWebUser, Menus
 from web.utils.menus import build_menus_for_user
 from notificaciones.services import notificar_respuesta
+from django.contrib import messages
+from django.utils.http import url_has_allowed_host_and_scheme
 
 def mi_vista(request):
     context = {
@@ -78,6 +80,81 @@ def mi_vista(request):
 api_key = getattr(settings, "OPENAI_API_KEY", None)
 client = OpenAI(api_key=api_key) if api_key else None
 
+
+
+
+# ========================================
+# tomar denuncia si esta libre
+# ========================================
+def tomar_denuncia_si_libre(denuncia, funcionario, motivo="Denuncia tomada para atención."):
+    """
+    Si la denuncia está libre -> la asigna al funcionario actual y registra historial/asignación.
+    Si ya está asignada al mismo funcionario -> no hace nada.
+    Si está asignada a otro -> retorna False.
+    """
+    if not funcionario:
+        return False, "No autorizado"
+
+    # ya está tomada por otro
+    if denuncia.asignado_funcionario_id and denuncia.asignado_funcionario_id != funcionario.id:
+        nombre_otro = f"{denuncia.asignado_funcionario.nombres} {denuncia.asignado_funcionario.apellidos}"
+        return False, f"Esta denuncia ya está siendo atendida por {nombre_otro}."
+
+    # si está libre, tomarla
+    if not denuncia.asignado_funcionario_id:
+        estado_anterior = denuncia.estado
+
+        denuncia.asignado_funcionario = funcionario
+        # opcional: si quieres cambiar estado al tomar
+        if denuncia.estado == "pendiente":
+            denuncia.estado = "en_proceso"
+
+        denuncia.save(update_fields=["asignado_funcionario", "estado"])
+
+        # historial (siempre)
+        DenunciaHistorial.objects.create(
+            id=get_uuid(),
+            estado_anterior=estado_anterior,
+            estado_nuevo=denuncia.estado,
+            comentario=motivo,
+            cambiado_por_funcionario=funcionario,
+            created_at=timezone.now(),
+            denuncia_id=denuncia.id,
+        )
+
+        # historial de asignaciones (si tienes esa tabla)
+        DenunciaAsignaciones.objects.create(
+            id=get_uuid(),
+            denuncia=denuncia,
+            funcionario=funcionario,
+            asignado_en=timezone.now(),
+        )
+
+    return True, "OK"
+
+
+@login_required
+@require_POST
+def tomar_denuncia(request, denuncia_id):
+    funcionario = get_funcionario_from_web_user(request.user)
+    if not (request.user.is_superuser or funcionario):
+        return JsonResponse({"success": False, "error": "No autorizado"}, status=403)
+
+    with transaction.atomic():
+        denuncia = get_object_or_404(
+            Denuncias.objects.select_for_update().select_related("asignado_funcionario"),
+            id=denuncia_id,
+        )
+
+        ok, msg = tomar_denuncia_si_libre(
+            denuncia,
+            funcionario,
+            motivo="Denuncia tomada al iniciar atención (respuesta/IA/resolver/rechazar).",
+        )
+        if not ok:
+            return JsonResponse({"success": False, "error": msg}, status=409)
+
+    return JsonResponse({"success": True})
 
 # =========================================
 # Helpers
@@ -720,52 +797,65 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
         return obj
 
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        denuncia = self.object
+def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    denuncia = self.object
 
-        context["asignaciones"] = (
-            DenunciaAsignaciones.objects.filter(denuncia=denuncia)
-            .select_related("funcionario")
-            .order_by("-asignado_en")
-        )
+    context["asignaciones"] = (
+        DenunciaAsignaciones.objects.filter(denuncia=denuncia)
+        .select_related("funcionario")
+        .order_by("-asignado_en")
+    )
 
-        context["evidencias"] = DenunciaEvidencias.objects.filter(denuncia=denuncia).order_by("-created_at")
+    context["evidencias"] = DenunciaEvidencias.objects.filter(denuncia=denuncia).order_by("-created_at")
 
-        historial_queryset = (
-            DenunciaHistorial.objects.filter(denuncia=denuncia)
-            .select_related("cambiado_por_funcionario")
-            .order_by("-created_at")
-        )
-        paginator = Paginator(historial_queryset, 3)
-        page_number = self.request.GET.get("historial_page")
-        try:
-            historial_page = paginator.page(page_number)
-        except (PageNotAnInteger, EmptyPage):
-            historial_page = paginator.page(1)
+    historial_queryset = (
+        DenunciaHistorial.objects.filter(denuncia=denuncia)
+        .select_related("cambiado_por_funcionario")
+        .order_by("-created_at")
+    )
+    paginator = Paginator(historial_queryset, 3)
+    page_number = self.request.GET.get("historial_page")
+    try:
+        historial_page = paginator.page(page_number)
+    except (PageNotAnInteger, EmptyPage):
+        historial_page = paginator.page(1)
 
-        context["historial"] = historial_page
-        context["historial_paginator"] = paginator
+    context["historial"] = historial_page
+    context["historial_paginator"] = paginator
 
-        context["respuestas"] = (
-            DenunciaRespuestas.objects.filter(denuncia=denuncia)
-            .select_related("funcionario")
-            .order_by("-created_at")
-        )
+    context["respuestas"] = (
+        DenunciaRespuestas.objects.filter(denuncia=denuncia)
+        .select_related("funcionario")
+        .order_by("-created_at")
+    )
 
-        # firma (OneToOne)
-        try:
-            context["firma"] = denuncia.denunciafirmas
-        except DenunciaFirmas.DoesNotExist:
-            context["firma"] = None
+    # -------------------------
+    # Control de "toma" (lock)
+    # -------------------------
+    user = self.request.user
+    funcionario = get_funcionario_from_web_user(user)
 
-        return context
+    puede_responder = False
+    if user.is_superuser or user.groups.filter(name="TICS_ADMIN").exists():
+        puede_responder = True
+    else:
+        if funcionario:
+            if (not denuncia.asignado_funcionario_id) or (denuncia.asignado_funcionario_id == funcionario.id):
+                puede_responder = True
 
-from django.contrib import messages
-from django.utils.http import url_has_allowed_host_and_scheme
-from django.urls import reverse_lazy
-from django.shortcuts import render
-from django.utils import timezone
+    context["puede_responder"] = puede_responder
+
+    # -------------------------
+    # firma (OneToOne)
+    # -------------------------
+    try:
+        context["firma"] = denuncia.denunciafirmas
+    except DenunciaFirmas.DoesNotExist:
+        context["firma"] = None
+
+    return context
+
 
 class DenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateView):
     model = Denuncias
@@ -864,13 +954,44 @@ def crear_respuesta_denuncia(request, pk):
     if request.method != "POST":
         return redirect("web:denuncia_detail", pk=pk)
 
-    denuncia = get_object_or_404(Denuncias, pk=pk)
     form = DenunciaRespuestaForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "❌ Mensaje inválido.")
+        return redirect("web:denuncia_detail", pk=pk)
 
-    if form.is_valid():
+    with transaction.atomic():
+        # 🔒 bloquea la fila para que 2 funcionarios no la “tomen” al mismo tiempo
+        denuncia = Denuncias.objects.select_for_update().get(pk=pk)
+        estado_anterior = denuncia.estado  # <-- agrega esto aquí
+
+        # (Opcional) seguridad por depto si no es admin
+        if not (request.user.is_superuser or request.user.groups.filter(name="TICS_ADMIN").exists()):
+            if not funcionario.departamento_id or denuncia.asignado_departamento_id != funcionario.departamento_id:
+                return render(request, "errors/403.html", status=403)
+
+        # ✅ Si nadie la está tratando, el primero que responde la “toma”
+        if denuncia.asignado_funcionario_id is None:
+            denuncia.asignado_funcionario = funcionario
+
+        # ❌ Si ya la está tratando otro, bloquear respuesta
+        elif denuncia.asignado_funcionario_id != funcionario.pk:
+            messages.warning(
+                request,
+                f"⚠️ Esta denuncia ya está siendo atendida por {denuncia.asignado_funcionario.nombres} {denuncia.asignado_funcionario.apellidos}."
+            )
+            return redirect("web:denuncia_detail", pk=pk)
+
+        # ✅ Si responde, pasar a EN_PROCESO si estaba pendiente/en_revision/asignada
+        if denuncia.estado in ["pendiente", "en_revision", "asignada"]:
+            denuncia.estado = "en_proceso"
+
+        denuncia.updated_at = timezone.now()
+        denuncia.save(update_fields=["asignado_funcionario", "estado", "updated_at"])
+
+        # historial
         DenunciaHistorial.objects.create(
             id=get_uuid(),
-            estado_anterior=denuncia.estado,
+            estado_anterior=estado_anterior,
             estado_nuevo=denuncia.estado,
             comentario="Nueva respuesta añadida.",
             cambiado_por_funcionario=funcionario,
@@ -878,6 +999,7 @@ def crear_respuesta_denuncia(request, pk):
             denuncia_id=denuncia.id,
         )
 
+        # respuesta
         DenunciaRespuestas.objects.create(
             id=get_uuid(),
             denuncia=denuncia,
@@ -886,10 +1008,10 @@ def crear_respuesta_denuncia(request, pk):
             created_at=timezone.now(),
             updated_at=timezone.now(),
         )
-        notificar_respuesta(denuncia)
 
-
+    notificar_respuesta(denuncia)
     return redirect("web:denuncia_detail", pk=pk)
+
 
 
 class MisDenunciasListView(LoginRequiredMixin, ListView):
@@ -1112,10 +1234,15 @@ def llm_response(request, denuncia_id):
             "ciudadano", "tipo_denuncia", "asignado_departamento", "asignado_funcionario"
         ).get(id=denuncia_id)
 
-        # si está pendiente, pasar a en_proceso (opcional)
-        if denuncia.estado == "pendiente":
-            denuncia.estado = "en_proceso"
-            denuncia.save(update_fields=["estado"])
+        # ✅ tomar denuncia (si está libre) o bloquear si ya la tomó otro
+        if not request.user.is_superuser:
+            ok, msg = tomar_denuncia_si_libre(
+                denuncia,
+                funcionario,
+                motivo="Denuncia tomada al generar respuesta con IA.",
+            )
+            if not ok:
+                return JsonResponse({"success": False, "error": msg}, status=409)
 
         func_name = get_web_user_name_from_funcionario(denuncia.asignado_funcionario)
 
@@ -1172,27 +1299,50 @@ Responde en español con tono empático.
 @login_required
 @require_POST
 def resolver_denuncia(request, denuncia_id):
-    if not client:
-        return JsonResponse({"success": False, "error": "Servicio de IA no configurado (falta OPENAI_API_KEY)"}, status=503)
-
-    #  proteger: solo funcionarios/superuser
+    # 1) proteger: solo funcionarios/superuser
     funcionario = get_funcionario_from_web_user(request.user)
     if not (request.user.is_superuser or funcionario):
         return render(request, "errors/403.html", status=403)
 
     denuncia = get_object_or_404(
-        Denuncias.objects.select_related("ciudadano", "tipo_denuncia", "asignado_departamento", "asignado_funcionario"),
+        Denuncias.objects.select_related(
+            "ciudadano", "tipo_denuncia", "asignado_departamento", "asignado_funcionario"
+        ),
         id=denuncia_id,
     )
 
-    # marcar resuelta
+    # 2) tomar denuncia (si está libre) o bloquear si ya la tomó otro
+    if not request.user.is_superuser:
+        ok, msg = tomar_denuncia_si_libre(
+            denuncia,
+            funcionario,
+            motivo="Denuncia tomada al intentar resolver.",
+        )
+        if not ok:
+            return render(request, "errors/403.html", status=403)
+
+    # 3) marcar resuelta + historial
     estado_anterior = denuncia.estado
     denuncia.estado = "resuelta"
     denuncia.save(update_fields=["estado"])
 
-    func_name = get_web_user_name_from_funcionario(denuncia.asignado_funcionario)
+    funcionario_cambio = funcionario  # ya lo tienes
 
-    prompt = f"""
+    DenunciaHistorial.objects.create(
+        id=get_uuid(),
+        estado_anterior=estado_anterior,
+        estado_nuevo="resuelta",
+        comentario="Denuncia marcada como resuelta.",
+        cambiado_por_funcionario=funcionario_cambio,
+        created_at=timezone.now(),
+        denuncia_id=denuncia.id,
+    )
+
+    # 4) IA (solo si está configurada)
+    raw_text = ""
+    if client:
+        func_name = get_web_user_name_from_funcionario(denuncia.asignado_funcionario)
+        prompt = f"""
 Eres un asistente especializado en gestión de denuncias ciudadanas para la Municipalidad de Salcedo, Cotopaxi, Ecuador.
 
 Datos de la denuncia:
@@ -1207,30 +1357,19 @@ Datos de la denuncia:
 Responde en español, solo texto plano, con tono empático.
 """.strip()
 
-    resp = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "Responde siempre en texto plano."},
-            {"role": "user", "content": prompt},
-        ],
-        max_tokens=500,
-    )
-    raw_text = (resp.choices[0].message.content or "").strip()
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Responde siempre en texto plano."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=500,
+        )
+        raw_text = (resp.choices[0].message.content or "").strip()
+    else:
+        raw_text = "Denuncia resuelta. Gracias por reportar. Su caso fue atendido."
 
-    funcionario_cambio = get_funcionario_from_web_user(request.user)
-
-    # historial
-    DenunciaHistorial.objects.create(
-        id=get_uuid(),
-        estado_anterior=estado_anterior,
-        estado_nuevo="resuelta",
-        comentario="Denuncia marcada como resuelta.",
-        cambiado_por_funcionario=funcionario_cambio,
-        created_at=timezone.now(),
-        denuncia_id=denuncia.id,
-    )
-
-    # respuesta automática
+    # 5) respuesta automática
     DenunciaRespuestas.objects.create(
         id=get_uuid(),
         denuncia=denuncia,
@@ -1239,9 +1378,8 @@ Responde en español, solo texto plano, con tono empático.
         created_at=timezone.now(),
         updated_at=timezone.now(),
     )
+
     notificar_respuesta(denuncia)
-
-
     return redirect("web:denuncia_detail", pk=denuncia_id)
 
 

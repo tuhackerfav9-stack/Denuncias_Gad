@@ -1,5 +1,7 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
+
+import views
 from .views import (
     TipoDenunciaDepartamentoCreateView, TipoDenunciaDepartamentoDeleteView, TipoDenunciaDepartamentoDetailView, TipoDenunciaDepartamentoListView, TipoDenunciaDepartamentoUpdateView, api_respuestas_denuncia, home_view, dashboard_view, CustomLoginView,
     get_user_data_ajax, llm_response, resolver_denuncia, crear_respuesta_denuncia,
@@ -40,7 +42,12 @@ urlpatterns = [
     path("denuncias/<uuid:pk>/respuestas/create/", crear_respuesta_denuncia, name="denuncia_respuesta_create"),
     path("denuncias/<uuid:pk>/update/", DenunciaUpdateView.as_view(), name="denuncia_update"),
     path("denuncias/<uuid:pk>/delete/", DenunciaDeleteView.as_view(), name="denuncia_delete"),
-     path("denuncia/<uuid:pk>/pdf/", denuncia_pdf, name="denuncia_pdf"),
+    path("denuncia/<uuid:pk>/pdf/", denuncia_pdf, name="denuncia_pdf"),
+   
+    path("denuncias/<uuid:denuncia_id>/tomar/", views.tomar_denuncia, name="tomar_denuncia"),
+    path("denuncias/<uuid:denuncia_id>/resolver/", views.resolver_denuncia, name="resolver_denuncia"),
+
+
 
     # Funcionarios
     path("funcionarios/", FuncionariosListView.as_view(), name="funcionario_list"),

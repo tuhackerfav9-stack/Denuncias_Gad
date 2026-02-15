@@ -111,6 +111,7 @@
                   <th>Tipo</th>
                   <th>Ciudadano</th>
                   <th>Departamento</th>
+                  <th>Atendida por</th>
                   <th>Estado</th>
                   <th class="text-center">Acciones</th>
                 </tr>
@@ -136,6 +137,15 @@
                         <span class="badge bg-info text-white">{{ denuncia.asignado_departamento.nombre }}</span>
                       {% else %}
                         <span class="badge bg-secondary">Sin asignar</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if denuncia.asignado_funcionario %}
+                        <span class="badge bg-primary">
+                          {{ denuncia.asignado_funcionario.nombres }} {{ denuncia.asignado_funcionario.apellidos }}
+                        </span>
+                      {% else %}
+                        <span class="badge bg-secondary">Libre</span>
                       {% endif %}
                     </td>
 
