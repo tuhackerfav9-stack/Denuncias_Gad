@@ -25,7 +25,7 @@ def build_menus_for_user(user):
         if m.padre_id:
             hijos_por_padre.setdefault(m.padre_id, []).append(m)
 
-    # ✅ atributo permitido en templates: children
+    #  atributo permitido en templates: children
     for p in padres:
         p.children = hijos_por_padre.get(p.id, [])
 

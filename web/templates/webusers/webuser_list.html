@@ -9,10 +9,11 @@
                 </h1>
                 <a href="{% url 'web:webuser_create' %}" class="btn btn-info text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
-  <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
-</svg> Agregar Usuario
+                        <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
+                    </svg> Agregar Usuario
                 </a>
             </div>
+
             <div class="card shadow-sm">
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -29,14 +30,18 @@
                                     <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
+
                             <tbody>
-                                {% for user in webusers %}
+                                {% for user in page_obj %}
                                 <tr>
-                                    <td>{{ forloop.counter }}</td>
+                                    <!-- Numeración real por página -->
+                                    <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+
                                     <td>{{ user.username }}</td>
                                     <td>{{ user.email }}</td>
                                     <td>{{ user.first_name }}</td>
                                     <td>{{ user.last_name }}</td>
+
                                     <td>
                                         {% if user.is_active %}
                                             <span class="badge bg-success">Activo</span>
@@ -44,6 +49,7 @@
                                             <span class="badge bg-danger">Inactivo</span>
                                         {% endif %}
                                     </td>
+
                                     <td>
                                         {% with func=user.funcionarios_set.first %}
                                             {% if func %}
@@ -56,26 +62,41 @@
                                             {% endif %}
                                         {% endwith %}
                                     </td>
+
                                     <td class="text-center">
                                         <div class="btn-group" role="group">
                                             <a href="{% url 'web:webuser_detail' user.pk %}" class="btn btn-sm btn-outline-info" title="Ver detalles">
-                                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
-  <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
-  <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
-</svg>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                                                </svg>
                                             </a>
-                                            
-                                            <a href="{% url 'web:webuser_delete' user.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="return confirm('¿Está seguro de eliminar este usuario?')">
-                                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash2-fill" viewBox="0 0 16 16">
-  <path d="M2.037 3.225A.7.7 0 0 1 2 3c0-1.105 2.686-2 6-2s6 .895 6 2a.7.7 0 0 1-.037.225l-1.684 10.104A2 2 0 0 1 10.305 15H5.694a2 2 0 0 1-1.973-1.671zm9.89-.69C10.966 2.214 9.578 2 8 2c-1.58 0-2.968.215-3.926.534-.477.16-.795.327-.975.466.18.14.498.307.975.466C5.032 3.786 6.42 4 8 4s2.967-.215 3.926-.534c.477-.16.795-.327.975-.466-.18-.14-.498-.307-.975-.466z"/>
-</svg>
-                                            </a>
+
+                                            <!--
+                                                🔥 Aquí queda listo para tu lógica:
+                                                - Si "puede_eliminar" => muestra botón eliminar
+                                                - Si NO => muestra botón desactivar
+                                                Cuando ya tengas el backend, solo mandas a template: user.can_delete (bool)
+                                            -->
+                                            {% if user.can_delete %}
+                                                <a href="{% url 'web:webuser_delete' user.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar"
+                                                   onclick="return confirm('¿Está seguro de eliminar este usuario?')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash2-fill" viewBox="0 0 16 16">
+                                                        <path d="M2.037 3.225A.7.7 0 0 1 2 3c0-1.105 2.686-2 6-2s6 .895 6 2a.7.7 0 0 1-.037.225l-1.684 10.104A2 2 0 0 1 10.305 15H5.694a2 2 0 0 1-1.973-1.671zm9.89-.69C10.966 2.214 9.578 2 8 2c-1.58 0-2.968.215-3.926.534-.477.16-.795.327-.975.466.18.14.498.307.975.466C5.032 3.786 6.42 4 8 4s2.967-.215 3.926-.534c.477-.16.795-.327.975-.466-.18-.14-.498-.307-.975-.466z"/>
+                                                    </svg>
+                                                </a>
+                                            {% else %}
+                                                <a href="{% url 'web:webuser_update' user.pk %}" class="btn btn-sm btn-outline-warning" title="Desactivar">
+                                                    <i class="bi bi-person-x"></i>
+                                                </a>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
+
                                 {% empty %}
                                 <tr>
-                                    <td colspan="7" class="text-center py-4">
+                                    <td colspan="8" class="text-center py-4">
                                         <div class="text-muted">
                                             <i class="bi bi-people fa-2x mb-2"></i>
                                             <p>No hay usuarios registrados</p>
@@ -90,7 +111,70 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- =========================
+                     PAGINACIÓN
+                ========================== -->
+                {% if is_paginated %}
+                <div class="card-footer bg-white">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <small class="text-muted">
+                            Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ page_obj.paginator.count }}
+                        </small>
+
+                        <nav aria-label="Paginación usuarios">
+                            <ul class="pagination pagination-sm mb-0">
+
+                                <!-- Anterior -->
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Anterior">
+                                            <i class="bi bi-chevron-left"></i> Anterior
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">
+                                            <i class="bi bi-chevron-left"></i> Anterior
+                                        </span>
+                                    </li>
+                                {% endif %}
+
+                                <!-- Números (ventana) -->
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if num == page_obj.number %}
+                                        <li class="page-item active" aria-current="page">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num >= page_obj.number|add:-2 and num <= page_obj.number|add:2 %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                <!-- Siguiente -->
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Siguiente">
+                                            Siguiente <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">
+                                            Siguiente <i class="bi bi-chevron-right"></i>
+                                        </span>
+                                    </li>
+                                {% endif %}
+
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                {% endif %}
             </div>
+
         </div>
     </div>
 </div>

@@ -10,9 +10,11 @@
                         {% if object %}Editar{% else %}Crear{% endif %} Usuario Web
                     </h5>
                 </div>
+
                 <div class="card-body">
                     <form method="post" action=".">
                         {% csrf_token %}
+
                         {% if form.non_field_errors %}
                             <div class="alert alert-danger" role="alert">
                                 <i class="bi bi-exclamation-triangle me-2"></i>
@@ -22,6 +24,9 @@
                             </div>
                         {% endif %}
 
+                        <!-- =========================
+                             DATOS BÁSICOS
+                        ========================== -->
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="{{ form.username.id_for_label }}" class="form-label">
@@ -41,10 +46,13 @@
                                 {% if form.password.errors %}
                                     <div class="text-danger small">{{ form.password.errors.0 }}</div>
                                 {% endif %}
+
                                 {% if object %}
                                     <div class="form-text">Dejar en blanco para no cambiar la contraseña</div>
                                 {% else %}
-                                    <div class="form-text text-warning"><i class="bi bi-exclamation-circle me-1"></i>Campo obligatorio</div>
+                                    <div class="form-text text-warning">
+                                        <i class="bi bi-exclamation-circle me-1"></i>Campo obligatorio
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>
@@ -84,6 +92,10 @@
                         </div>
 
                         <hr class="my-4">
+
+                        <!-- =========================
+                             ROLES / FLAGS
+                        ========================== -->
                         <h6 class="mb-3">
                             <i class="bi bi-gear me-2"></i>Permisos y Roles
                         </h6>
@@ -99,6 +111,7 @@
                                 {% endif %}
                             </div>
 
+                            {% if object %}
                             <div class="col-md-4 mb-3 form-check">
                                 {{ form.is_active }}
                                 <label for="{{ form.is_active.id_for_label }}" class="form-check-label">
@@ -108,6 +121,7 @@
                                     <div class="text-danger small">{{ form.is_active.errors.0 }}</div>
                                 {% endif %}
                             </div>
+                            {% endif %}
 
                             <div class="col-md-4 mb-3 form-check">
                                 {{ form.is_superuser }}
@@ -120,6 +134,25 @@
                             </div>
                         </div>
 
+                        <!-- =========================
+                             DEPARTAMENTO (solo si es Personal)
+                        ========================== -->
+                        {% if form.departamento %}
+                        <div id="departamentoBlock" class="mb-3" style="display:none;">
+                            <label for="{{ form.departamento.id_for_label }}" class="form-label">
+                                <i class="bi bi-diagram-3 me-1"></i>Departamento
+                            </label>
+                            {{ form.departamento }}
+                            {% if form.departamento.errors %}
+                                <div class="text-danger small">{{ form.departamento.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Seleccione el departamento al que pertenece el funcionario</div>
+                        </div>
+                        {% endif %}
+
+                        <!-- =========================
+                             GRUPOS
+                        ========================== -->
                         <div class="mb-3">
                             <label for="{{ form.groups.id_for_label }}" class="form-label">
                                 <i class="bi bi-people me-1"></i>Grupos
@@ -131,6 +164,9 @@
                             <div class="form-text">Seleccione los grupos a los que pertenece este usuario</div>
                         </div>
 
+                        <!-- =========================
+                             PERMISOS
+                        ========================== -->
                         <div class="mb-3">
                             <label class="form-label">
                                 <i class="bi bi-key me-1"></i>Permisos
@@ -164,6 +200,7 @@
                                             <h5 class="modal-title" id="permisosModalLabel">Seleccionar permisos por modelo</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
+
                                         <div class="modal-body">
                                             <div class="d-flex flex-wrap gap-2 mb-3">
                                                 <button class="btn btn-sm btn-outline-success" type="button" id="selectAllPerms">
@@ -185,6 +222,7 @@
                                                             {{ modelo|capfirst }}
                                                         </button>
                                                     </h2>
+
                                                     <div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#accordionPermisos">
                                                         <div class="accordion-body">
                                                             <div class="row row-cols-1 row-cols-md-2 g-2">
@@ -204,6 +242,7 @@
                                                 {% endfor %}
                                             </div>
                                         </div>
+
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                                             <button type="button" class="btn btn-info" data-bs-dismiss="modal">Listo</button>
@@ -211,7 +250,6 @@
                                     </div>
                                 </div>
                             </div>
-
                             {% endwith %}
 
                             {% if form.user_permissions.errors %}
@@ -221,6 +259,11 @@
                         </div>
 
                         <hr class="my-4">
+
+                        <!-- =========================
+                             FECHAS (solo en editar)
+                        ========================== -->
+                        {% if object %}
                         <h6 class="mb-3">
                             <i class="bi bi-calendar me-2"></i>Información de Fechas
                         </h6>
@@ -246,7 +289,11 @@
                                 {% endif %}
                             </div>
                         </div>
+                        {% endif %}
 
+                        <!-- =========================
+                             BOTONES
+                        ========================== -->
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <a href="{% url 'web:webuser_list' %}" class="btn btn-outline-secondary me-md-2">
                                 <i class="bi bi-arrow-left me-1"></i>Cancelar
@@ -264,55 +311,72 @@
 </div>
 
 <script>
-    // Manejo de checkboxes y chips para permisos de usuario
-    (function() {
-        const chipsContainer = document.getElementById('permisosSeleccionados');
-        const checkboxes = document.querySelectorAll('.perm-checkbox');
-        const selectAllBtn = document.getElementById('selectAllPerms');
-        const unselectAllBtn = document.getElementById('unselectAllPerms');
-        const clearBtn = document.getElementById('clearPermissions');
+(function() {
+    // =========================
+    // 1) Chips permisos (igual que tu versión)
+    // =========================
+    const chipsContainer = document.getElementById('permisosSeleccionados');
+    const checkboxes = document.querySelectorAll('.perm-checkbox');
+    const selectAllBtn = document.getElementById('selectAllPerms');
+    const unselectAllBtn = document.getElementById('unselectAllPerms');
+    const clearBtn = document.getElementById('clearPermissions');
 
-        function renderChips() {
-            chipsContainer.innerHTML = '';
-            checkboxes.forEach(cb => {
-                if (cb.checked) {
-                    const label = document.querySelector(`label[for="${cb.id}"]`).innerText;
-                    const span = document.createElement('span');
-                    span.className = 'badge bg-info text-dark me-1 mb-1';
-                    span.dataset.permId = cb.value;
-                    span.textContent = label;
-                    chipsContainer.appendChild(span);
-                }
-            });
-        }
-
+    function renderChips() {
+        if (!chipsContainer) return;
+        chipsContainer.innerHTML = '';
         checkboxes.forEach(cb => {
-            cb.addEventListener('change', renderChips);
+            if (cb.checked) {
+                const label = document.querySelector(`label[for="${cb.id}"]`)?.innerText || cb.value;
+                const span = document.createElement('span');
+                span.className = 'badge bg-info text-dark me-1 mb-1';
+                span.dataset.permId = cb.value;
+                span.textContent = label;
+                chipsContainer.appendChild(span);
+            }
         });
+    }
 
-        if (selectAllBtn) {
-            selectAllBtn.addEventListener('click', () => {
-                checkboxes.forEach(cb => cb.checked = true);
-                renderChips();
-            });
-        }
+    checkboxes.forEach(cb => cb.addEventListener('change', renderChips));
 
-        if (unselectAllBtn) {
-            unselectAllBtn.addEventListener('click', () => {
-                checkboxes.forEach(cb => cb.checked = false);
-                renderChips();
-            });
-        }
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', () => {
+            checkboxes.forEach(cb => cb.checked = true);
+            renderChips();
+        });
+    }
 
-        if (clearBtn) {
-            clearBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                checkboxes.forEach(cb => cb.checked = false);
-                renderChips();
-            });
-        }
+    if (unselectAllBtn) {
+        unselectAllBtn.addEventListener('click', () => {
+            checkboxes.forEach(cb => cb.checked = false);
+            renderChips();
+        });
+    }
 
-        renderChips();
-    })();
+    if (clearBtn) {
+        clearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            checkboxes.forEach(cb => cb.checked = false);
+            renderChips();
+        });
+    }
+
+    renderChips();
+
+    // =========================
+    // 2) Mostrar/Ocultar Departamento si es Personal
+    // =========================
+    const staffCheckbox = document.getElementById('{{ form.is_staff.id_for_label }}');
+    const deptBlock = document.getElementById('departamentoBlock');
+
+    function toggleDept() {
+        if (!deptBlock || !staffCheckbox) return;
+        deptBlock.style.display = staffCheckbox.checked ? 'block' : 'none';
+    }
+
+    if (staffCheckbox && deptBlock) {
+        staffCheckbox.addEventListener('change', toggleDept);
+        toggleDept();
+    }
+})();
 </script>
 {% endblock %}

@@ -470,69 +470,95 @@ class DepartamentoForm(forms.ModelForm):
             instance.save()
         return instance
 
-# =========================
-# Web Users
-# =========================
+#------------------------
+# crear usuario y editar
+#--------------------------
+from web.services.webuser_domain import ensure_domain_for_web_user
 
 
 class WebUserForm(forms.ModelForm):
-    groups = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.all(),
-        required=False,
-        widget=ModelSelect2MultipleWidget(
-            model=Group,
-            search_fields=["name__icontains"],
-            attrs={"class": "form-control", "multiple": "multiple", "data-placeholder": "Buscar grupos..."},
-        ),
-    )
-
     password = forms.CharField(
         required=False,
-        widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "Dejar en blanco para no cambiar"}),
-        help_text="Dejar en blanco para mantener la contraseña actual",
+        widget=forms.PasswordInput(attrs={"class": "form-control"})
+    )
+
+    departamento = forms.ModelChoiceField(
+        queryset=Departamentos.objects.filter(activo=True).order_by("nombre"),
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"})
     )
 
     class Meta:
         model = User
         fields = [
-            "username",
-            "email",
-            "first_name",
-            "last_name",
-            "is_staff",
-            "is_active",
-            "is_superuser",
+            "username", "email", "first_name", "last_name",
+            "password",
+            "is_staff", "is_superuser", "is_active",
             "groups",
-            #"user_permissions",
-            "last_login",
-            "date_joined",
+            "date_joined", "last_login"
         ]
-        widgets = {
-            "username": forms.TextInput(attrs={"class": "form-control"}),
-            "email": forms.EmailInput(attrs={"class": "form-control"}),
-            "first_name": forms.TextInput(attrs={"class": "form-control"}),
-            "last_name": forms.TextInput(attrs={"class": "form-control"}),
-            "is_staff": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "is_superuser": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            #"user_permissions": forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
-            "last_login": forms.DateTimeInput(attrs={"class": "form-control", "type": "datetime-local"}),
-            "date_joined": forms.DateTimeInput(attrs={"class": "form-control", "type": "datetime-local"}),
-        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields["groups"].queryset = Group.objects.all()
-        #self.fields["user_permissions"].queryset = Permission.objects.all()
+        is_create = not (self.instance and self.instance.pk)
 
-        if "last_login" in self.fields:
-            self.fields["last_login"].disabled = True
-        if "date_joined" in self.fields:
-            self.fields["date_joined"].disabled = True
+        # widgets básicos
+        for f in ["username", "email", "first_name", "last_name"]:
+            self.fields[f].widget.attrs.update({"class": "form-control"})
 
-        if self.instance and self.instance.pk:
-            self.fields["password"].initial = ""
+        self.fields["groups"].widget.attrs.update({"class": "form-select", "multiple": True})
+
+        self.fields["is_staff"].widget.attrs.update({"class": "form-check-input"})
+        self.fields["is_superuser"].widget.attrs.update({"class": "form-check-input"})
+        self.fields["is_active"].widget.attrs.update({"class": "form-check-input"})
+
+        # fechas solo lectura
+        self.fields["date_joined"].disabled = True
+        self.fields["last_login"].disabled = True
+        self.fields["date_joined"].widget.attrs.update({"class": "form-control"})
+        self.fields["last_login"].widget.attrs.update({"class": "form-control"})
+
+        if is_create:
+            # is_active interno al crear
+            self.fields["is_active"].initial = True
+            self.fields["is_active"].widget = forms.HiddenInput()
+
+            # fechas ocultas en create
+            self.fields["date_joined"].widget = forms.HiddenInput()
+            self.fields["last_login"].widget = forms.HiddenInput()
+
+            # password obligatorio al crear
+            self.fields["password"].required = True
+        else:
+            self.fields["password"].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        is_staff = cleaned.get("is_staff")
+        dep = cleaned.get("departamento")
+
+        if is_staff and not dep:
+            self.add_error("departamento", "Seleccione el departamento del funcionario.")
+
+        return cleaned
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+
+        pwd = self.cleaned_data.get("password")
+        if pwd:
+            user.set_password(pwd)
+
+        if commit:
+            user.save()
+            self.save_m2m()
+
+            # ✅ crear/sincronizar dominio con departamento
+            dep = self.cleaned_data.get("departamento")
+            ensure_domain_for_web_user(user, departamento_id=dep.id if dep else None)
+
+        return user
 
 # =========================
 # FAQ

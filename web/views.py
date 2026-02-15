@@ -64,6 +64,8 @@ from web.utils.menus import build_menus_for_user
 from notificaciones.services import notificar_respuesta
 from django.contrib import messages
 from django.utils.http import url_has_allowed_host_and_scheme
+from web.services.webuser_domain import soft_disable_web_user
+from web.services.delete_rules import can_hard_delete_user
 
 def mi_vista(request):
     context = {
@@ -1721,7 +1723,7 @@ class DepartamentosDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, Delete
 # =========================================
 # WEB USERS (Django auth_user CRUD)
 # =========================================
-#  Estos se quedan con CustomPermissionRequiredMixin porque usan auth.* (EXISTE)
+
 class WebUserListView(LoginRequiredMixin, CustomPermissionRequiredMixin, ListView):
     model = User
     template_name = "webusers/webuser_list.html"
@@ -1744,9 +1746,15 @@ class WebUserCreateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRe
 
     def form_valid(self, form):
         user = form.save(commit=False)
+
+        # ✅ Forzar reglas internas (para que el signal dispare)
+        user.is_staff = True
+        user.is_active = True
+        user.is_superuser = False  # si quieres permitir super admin, lo hacemos aparte
+
         password = form.cleaned_data.get("password")
-        if password:
-            user.set_password(password)
+        user.set_password(password)
+
         user.save()
         form.save_m2m()
         return redirect(self.success_url)
@@ -1784,16 +1792,44 @@ class WebUserUpdateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRe
         return redirect(self.success_url)
 
 
-class WebUserDeleteView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRequiredMixin, DeleteView):
+
+
+
+class WebUserDeleteView(DeleteView):
     model = User
     template_name = "webusers/webuser_confirm_delete.html"
     success_url = reverse_lazy("web:webuser_list")
-    permission_required = "auth.delete_user"
-    login_url = "web:login"
 
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
 
+        # si pidió hard delete explícito
+        hard_requested = (request.POST.get("hard_delete") == "1")
 
+        allowed = can_hard_delete_user(self.object)
 
+        if hard_requested and allowed:
+            # ✅ hard delete real (luego el signal pre_delete limpia el dominio)
+            messages.success(request, "✅ Usuario eliminado definitivamente.")
+            return super().post(request, *args, **kwargs)
+
+        # ✅ si NO se permite hard delete, o si no lo pidió: soft disable
+        soft_disable_web_user(self.object)
+
+        if not allowed:
+            messages.warning(request, "⚠️ No se puede eliminar porque tiene denuncias tratadas. Se desactivó el usuario.")
+        else:
+            messages.info(request, "✅ Usuario desactivado (soft delete).")
+
+        return redirect(self.success_url)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["can_hard_delete"] = can_hard_delete_user(self.object)
+        return ctx
+#-----------------------------
+# pdf
+#---------------------------------
 from django.template.loader import render_to_string
 from django.http import HttpResponse, Http404
 from django.template.loader import get_template
