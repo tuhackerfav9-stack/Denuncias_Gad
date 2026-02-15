@@ -5,9 +5,9 @@ from db.models import (
     DenunciaRespuestas,
     DenunciaHistorial,
     Funcionarios,
-    Usuarios,
-    FuncionarioWebUser,  # <- tu tabla puente (funcionario_web_user)
+    Usuarios,  # <- tu tabla puente (funcionario_web_user)
 )
+from web.models import FuncionarioWebUser
 
 # -------------------------------
 # Obtener funcionarios ligados a un auth_user
