@@ -104,17 +104,130 @@ from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from .models import Menus
 
 ICON_CHOICES = [
-    ("", "— Sin icono —"),
-    ("mdi mdi-home", "Inicio (mdi-home)"),
-    ("mdi mdi-view-dashboard", "Dashboard (mdi-view-dashboard)"),
-    ("mdi mdi-file-document", "Documento (mdi-file-document)"),
-    ("mdi mdi-folder", "Carpeta (mdi-folder)"),
-    ("mdi mdi-account", "Usuario (mdi-account)"),
-    ("mdi mdi-account-group", "Grupo (mdi-account-group)"),
-    ("mdi mdi-cog", "Configuración (mdi-cog)"),
-    ("mdi mdi-alert", "Alerta (mdi-alert)"),
-    ("mdi mdi-map-marker", "Ubicación (mdi-map-marker)"),
+    ("", "--- Sin icono ---"),
+
+    # Navegación / Inicio
+    ("mdi mdi-home", "Inicio"),
+    ("mdi mdi-view-dashboard", "Dashboard"),
+    ("mdi mdi-view-grid", "Panel"),
+    ("mdi mdi-menu", "Menú"),
+    ("mdi mdi-view-list", "Listado"),
+    ("mdi mdi-format-list-bulleted", "Lista"),
+    ("mdi mdi-chart-bar", "Estadísticas"),
+    ("mdi mdi-chart-line", "Gráfico"),
+    ("mdi mdi-table", "Tabla"),
+    ("mdi mdi-timeline", "Tendencias"),
+
+    # Denuncias / Reportes
+    ("mdi mdi-megaphone", "Denuncias"),
+    ("mdi mdi-file-document", "Reporte"),
+    ("mdi mdi-file-document-edit", "Editar reporte"),
+    ("mdi mdi-file-document-multiple", "Reportes"),
+    ("mdi mdi-clipboard-text", "Formulario"),
+    ("mdi mdi-clipboard-check", "Validación"),
+    ("mdi mdi-clipboard-alert", "Incidencias"),
+    ("mdi mdi-note-text", "Detalle"),
+    ("mdi mdi-text-box", "Descripción"),
+    ("mdi mdi-text-box-check", "Confirmación"),
+
+    # Estados / Flujo
+    ("mdi mdi-progress-clock", "Pendiente"),
+    ("mdi mdi-timer-sand", "En proceso"),
+    ("mdi mdi-checkbox-marked-circle", "Resuelto"),
+    ("mdi mdi-close-circle", "Rechazado"),
+    ("mdi mdi-check-circle", "Aprobado"),
+    ("mdi mdi-alert-circle", "Observado"),
+    ("mdi mdi-sync", "Actualización"),
+    ("mdi mdi-refresh", "Recargar"),
+    ("mdi mdi-history", "Historial"),
+    ("mdi mdi-history-clock", "Bitácora"),
+
+    # Usuarios / Roles / Seguridad
+    ("mdi mdi-account", "Usuario"),
+    ("mdi mdi-account-multiple", "Usuarios"),
+    ("mdi mdi-account-check", "Usuario verificado"),
+    ("mdi mdi-account-badge", "Funcionario"),
+    ("mdi mdi-account-tie", "Administrador"),
+    ("mdi mdi-shield-account", "Rol"),
+    ("mdi mdi-account-group", "Grupos"),
+    ("mdi mdi-shield-lock", "Permisos"),
+    ("mdi mdi-lock", "Bloqueo"),
+    ("mdi mdi-key", "Acceso"),
+
+    # Comunicación / Notificaciones
+    ("mdi mdi-bell", "Notificaciones"),
+    ("mdi mdi-bell-alert", "Alerta de notificación"),
+    ("mdi mdi-email", "Correo"),
+    ("mdi mdi-email-outline", "Bandeja"),
+    ("mdi mdi-send", "Enviar"),
+    ("mdi mdi-chat", "Chat"),
+    ("mdi mdi-message-text", "Mensaje"),
+    ("mdi mdi-comment-text", "Comentario"),
+    ("mdi mdi-phone", "Teléfono"),
+    ("mdi mdi-bullhorn", "Avisos"),
+
+    # Ubicación / Mapa / Zonas
+    ("mdi mdi-map", "Mapa"),
+    ("mdi mdi-map-marker", "Ubicación"),
+    ("mdi mdi-map-marker-radius", "Zona"),
+    ("mdi mdi-map-marker-alert", "Zona de riesgo"),
+    ("mdi mdi-map-marker-check", "Zona segura"),
+    ("mdi mdi-crosshairs-gps", "GPS"),
+    ("mdi mdi-routes", "Rutas"),
+    ("mdi mdi-navigation", "Navegación"),
+    ("mdi mdi-compass", "Brújula"),
+    ("mdi mdi-earth", "Geolocalización"),
+
+    # Evidencias (fotos, archivos, multimedia)
+    ("mdi mdi-camera", "Cámara"),
+    ("mdi mdi-image", "Imagen"),
+    ("mdi mdi-image-multiple", "Galería"),
+    ("mdi mdi-video", "Video"),
+    ("mdi mdi-microphone", "Audio"),
+    ("mdi mdi-paperclip", "Adjunto"),
+    ("mdi mdi-file", "Archivo"),
+    ("mdi mdi-file-pdf-box", "PDF"),
+    ("mdi mdi-file-excel-box", "Excel"),
+    ("mdi mdi-folder", "Carpeta"),
+
+    # Catálogos / Configuración / Administración
+    ("mdi mdi-cog", "Configuración"),
+    ("mdi mdi-cogs", "Ajustes avanzados"),
+    ("mdi mdi-tools", "Herramientas"),
+    ("mdi mdi-tune", "Parámetros"),
+    ("mdi mdi-database", "Base de datos"),
+    ("mdi mdi-server", "Servidor"),
+    ("mdi mdi-shield", "Seguridad"),
+    ("mdi mdi-wrench", "Mantenimiento"),
+    ("mdi mdi-calendar", "Calendario"),
+    ("mdi mdi-clock", "Horario"),
+
+    # Acciones comunes
+    ("mdi mdi-plus-circle", "Crear"),
+    ("mdi mdi-pencil", "Editar"),
+    ("mdi mdi-content-save", "Guardar"),
+    ("mdi mdi-delete", "Eliminar"),
+    ("mdi mdi-eye", "Ver"),
+    ("mdi mdi-eye-off", "Ocultar"),
+    ("mdi mdi-magnify", "Buscar"),
+    ("mdi mdi-filter", "Filtrar"),
+    ("mdi mdi-sort", "Ordenar"),
+    ("mdi mdi-download", "Descargar"),
+
+    # Riesgo / Prioridad
+    ("mdi mdi-alert", "Alerta"),
+    ("mdi mdi-alert-octagon", "Urgente"),
+    ("mdi mdi-alert-outline", "Advertencia"),
+    ("mdi mdi-fire", "Incendio"),
+    ("mdi mdi-traffic-cone", "Tránsito"),
+    ("mdi mdi-hospital-box", "Salud"),
+    ("mdi mdi-police-badge", "Seguridad ciudadana"),
+    ("mdi mdi-water", "Agua"),
+    ("mdi mdi-lightbulb", "Alumbrado"),
+    ("mdi mdi-trash-can", "Basura"),
+    ("mdi mdi-road-variant", "Vía pública"),
 ]
+
 
 
 class MenuForm(forms.ModelForm):
