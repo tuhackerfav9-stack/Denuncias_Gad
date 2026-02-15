@@ -454,7 +454,7 @@ class TipoDenunciaDepartamentoForm(forms.ModelForm):
         self.fields["tipo_denuncia"].queryset = qs_tipos
         self.fields["departamento"].queryset = qs_deps
 
-        
+
 # =========================
 # Tipos de Denuncia
 # =========================
@@ -467,3 +467,12 @@ class TiposDenunciaForm(forms.ModelForm):
             "descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
             "activo": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Si es CREATE: activo por defecto True y oculto el campo
+        if not self.instance or not self.instance.pk:
+            self.fields["activo"].initial = True
+            self.fields["activo"].required = False
+            self.fields["activo"].widget = forms.HiddenInput()

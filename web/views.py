@@ -1012,7 +1012,7 @@ class TipoDenunciaDepartamentoDeleteView(CrudMessageMixin, FuncionarioRequiredMi
 # =========================================
 # Tipos de Denuncia
 # =========================================
-#  Cambio: db.* -> FuncionarioRequiredMixin
+
 class TiposDenunciaListView(FuncionarioRequiredMixin, ListView):
     model = TiposDenuncia
     template_name = "tipos_denuncia/tipos_denuncia_list.html"
@@ -1029,6 +1029,14 @@ class TiposDenunciaCreateView(CrudMessageMixin, FuncionarioRequiredMixin, Create
     success_url = reverse_lazy("web:tipos_denuncia_list")
     login_url = "web:login"
 
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        now = timezone.now()
+        obj.created_at = now
+        obj.updated_at = now
+        obj.activo = True  # ✅ por si acaso (regla del sistema)
+        obj.save()
+        return super().form_valid(form)
 
 class TiposDenunciaDetailView(FuncionarioRequiredMixin, DetailView):
     model = TiposDenuncia
@@ -1061,6 +1069,11 @@ class TiposDenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, Update
     success_url = reverse_lazy("web:tipos_denuncia_list")
     login_url = "web:login"
 
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        obj.updated_at = timezone.now()
+        obj.save()
+        return super().form_valid(form)
 
 class TiposDenunciaDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, DeleteView):
     model = TiposDenuncia
