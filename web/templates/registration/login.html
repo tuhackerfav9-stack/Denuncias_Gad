@@ -2,190 +2,291 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Ingreso al Sistema | GAD Salcedo</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <title>Ingreso al Sistema | GAD Salcedo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Bootstrap -->
-    <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
-    <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <!-- Bootstrap -->
+  <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
 
-    <!-- iziToast -->
-    <link href="https://cdn.jsdelivr.net/npm/izitoast/dist/css/iziToast.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- iziToast -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            min-height: 100vh;
-            background: 
-                linear-gradient(rgba(116, 116, 116, 0.95), rgba(116, 116, 116, 0.95)),
-                url("{% static 'assets/img/fondo_web.png' %}") center/cover no-repeat;
-        }
+  <style>
+    body{
+      font-family: 'Poppins', sans-serif;
+      min-height: 100vh;
+      background:
+        linear-gradient(rgba(116,116,116,.92), rgba(116,116,116,.92)),
+        url("{% static 'assets/img/fondo_web.png' %}") center/cover no-repeat;
+    }
 
-        .login-card {
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 14px;
-            box-shadow: 0 25px 60px rgba(0,0,0,.25);
-            padding: 35px;
-            position: relative;
-        }
+    .login-card{
+      backdrop-filter: blur(12px);
+      background: rgba(255,255,255,.96);
+      border-radius: 16px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.25);
+      padding: 34px;
+    }
 
-        .login-decoration {
-            position: absolute;
-            top: -45px;
-            right: -35px;
-            width: 110px;
-            opacity: .9;
-        }
+    .login-title{
+      color:#0d6efd;
+      font-weight: 700;
+      letter-spacing: .2px;
+    }
 
-        .form-control {
-            border-radius: 10px;
-            padding: 12px;
-        }
+    .input-wrap{
+      position: relative;
+    }
 
-        .btn-gad {
-            background-color: #0d6efd;
-            border: none;
-            border-radius: 10px;
-            padding: 12px;
-            font-weight: 600;
-            color: white;
+    .input-icon-left{
+      position:absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color:#9CA3AF;
+      pointer-events:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width: 22px;
+      height: 22px;
+    }
 
-        }
+    .input-icon-right-btn{
+      position:absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 1px solid #D1D5DB;
+      background: #fff;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+    }
 
-        .btn-gad:hover {
-            background-color: #0b5ed7;
-        }
+    .form-control{
+      border-radius: 12px;
+      padding: 12px 12px 12px 44px;
+      height: 46px;
+      border: 1px solid #E5E7EB;
+    }
+    .form-control:focus{
+      border-color:#93C5FD;
+      box-shadow: 0 0 0 .25rem rgba(13,110,253,.18);
+    }
 
-        .login-title {
-            color: #0d6efd;
-            font-weight: 600;
-        }
-    </style>
+    .btn-gad{
+      background:#0d6efd;
+      border:none;
+      border-radius: 12px;
+      padding: 12px;
+      font-weight: 700;
+      color:#fff;
+      height: 48px;
+    }
+    .btn-gad:hover{ background:#0b5ed7; }
+
+    /* Toastify-like */
+    .iziToast{
+      border-radius: 12px !important;
+      box-shadow: 0 14px 30px rgba(0,0,0,.16) !important;
+      padding: 14px 16px !important;
+      overflow: hidden !important;
+    }
+    .iziToast > .iziToast-body .iziToast-texts{ margin-left: 44px !important; }
+    .iziToast > .iziToast-body .iziToast-title{ font-weight:700 !important; font-size:14px !important; }
+    .iziToast > .iziToast-body .iziToast-message{ font-size:14px !important; }
+    .iziToast > .iziToast-progressbar{ height:3px !important; }
+
+    @media (max-width: 420px){
+      .login-card{ padding: 26px; }
+    }
+  </style>
 </head>
+
 <body class="d-flex align-items-center justify-content-center">
 
-<div class="container">
+  <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-5 col-lg-4">
+      <div class="col-md-5 col-lg-4">
 
-            <div class="login-card position-relative">
+        <div class="login-card">
 
-                <div class="text-center mb-4">
-                    <h5 class="login-title d-flex align-items-center justify-content-center gap-2">
-                        <svg stroke="currentColor" fill="currentColor" stroke-width="0"
-                            viewBox="0 0 24 24"
-                            height="1.4em" width="1.4em"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M10.1062 12.0046c0 1.5815-1.2842 2.8636-2.8685 2.8636-1.5842 0-2.8684-1.282-2.8684-2.8636 0-1.5815 1.2842-2.8635 2.8684-2.8635 1.5843 0 2.8685 1.2821 2.8685 2.8635zM7.2377 0C5.6536 0 4.3693 1.2817 4.3693 2.8628s1.2842 2.8629 2.8684 2.8629c1.5842 0 2.8685-1.2817 2.8685-2.8629C10.1062 1.2817 8.822 0 7.2377 0zm9.5246 18.2781c-1.5838 0-2.8677 1.2764-2.8677 2.8636 0 1.5763 1.2835 2.8583 2.8677 2.8583 1.5845 0 2.8684-1.282 2.8684-2.8583 0-1.5872-1.2843-2.8636-2.8684-2.8636zm-2.8685-6.2735c0-1.5815 1.2842-2.8635 2.8685-2.8635 1.5842 0 2.8684 1.282 2.8684 2.8635 0 1.5815-1.2842 2.8636-2.8684 2.8636-1.5843 0-2.8685-1.282-2.8685-2.8636zm.5 0c0 1.3033 1.0625 2.3636 2.3685 2.3636s2.3684-1.0603 2.3684-2.3636c0-1.3032-1.0624-2.3635-2.3684-2.3635s-2.3685 1.0603-2.3685 2.3635z"></path>
-                        </svg>
-                        Ingreso al Sistema
-                    </h5>
+          <div class="text-center mb-4">
+            <h5 class="login-title d-flex align-items-center justify-content-center gap-2 mb-0">
+              <!-- iconito “puntitos” como tu ejemplo -->
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <circle cx="6" cy="6" r="2"></circle>
+                <circle cx="6" cy="18" r="2"></circle>
+                <circle cx="18" cy="12" r="2"></circle>
+                <circle cx="12" cy="12" r="2" opacity=".65"></circle>
+                <circle cx="12" cy="6" r="2" opacity=".35"></circle>
+              </svg>
+              Ingreso al Sistema
+            </h5>
+          </div>
 
-                </div>
+          <form id="loginForm" method="post" novalidate>
+            {% csrf_token %}
 
-                <form id="loginForm" method="post" novalidate>
-                    {% csrf_token %}
+            <!-- Usuario -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Usuario</label>
+              <div class="input-wrap">
+                <span class="input-icon-left">
+                  <!-- SVG correo (el que me pasaste) -->
+                  <svg aria-hidden="true" fill="none" focusable="false" height="1em" role="presentation" viewBox="0 0 24 24" width="1em">
+                    <path d="M17 3.5H7C4 3.5 2 5 2 8.5V15.5C2 19 4 20.5 7 20.5H17C20 20.5 22 19 22 15.5V8.5C22 5 20 3.5 17 3.5ZM17.47 9.59L14.34 12.09C13.68 12.62 12.84 12.88 12 12.88C11.16 12.88 10.31 12.62 9.66 12.09L6.53 9.59C6.21 9.33 6.16 8.85 6.41 8.53C6.67 8.21 7.14 8.15 7.46 8.41L10.59 10.91C11.35 11.52 12.64 11.52 13.4 10.91L16.53 8.41C16.85 8.15 17.33 8.2 17.58 8.53C17.84 8.85 17.79 9.33 17.47 9.59Z" fill="currentColor"></path>
+                  </svg>
+                </span>
 
-                   <div class="mb-3">
-                        <label class="form-label">Usuario</label>
-                        <input 
-                            type="text"
-                            name="username"
-                            id="id_username"
-                            class="form-control"
-                            placeholder="Ingrese su usuario"
-                            required
-                        >
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label">Contraseña</label>
-                        <div class="input-group">
-                            <input 
-                                type="password"
-                                name="password"
-                                id="id_password"
-                                class="form-control"
-                                placeholder="Ingrese su contraseña"
-                                required
-                            >
-                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-
-
-                    <div class="d-grid">
-                        <button class="btn btn-gad" type="submit">
-                            <i class="bi bi-shield-lock"></i> Ingresar
-                        </button>
-                    </div>
-                </form>
-
+                <input
+                  type="text"
+                  name="username"
+                  id="id_username"
+                  class="form-control"
+                  placeholder="Ingrese su usuario"
+                  required
+                >
+              </div>
             </div>
 
-            <p class="text-center text-white small mt-4">
-                © {% now "Y" %} GAD Municipal de Salcedo
-            </p>
+            <!-- Contraseña -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Contraseña</label>
+              <div class="input-wrap">
+                <span class="input-icon-left">
+                  <!-- SVG candado/seguridad (el que me pasaste para “ojo” en tu ejemplo, lo uso como lock) -->
+                  <svg aria-hidden="true" fill="none" focusable="false" height="1em" role="presentation" viewBox="0 0 24 24" width="1em">
+                    <path d="M12.0011 17.3498C12.9013 17.3498 13.6311 16.6201 13.6311 15.7198C13.6311 14.8196 12.9013 14.0898 12.0011 14.0898C11.1009 14.0898 10.3711 14.8196 10.3711 15.7198C10.3711 16.6201 11.1009 17.3498 12.0011 17.3498Z" fill="currentColor"></path>
+                    <path d="M18.28 9.53V8.28C18.28 5.58 17.63 2 12 2C6.37 2 5.72 5.58 5.72 8.28V9.53C2.92 9.88 2 11.3 2 14.79V16.65C2 20.75 3.25 22 7.35 22H16.65C20.75 22 22 20.75 22 16.65V14.79C22 11.3 21.08 9.88 18.28 9.53ZM12 18.74C10.33 18.74 8.98 17.38 8.98 15.72C8.98 14.05 10.34 12.7 12 12.7C13.66 12.7 15.02 14.06 15.02 15.72C15.02 17.39 13.67 18.74 12 18.74ZM7.35 9.44C7.27 9.44 7.2 9.44 7.12 9.44V8.28C7.12 5.35 7.95 3.4 12 3.4C16.05 3.4 16.88 5.35 16.88 8.28V9.45C16.8 9.45 16.73 9.45 16.65 9.45H7.35V9.44Z" fill="currentColor"></path>
+                  </svg>
+                </span>
+
+                <input
+                  type="password"
+                  name="password"
+                  id="id_password"
+                  class="form-control"
+                  placeholder="Ingrese su contraseña"
+                  required
+                >
+
+                <button class="input-icon-right-btn" type="button" id="togglePassword" aria-label="Mostrar contraseña">
+                  <!-- ojo simple -->
+                  <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 5c5 0 9 4 10 7-1 3-5 7-10 7S3 15 2 12c1-3 5-7 10-7Z" stroke="currentColor" stroke-width="1.7"/>
+                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="d-grid">
+              <button class="btn btn-gad" type="submit">
+                Ingresar
+              </button>
+            </div>
+          </form>
 
         </div>
+
+        <p class="text-center text-white small mt-4 mb-0">
+          © {% now "Y" %} GAD Municipal de Salcedo
+        </p>
+
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- JS -->
-<script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/izitoast/dist/js/iziToast.min.js"></script>
+  <!-- JS -->
+  <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-<script>
-    // Mostrar / ocultar contraseña
-    $("#togglePassword").on("click", function () {
-        const input = $("#id_password");
-        const icon = $(this).find("i");
+  <script>
+    // Toggle password
+    (function(){
+      const btn = document.getElementById("togglePassword");
+      const input = document.getElementById("id_password");
+      if(!btn || !input) return;
 
-        if (input.attr("type") === "password") {
-            input.attr("type", "text");
-            icon.removeClass("bi-eye").addClass("bi-eye-slash");
-        } else {
-            input.attr("type", "password");
-            icon.removeClass("bi-eye-slash").addClass("bi-eye");
+      btn.addEventListener("click", function(){
+        input.type = (input.type === "password") ? "text" : "password";
+      });
+    })();
+
+    // Validación simple (sin plugin): si falta algo -> toast
+    (function(){
+      const form = document.getElementById("loginForm");
+      if(!form) return;
+
+      form.addEventListener("submit", function(e){
+        const u = document.getElementById("id_username")?.value.trim();
+        const p = document.getElementById("id_password")?.value.trim();
+        if(!u || !p){
+          e.preventDefault();
+          iziToast.show({
+            title: "Error",
+            message: "Usuario y contraseña son obligatorios",
+            position: "topRight",
+            timeout: 2000,
+            closeOnClick: true,
+            backgroundColor: "#ffffff",
+            titleColor: "#111827",
+            messageColor: "#374151",
+            progressBarColor: "#D32F2F",
+            iconColor: "#D32F2F"
+          });
         }
-    });
+      });
+    })();
 
-    // Validación
-    $("#loginForm").validate({
-        rules: {
-            username: { required: true },
-            password: { required: true }
-        },
-        messages: {
-            username: "Ingrese su usuario",
-            password: "Ingrese su contraseña"
-        },
-        errorPlacement: function () {
-            iziToast.error({
-                title: 'Error',
-                message: 'Usuario y contraseña son obligatorios',
-                position: 'topRight'
-            });
-        }
-    });
-
-    {% if form.errors %}
-        iziToast.error({
-            title: 'Acceso denegado',
-            message: 'Usuario o contraseña incorrectos',
-            position: 'topRight'
+    // Si Django manda error por credenciales
+    {% if messages %}
+      // Los messages se muestran con tu partial normalmente, pero aquí NO hay base.html,
+      // así que los mostramos también en login:
+      document.addEventListener("DOMContentLoaded", function(){
+        {% for message in messages %}
+          iziToast.show({
+            title: "{{ message.tags|default:'info'|capfirst }}",
+            message: "{{ message|escapejs }}",
+            position: "topRight",
+            timeout: 2000,
+            closeOnClick: true,
+            backgroundColor: "#ffffff",
+            titleColor: "#111827",
+            messageColor: "#374151",
+            progressBarColor: "{{ 'D32F2F' if 'error' in message.tags or 'danger' in message.tags else '0B3A6E' if 'success' in message.tags else 'F28C28' if 'warning' in message.tags else '0B3A6E' }}",
+            iconColor: "{{ 'D32F2F' if 'error' in message.tags or 'danger' in message.tags else '0B3A6E' if 'success' in message.tags else 'F28C28' if 'warning' in message.tags else '0B3A6E' }}"
+          });
+        {% endfor %}
+      });
+    {% elif form.errors %}
+      document.addEventListener("DOMContentLoaded", function(){
+        iziToast.show({
+          title: "Acceso denegado",
+          message: "Usuario o contraseña incorrectos",
+          position: "topRight",
+          timeout: 2000,
+          closeOnClick: true,
+          backgroundColor: "#ffffff",
+          titleColor: "#111827",
+          messageColor: "#374151",
+          progressBarColor: "#D32F2F",
+          iconColor: "#D32F2F"
         });
+      });
     {% endif %}
-</script>
+  </script>
 
 </body>
 </html>

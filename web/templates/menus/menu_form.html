@@ -73,39 +73,36 @@
         <h5 class="mb-3">Datos del menú</h5>
 
         <div class="row g-3">
-          <div class="col-12 col-md-6">
-            {{ form.nombre|as_crispy_field }}
-          </div>
+  <div class="col-12 col-md-6">
+    {{ form.nombre|as_crispy_field }}
+  </div>
 
-          <div class="col-12 col-md-6">
-            {{ form.url|as_crispy_field }}
-          </div>
+  <div class="col-12 col-md-6">
+    {{ form.url|as_crispy_field }}
+  </div>
 
-          <!-- Icono (Select2 + Preview) -->
-          <div class="col-12 col-lg-6">
-            <div class="d-flex justify-content-between align-items-center">
-              <label class="form-label mb-1">Icono</label>
-              <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small">Preview:</span>
-                <i id="iconPreview" class=""></i>
-              </div>
-            </div>
+  <div class="col-12 col-lg-6">
+    {{ form.icono|as_crispy_field }}
+    <small class="text-muted">Busca un icono y selecciónalo.</small>
 
-            {{ form.icono|as_crispy_field }}
-            <small class="text-muted">Busca un icono y selecciónalo.</small>
-          </div>
+    <div class="mt-2 d-flex align-items-center gap-2">
+      <span class="text-muted">Preview:</span>
+      <i id="iconPreview" class=""></i>
+    </div>
+  </div>
 
-          <div class="col-12 col-md-6 col-lg-3">
-            {{ form.orden|as_crispy_field }}
-          </div>
+  <div class="col-12 col-md-6 col-lg-3">
+    {{ form.orden|as_crispy_field }}
+  </div>
 
-          <div class="col-12 col-md-6 col-lg-3">
-            {{ form.padre|as_crispy_field }}
-            <small class="text-muted">
-              Si es submenú, elige su padre. Si es principal, déjalo vacío.
-            </small>
-          </div>
-        </div>
+  <div class="col-12 col-md-6 col-lg-3">
+    {{ form.padre|as_crispy_field }}
+    <small class="text-muted">
+      Si es submenú, elige su padre. Si es principal, déjalo vacío.
+    </small>
+  </div>
+</div>
+
 
         <hr class="my-4">
 

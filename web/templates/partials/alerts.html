@@ -1,29 +1,40 @@
 {# web/templates/partials/alerts.html #}
 {% if messages %}
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      {% for message in messages %}
-        (function () {
-          const tag = "{{ message.tags|default:'' }}";
-          const text = "{{ message|escapejs }}";
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const map = {
+      success: { title:"Éxito",    color:"#0B3A6E" },
+      error:   { title:"Error",    color:"#D32F2F" },
+      danger:  { title:"Error",    color:"#D32F2F" },
+      warning: { title:"Atención", color:"#F28C28" },
+      info:    { title:"Info",     color:"#0B3A6E" },
+    };
 
+    {% for message in messages %}
+      (function(){
+        const tags = "{{ message.tags|default:'info' }}";
+        const key = (tags.includes("success") && "success")
+                 || ((tags.includes("error") || tags.includes("danger")) && "error")
+                 || (tags.includes("warning") && "warning")
+                 || "info";
 
-          // Map Django tags -> iziToast types
-          let type = "info";
-          if (tag.includes("success")) type = "success";
-          else if (tag.includes("error") || tag.includes("danger")) type = "error";
-          else if (tag.includes("warning")) type = "warning";
+        const cfg = map[key];
 
-          iziToast[type]({
-            title: (type === "success" ? "Éxito" : type === "error" ? "Error" : type === "warning" ? "Aviso" : "Info"),
-            message: text,
-            position: "topRight",
-            timeout: 3500,
-            close: true,
-            progressBar: true,
-          });
-        })();
-      {% endfor %}
-    });
-  </script>
+        iziToast.show({
+          title: cfg.title,
+          message: "{{ message|escapejs }}",
+          position: "bottomRight",
+          timeout: 2000,
+          closeOnClick: true,
+          progressBar: true,
+          backgroundColor: "#ffffff",
+          titleColor: "#111827",
+          messageColor: "#374151",
+          progressBarColor: cfg.color,
+          iconColor: cfg.color
+        });
+      })();
+    {% endfor %}
+  });
+</script>
 {% endif %}

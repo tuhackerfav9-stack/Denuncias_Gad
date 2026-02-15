@@ -216,6 +216,10 @@ def server_error_view(request):
 class CustomLoginView(LoginView):
     template_name = "registration/login.html"
 
+    def form_invalid(self, form):
+        messages.error(self.request, "Usuario o contraseña incorrectos.")
+        return super().form_invalid(form)
+    
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             if request.user.is_superuser:
@@ -600,6 +604,11 @@ class MenuCreateView(LoginRequiredMixin, SuperUserRequiredMixin, CreateView):
     success_url = reverse_lazy("web:menu_list")
     login_url = "web:login"
 
+    def form_valid(self, form):
+        messages.success(self.request, "✅ Menú creado correctamente.")
+        return super().form_valid(form)
+
+
 
 class MenuUpdateView(LoginRequiredMixin, SuperUserRequiredMixin, UpdateView):
     model = Menus
@@ -608,6 +617,10 @@ class MenuUpdateView(LoginRequiredMixin, SuperUserRequiredMixin, UpdateView):
     success_url = reverse_lazy("web:menu_list")
     login_url = "web:login"
 
+    def form_valid(self, form):
+        messages.success(self.request, "✅ Menú actualizado correctamente.")
+        return super().form_valid(form)
+
 
 class MenuDeleteView(LoginRequiredMixin, SuperUserRequiredMixin, DeleteView):
     model = Menus
@@ -615,6 +628,9 @@ class MenuDeleteView(LoginRequiredMixin, SuperUserRequiredMixin, DeleteView):
     success_url = reverse_lazy("web:menu_list")
     login_url = "web:login"
 
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "🗑️ Menú eliminado.")
+        return super().delete(request, *args, **kwargs)
 
 # =========================================
 # FAQ
@@ -1010,7 +1026,9 @@ def crear_respuesta_denuncia(request, pk):
         )
 
     notificar_respuesta(denuncia)
+    messages.success(request, "✅ Respuesta enviada correctamente.")
     return redirect("web:denuncia_detail", pk=pk)
+
 
 
 
@@ -1380,6 +1398,7 @@ Responde en español, solo texto plano, con tono empático.
     )
 
     notificar_respuesta(denuncia)
+    messages.success(request, "✅ Denuncia marcada como resuelta.")
     return redirect("web:denuncia_detail", pk=denuncia_id)
 
 #-----------------------------------

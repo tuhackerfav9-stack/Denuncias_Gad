@@ -12,21 +12,18 @@
   <link rel="stylesheet" href="{% static 'skydash/assets/vendors/css/vendor.bundle.base.css' %}">
   <link rel="stylesheet" href="{% static 'skydash/assets/vendors/font-awesome/css/font-awesome.min.css' %}">
   <link rel="stylesheet" href="{% static 'skydash/assets/vendors/mdi/css/materialdesignicons.min.css' %}">
-  
-  
-  <!-- Skydash plugin css <link rel="stylesheet" href="{% static 'skydash/assets/vendors/datatables.net-bs5/dataTables.bootstrap5.css' %}">
- -->
-  <link rel="stylesheet" href="{% static 'skydash/assets/vendors/datatables.net-bs4/dataTables.bootstrap4.css' %}">
 
+  <!-- DataTables (tu versión actual) -->
+  <link rel="stylesheet" href="{% static 'skydash/assets/vendors/datatables.net-bs4/dataTables.bootstrap4.css' %}">
   <link rel="stylesheet" type="text/css" href="{% static 'skydash/assets/js/select.dataTables.min.css' %}">
 
   <!-- Skydash main css -->
   <link rel="stylesheet" href="{% static 'skydash/assets/css/style.css' %}">
 
-  <!-- FavIcon (tu logo) -->
+  <!-- FavIcon -->
   <link rel="shortcut icon" href="{% static 'assets/img/logo_gad_municipal_claro.png' %}" />
 
-  <!-- jQuery + Chartkick (si lo usas en dashboard) -->
+  <!-- jQuery + Chartkick -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="{% static 'chartkick/Chart.bundle.js' %}"></script>
   <script src="{% static 'chartkick/chartkick.js' %}"></script>
@@ -34,10 +31,38 @@
   <!-- iziToast -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-  <!-- mensajes alert globales 
-  <link rel="stylesheet" href="{% static 'assets/vendor/izitoast/iziToast.min.css' %}">
- -->
-  <script src="{% static 'skydash/assets/vendors/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <!-- Estilo Toastify-like (global) -->
+  <style>
+    /* Toastify-like */
+    .iziToast {
+      border-radius: 12px !important;
+      box-shadow: 0 14px 30px rgba(0,0,0,.16) !important;
+      padding: 14px 16px !important;
+      overflow: hidden !important;
+    }
+    .iziToast:after { box-shadow: none !important; }
+    .iziToast > .iziToast-body { min-height: 36px !important; }
+    .iziToast > .iziToast-body .iziToast-texts { margin-left: 44px !important; }
+    .iziToast > .iziToast-body .iziToast-title {
+      font-weight: 700 !important;
+      font-size: 14px !important;
+      line-height: 1.2 !important;
+    }
+    .iziToast > .iziToast-body .iziToast-message {
+      font-size: 14px !important;
+      line-height: 1.35 !important;
+      opacity: .95 !important;
+    }
+    .iziToast > .iziToast-progressbar {
+      height: 3px !important;
+    }
+
+    /* Que no se corte en cards / dropdowns */
+    .card, .card-body { overflow: visible !important; }
+
+    /* helper: evita layout raro en topRight */
+    .iziToast-wrapper { z-index: 999999 !important; }
+  </style>
 
   {% block extra_css %}{% endblock %}
 </head>
@@ -45,7 +70,7 @@
 <body>
   <div class="container-scroller">
 
-    <!-- NAVBAR (Skydash) -->
+    <!-- NAVBAR -->
     <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
       <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
         <a class="navbar-brand brand-logo me-5" href="{% url 'web:dashboard' %}">
@@ -57,8 +82,6 @@
       </div>
 
       <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
-
-        <!-- Botón minimizar sidebar -->
         <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
           <span class="icon-menu"></span>
         </button>
@@ -73,9 +96,7 @@
             </a>
 
             <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
-              <div class="dropdown-item text-muted small">
-                {{ user.email }}
-              </div>
+              <div class="dropdown-item text-muted small">{{ user.email }}</div>
               <div class="dropdown-divider"></div>
 
               <form method="post" action="{% url 'web:logout' %}">
@@ -91,13 +112,12 @@
         <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
           <span class="icon-menu"></span>
         </button>
-
       </div>
     </nav>
 
     <div class="container-fluid page-body-wrapper">
 
-      <!-- SIDEBAR (Skydash) -->
+      <!-- SIDEBAR -->
       <nav class="sidebar sidebar-offcanvas" id="sidebar">
         <ul class="nav">
 
@@ -109,60 +129,56 @@
             </a>
           </li>
 
-          <!-- Tus menús dinámicos -->
-          <!-- Menús dinámicos (según roles/grupos) -->
-<!-- Menús dinámicos (según roles/grupos) -->
-{% for menu in menus_principales %}
-  {% with children=menu.children %}
-    {% if children %}
-      <li class="nav-item">
-        <a class="nav-link"
-           data-bs-toggle="collapse"
-           href="#menu-{{ menu.id }}"
-           aria-expanded="false"
-           aria-controls="menu-{{ menu.id }}">
-          <i class="{% if menu.icono %}{{ menu.icono }}{% else %}icon-layout{% endif %} menu-icon"></i>
-          <span class="menu-title">{{ menu.nombre }}</span>
-          <i class="menu-arrow"></i>
-        </a>
-
-        <div class="collapse" id="menu-{{ menu.id }}">
-          <ul class="nav flex-column sub-menu">
-            {% for submenu in children %}
-              <li class="nav-item">
-                {% if submenu.url %}
+          <!-- Menús dinámicos -->
+          {% for menu in menus_principales %}
+            {% with children=menu.children %}
+              {% if children %}
+                <li class="nav-item">
                   <a class="nav-link"
-                     href="{% if ':' in submenu.url %}{% url submenu.url %}{% else %}{{ submenu.url }}{% endif %}">
-                    {{ submenu.nombre }}
+                     data-bs-toggle="collapse"
+                     href="#menu-{{ menu.id }}"
+                     aria-expanded="false"
+                     aria-controls="menu-{{ menu.id }}">
+                    <i class="{% if menu.icono %}{{ menu.icono }}{% else %}icon-layout{% endif %} menu-icon"></i>
+                    <span class="menu-title">{{ menu.nombre }}</span>
+                    <i class="menu-arrow"></i>
                   </a>
-                {% else %}
-                  <span class="nav-link text-muted">{{ submenu.nombre }}</span>
-                {% endif %}
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-      </li>
-    {% else %}
-      <li class="nav-item">
-        {% if menu.url %}
-          <a class="nav-link"
-             href="{% if ':' in menu.url %}{% url menu.url %}{% else %}{{ menu.url }}{% endif %}">
-            <i class="{% if menu.icono %}{{ menu.icono }}{% else %}icon-grid-2{% endif %} menu-icon"></i>
-            <span class="menu-title">{{ menu.nombre }}</span>
-          </a>
-        {% else %}
-          <a class="nav-link" href="javascript:void(0)">
-            <i class="{% if menu.icono %}{{ menu.icono }}{% else %}icon-grid-2{% endif %} menu-icon"></i>
-            <span class="menu-title">{{ menu.nombre }}</span>
-          </a>
-        {% endif %}
-      </li>
-    {% endif %}
-  {% endwith %}
-{% endfor %}
 
-
+                  <div class="collapse" id="menu-{{ menu.id }}">
+                    <ul class="nav flex-column sub-menu">
+                      {% for submenu in children %}
+                        <li class="nav-item">
+                          {% if submenu.url %}
+                            <a class="nav-link"
+                               href="{% if ':' in submenu.url %}{% url submenu.url %}{% else %}{{ submenu.url }}{% endif %}">
+                              {{ submenu.nombre }}
+                            </a>
+                          {% else %}
+                            <span class="nav-link text-muted">{{ submenu.nombre }}</span>
+                          {% endif %}
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </li>
+              {% else %}
+                <li class="nav-item">
+                  {% if menu.url %}
+                    <a class="nav-link"
+                       href="{% if ':' in menu.url %}{% url menu.url %}{% else %}{{ menu.url }}{% endif %}">
+                      <i class="{% if menu.icono %}{{ menu.icono }}{% else %}icon-grid-2{% endif %} menu-icon"></i>
+                      <span class="menu-title">{{ menu.nombre }}</span>
+                    </a>
+                  {% else %}
+                    <a class="nav-link" href="javascript:void(0)">
+                      <i class="{% if menu.icono %}{{ menu.icono }}{% else %}icon-grid-2{% endif %} menu-icon"></i>
+                      <span class="menu-title">{{ menu.nombre }}</span>
+                    </a>
+                  {% endif %}
+                </li>
+              {% endif %}
+            {% endwith %}
+          {% endfor %}
 
           {% if user.is_superuser %}
             <li class="nav-item">
@@ -185,7 +201,7 @@
         <footer class="footer">
           <div class="d-sm-flex justify-content-center justify-content-sm-between">
             <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">
-             Desarrollado: Cristian Aguila - Alejandra Erreyes / GAD Municipal de Salcedo © {{ now|date:"Y" }} / V1.0
+              Desarrollado: Cristian Aguila - Alejandra Erreyes / GAD Municipal de Salcedo © {% now "Y" %} / V1.0
             </span>
           </div>
         </footer>
@@ -201,29 +217,12 @@
   <script src="{% static 'skydash/assets/js/settings.js' %}"></script>
   <script src="{% static 'skydash/assets/js/todolist.js' %}"></script>
 
-  <!-- iziToast -->
+  <!-- iziToast JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-  <!-- mensajes Django 
-  <script>
-    {% if messages %}
-      {% for message in messages %}
-        iziToast.{% if message.tags %}{{ message.tags }}{% else %}show{% endif %}({
-          title: "Notificación",
-          message: "{{ message|escapejs }}",
-          position: "bottomRight",
-          timeout: 3000
-        });
-      {% endfor %}
-    {% endif %}
-  </script>
--->
+  <!-- Django messages -> Toast global -->
   {% include "partials/alerts.html" %}
 
-  
   {% block extra_js %}{% endblock %}
-   <!-- <script src="{% static 'assets/vendor/izitoast/iziToast.min.js' %}"></script> -->
-
-
 </body>
 </html>
