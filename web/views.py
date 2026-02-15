@@ -517,7 +517,7 @@ class GrupoListView(LoginRequiredMixin, CustomPermissionRequiredMixin, ListView)
     permission_required = "auth.view_group"
     login_url = "web:login"
     ordering = ["name"]
-    paginate_by = 15
+    paginate_by = 10
 
 
 
@@ -648,7 +648,7 @@ class FaqListView(FuncionarioRequiredMixin, ListView):
     context_object_name = "faqs"
     login_url = "web:login"
     ordering = ["-created_at"]
-    paginate_by = 15
+    paginate_by = 10
 
 
 class FaqCreateView(CrudMessageMixin, FuncionarioRequiredMixin, CreateView):
@@ -698,7 +698,7 @@ class DenunciaListView(FuncionarioRequiredMixin, ListView):
     context_object_name = "denuncias"
     login_url = "web:login"
     ordering = ["-created_at"]
-    paginate_by = 20
+    paginate_by = 10
 
     def _is_admin(self, user):
         return user.is_superuser or user.groups.filter(name="TICS_ADMIN").exists()
@@ -1102,7 +1102,7 @@ class TipoDenunciaDepartamentoListView(FuncionarioRequiredMixin, ListView):
     template_name = "tipo_denuncia_departamento/tipo_denuncia_departamento_list.html"
     context_object_name = "asignaciones"  #  CAMBIO
     login_url = "web:login"
-    paginate_by = 15
+    paginate_by = 10
     ordering = ["-created_at"]
 
     def get_queryset(self):
@@ -1165,7 +1165,7 @@ class TiposDenunciaListView(FuncionarioRequiredMixin, ListView):
     context_object_name = "tipos"
     login_url = "web:login"
     ordering = ["-id"]
-    paginate_by = 15
+    paginate_by = 10
 
 
 class TiposDenunciaCreateView(CrudMessageMixin, FuncionarioRequiredMixin, CreateView):

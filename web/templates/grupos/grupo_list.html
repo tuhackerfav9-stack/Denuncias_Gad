@@ -36,13 +36,18 @@
           <tbody>
             {% for grupo in grupos %}
               <tr>
-                <td class="text-muted">{{ forloop.counter }}</td>
+                <td class="text-muted">
+                  {# si hay paginación, numeración global #}
+                  {% if is_paginated %}
+                    {{ page_obj.start_index|add:forloop.counter0 }}
+                  {% else %}
+                    {{ forloop.counter }}
+                  {% endif %}
+                </td>
 
                 <td>
                   <div class="fw-semibold">{{ grupo.name }}</div>
-                  <div class="small text-muted">
-                    ID: {{ grupo.id }}
-                  </div>
+                  <div class="small text-muted">ID: {{ grupo.id }}</div>
                 </td>
 
                 <td class="text-center">
@@ -52,28 +57,16 @@
                 <td class="text-end">
                   <div class="btn-group" role="group">
                     <a href="{% url 'web:grupo_detail' grupo.pk %}" class="btn btn-sm btn-outline-info" title="Ver">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
-                        <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
-                        <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
-                      </svg>
-                    </a>
-
-                    <a href="{% url 'web:grupo_update' grupo.pk %}" class="btn btn-sm btn-outline-warning" title="Editar">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pen" viewBox="0 0 16 16">
-                        <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001m-.644.766a.5.5 0 0 0-.707 0L1.95 11.756l-.764 3.057 3.057-.764L14.44 3.854a.5.5 0 0 0 0-.708z"/>
-                      </svg>
+                      <i class="bi bi-eye"></i>
                     </a>
 
                     <a href="{% url 'web:grupo_delete' grupo.pk %}" class="btn btn-sm btn-outline-danger"
                        title="Eliminar" onclick="return confirm('¿Está seguro de eliminar este grupo?')">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash2-fill" viewBox="0 0 16 16">
-                        <path d="M2.037 3.225A.7.7 0 0 1 2 3c0-1.105 2.686-2 6-2s6 .895 6 2a.7.7 0 0 1-.037.225l-1.684 10.104A2 2 0 0 1 10.305 15H5.694a2 2 0 0 1-1.973-1.671zm9.89-.69C10.966 2.214 9.578 2 8 2c-1.58 0-2.968.215-3.926.534-.477.16-.795.327-.975.466.18.14.498.307.975.466C5.032 3.786 6.42 4 8 4s2.967-.215 3.926-.534c.477-.16.795-.327.975-.466-.18-.14-.498-.307-.975-.466z"/>
-                      </svg>
+                      <i class="bi bi-trash2-fill"></i>
                     </a>
                   </div>
                 </td>
               </tr>
-
             {% empty %}
               <tr>
                 <td colspan="4" class="text-center py-5 text-muted">
@@ -90,28 +83,34 @@
         </table>
       </div>
 
-      {# ✅ PAGINADO DJANGO (igual a menú_list) #}
-      {% if is_paginated %}
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 border-top">
-          <div class="text-muted small">
+      {# ✅ Footer tipo DataTable: SIEMPRE visible #}
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 border-top">
+
+        <div class="text-muted small">
+          {% if is_paginated %}
+            Mostrando <strong>{{ page_obj.start_index }}</strong> a <strong>{{ page_obj.end_index }}</strong>
+            de <strong>{{ page_obj.paginator.count }}</strong> grupos —
             Página <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong>
-          </div>
+          {% else %}
+            Mostrando <strong>{{ grupos|length }}</strong> de <strong>{{ grupos|length }}</strong> grupos —
+            Página <strong>1</strong> de <strong>1</strong>
+          {% endif %}
+        </div>
 
-          <nav aria-label="Paginación de grupos">
-            <ul class="pagination pagination-sm mb-0">
+        <nav aria-label="Paginación de grupos">
+          <ul class="pagination pagination-sm mb-0">
 
-              {# Anterior #}
-              {% if page_obj.has_previous %}
-                <li class="page-item">
-                  <a class="page-link" href="?page={{ page_obj.previous_page_number }}">«</a>
-                </li>
-              {% else %}
-                <li class="page-item disabled">
-                  <span class="page-link">«</span>
-                </li>
-              {% endif %}
+            {% if is_paginated and page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">«</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link">«</span>
+              </li>
+            {% endif %}
 
-              {# Números (ventana -2/+2) #}
+            {% if is_paginated %}
               {% for num in page_obj.paginator.page_range %}
                 {% if num == page_obj.number %}
                   <li class="page-item active" aria-current="page">
@@ -123,22 +122,24 @@
                   </li>
                 {% endif %}
               {% endfor %}
+            {% else %}
+              <li class="page-item active"><span class="page-link">1</span></li>
+            {% endif %}
 
-              {# Siguiente #}
-              {% if page_obj.has_next %}
-                <li class="page-item">
-                  <a class="page-link" href="?page={{ page_obj.next_page_number }}">»</a>
-                </li>
-              {% else %}
-                <li class="page-item disabled">
-                  <span class="page-link">»</span>
-                </li>
-              {% endif %}
+            {% if is_paginated and page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">»</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link">»</span>
+              </li>
+            {% endif %}
 
-            </ul>
-          </nav>
-        </div>
-      {% endif %}
+          </ul>
+        </nav>
+
+      </div>
 
     </div>
   </div>
