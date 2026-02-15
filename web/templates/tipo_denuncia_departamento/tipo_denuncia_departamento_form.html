@@ -1,76 +1,75 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-12 col-lg-8 mx-auto">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-diagram-3 me-2"></i>
-                       
-                        {% if object %}Editar Asignación{% else %}Nueva Asignación{% endif %}
-
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-                        
-                        {% if form.non_field_errors %}
-                            <div class="alert alert-danger" role="alert">
-                                {{ form.non_field_errors }}
-                            </div>
-                        {% endif %}
-
-                        <div class="mb-3">
-                            <label for="{{ form.tipo_denuncia.id_for_label }}" class="form-label">
-                                {{ form.tipo_denuncia.label }} <span class="text-danger">*</span>
-                            </label>
-                            {{ form.tipo_denuncia }}
-                            {% if form.tipo_denuncia.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.tipo_denuncia.errors }}
-                                </div>
-                            {% endif %}
-                            <small class="form-text text-muted">
-                                Seleccione el tipo de denuncia que será atendido por el departamento
-                            </small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.departamento.id_for_label }}" class="form-label">
-                                {{ form.departamento.label }} <span class="text-danger">*</span>
-                            </label>
-                            {{ form.departamento }}
-                            {% if form.departamento.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.departamento.errors }}
-                                </div>
-                            {% endif %}
-                            <small class="form-text text-muted">
-                                Seleccione el departamento que atenderá este tipo de denuncia
-                            </small>
-                        </div>
-
-                        <div class="alert alert-info" role="alert">
-                            <i class="bi bi-info-circle me-2"></i>
-                            <strong>Nota:</strong> Esta asignación determina qué departamento será responsable de atender denuncias de este tipo específico.
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-2 mt-4">
-                            <a href="{% url 'web:tipo_denuncia_departamento_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle me-2"></i>Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-2"></i>
-                               
-                                {% if object %}Actualizar{% else %}Crear{% endif %}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+  <div class="row">
+    <div class="col-12 col-lg-8 mx-auto">
+      <div class="card shadow-sm">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-diagram-3 me-2"></i>
+            {% if object %}Editar Asignación{% else %}Nueva Asignación{% endif %}
+          </h5>
         </div>
+
+        <div class="card-body">
+          <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger" role="alert">
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label for="{{ form.tipo_denuncia.id_for_label }}" class="form-label">
+                {{ form.tipo_denuncia.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.tipo_denuncia }}
+              {% if form.tipo_denuncia.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.tipo_denuncia.errors }}
+                </div>
+              {% endif %}
+              <small class="form-text text-muted">
+                Solo se muestran tipos activos y que aún no tienen departamento asignado.
+              </small>
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.departamento.id_for_label }}" class="form-label">
+                {{ form.departamento.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.departamento }}
+              {% if form.departamento.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.departamento.errors }}
+                </div>
+              {% endif %}
+              <small class="form-text text-muted">
+                Solo se muestran departamentos activos.
+              </small>
+            </div>
+
+            <div class="alert alert-info" role="alert">
+              <i class="bi bi-info-circle me-2"></i>
+              <strong>Nota:</strong> Esta asignación determina qué departamento será responsable de atender denuncias de este tipo.
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <a href="{% url 'web:tipo_denuncia_departamento_list' %}" class="btn btn-secondary">
+                <i class="bi bi-x-circle me-2"></i>Cancelar
+              </a>
+              <button type="submit" class="btn btn-info text-white">
+                <i class="bi bi-check-circle me-2"></i>
+                {% if object %}Actualizar{% else %}Crear{% endif %}
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}

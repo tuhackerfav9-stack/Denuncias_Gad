@@ -972,6 +972,14 @@ class TipoDenunciaDepartamentoCreateView(CrudMessageMixin, FuncionarioRequiredMi
     success_url = reverse_lazy("web:tipo_denuncia_departamento_list")
     login_url = "web:login"
 
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        now = timezone.now()
+        obj.created_at = now
+        obj.updated_at = now
+        obj.save()
+        return super().form_valid(form)
+
 
 class TipoDenunciaDepartamentoDetailView(FuncionarioRequiredMixin, DetailView):
     model = TipoDenunciaDepartamento
@@ -986,6 +994,12 @@ class TipoDenunciaDepartamentoUpdateView(CrudMessageMixin, FuncionarioRequiredMi
     template_name = "tipo_denuncia_departamento/tipo_denuncia_departamento_form.html"
     success_url = reverse_lazy("web:tipo_denuncia_departamento_list")
     login_url = "web:login"
+
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        obj.updated_at = timezone.now()
+        obj.save()
+        return super().form_valid(form)
 
 
 class TipoDenunciaDepartamentoDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, DeleteView):

@@ -154,7 +154,7 @@ from web.models import FuncionarioWebUser  # <-- tu tabla puente
 
 
 class FuncionarioForm(forms.ModelForm):
-    # ✅ Usuario REAL (tabla usuarios UUID)
+    #  Usuario REAL (tabla usuarios UUID)
     usuario = forms.ModelChoiceField(
         queryset=Usuarios.objects.all(),
         label="Usuario (App móvil - UUID)",
@@ -165,7 +165,7 @@ class FuncionarioForm(forms.ModelForm):
         ),
     )
 
-    # ✅ WebUser (auth_user int) - se guarda en tabla puente
+    #   WebUser (auth_user int) - se guarda en tabla puente
     web_user = forms.ModelChoiceField(
         queryset=User.objects.all(),
         label="Usuario Web (Login - auth_user)",
@@ -203,10 +203,10 @@ class FuncionarioForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # ✅ WebUsers disponibles: solo los que NO están vinculados en la tabla puente
+        #   WebUsers disponibles: solo los que NO están vinculados en la tabla puente
         users_sin_funcionario = User.objects.exclude(funcionario_link__isnull=False).order_by("username")
 
-        # ✅ En edición: permitir el actual y bloquear cambio de usuario UUID
+        #   En edición: permitir el actual y bloquear cambio de usuario UUID
         if self.instance and getattr(self.instance, "pk", None):
             # Mantener el web_user ya vinculado (si existe)
             link = FuncionarioWebUser.objects.filter(funcionario=self.instance).select_related("web_user").first()
@@ -234,7 +234,7 @@ class FuncionarioForm(forms.ModelForm):
         if commit:
             instance.save()
 
-            # ✅ Guardar/actualizar tabla puente con auth_user (si se seleccionó)
+            #   Guardar/actualizar tabla puente con auth_user (si se seleccionó)
             web_user = self.cleaned_data.get("web_user")
 
             if web_user:
@@ -426,15 +426,35 @@ class TipoDenunciaDepartamentoForm(forms.ModelForm):
         model = TipoDenunciaDepartamento
         fields = ["tipo_denuncia", "departamento"]
         widgets = {
-            "tipo_denuncia": ModelSelect2Widget(model=TiposDenuncia, search_fields=["nombre__icontains"], attrs={"class": "form-control"}),
-            "departamento": ModelSelect2Widget(model=Departamentos, search_fields=["nombre__icontains"], attrs={"class": "form-control"}),
+            "tipo_denuncia": forms.Select(attrs={"class": "form-select"}),
+            "departamento": forms.Select(attrs={"class": "form-select"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["tipo_denuncia"].queryset = TiposDenuncia.objects.filter(activo=True).order_by("nombre")
-        self.fields["departamento"].queryset = Departamentos.objects.filter(activo=True).order_by("nombre")
 
+        # 1) Solo activos
+        qs_tipos = TiposDenuncia.objects.filter(activo=True).order_by("nombre")
+        qs_deps  = Departamentos.objects.filter(activo=True).order_by("nombre")
+
+        # 2) Tipos ya asignados (por ser OneToOne, no deben repetirse)
+        asignados_ids = list(
+            TipoDenunciaDepartamento.objects.values_list("tipo_denuncia_id", flat=True)
+        )
+
+        # 3) Si estoy editando, dejo el actual disponible (para que no desaparezca)
+        if self.instance and self.instance.pk:
+            actual_id = self.instance.tipo_denuncia_id
+            if actual_id in asignados_ids:
+                asignados_ids.remove(actual_id)
+
+        # 4) En Create: excluye asignados. En Update: excluye asignados excepto el actual.
+        qs_tipos = qs_tipos.exclude(id__in=asignados_ids)
+
+        self.fields["tipo_denuncia"].queryset = qs_tipos
+        self.fields["departamento"].queryset = qs_deps
+
+        
 # =========================
 # Tipos de Denuncia
 # =========================
