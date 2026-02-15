@@ -230,6 +230,10 @@ ICON_CHOICES = [
 
 
 
+# =========================
+# Grupos
+# =========================
+
 class MenuForm(forms.ModelForm):
     icono = forms.ChoiceField(
         choices=ICON_CHOICES,
@@ -256,69 +260,81 @@ class MenuForm(forms.ModelForm):
             ),
         }
 
-# =========================
-# Grupos
-# =========================
+
+class GrupoFuncionariosWidget(ModelSelect2MultipleWidget):
+    model = User
+    search_fields = [
+        "username__icontains",
+        "email__icontains",
+        "first_name__icontains",
+        "last_name__icontains",
+    ]
 
 class GrupoForm(forms.ModelForm):
     funcionarios = forms.ModelMultipleChoiceField(
         queryset=User.objects.none(),
         required=False,
         label="Funcionarios",
-        widget=forms.SelectMultiple(attrs={
-            "class": "form-select",
-            "multiple": "multiple",
-            "size": "8"
-        })
+        widget=GrupoFuncionariosWidget(
+            attrs={
+                "class": "form-control",
+                "data-placeholder": "Buscar funcionarios...",
+                "style": "width: 100%;",
+            }
+        )
     )
 
     class Meta:
         model = Group
-        fields = ["name"]  # <- OJO: ya NO permissions
+        fields = ["name"]  # seguimos sin permissions
 
         widgets = {
             "name": forms.TextInput(attrs={
                 "class": "form-control",
-                "placeholder": "Ej: Seguridad Ciudadana"
+                "placeholder": "Ej: Seguridad Ciudadana",
+                "autocomplete": "off",
             })
         }
 
     def __init__(self, *args, **kwargs):
-        # queryset que manda la vista (create/update)
         available_users_qs = kwargs.pop("available_users_qs", None)
         super().__init__(*args, **kwargs)
 
-        self.fields["name"].label = "Nombre del Grupo"
-        self.fields["name"].widget.attrs.update({"autocomplete": "off"})
+        # ✅ name requerido + mensaje bonito
+        self.fields["name"].required = True
+        self.fields["name"].error_messages["required"] = "Debes ingresar el nombre del grupo."
 
         if available_users_qs is not None:
             self.fields["funcionarios"].queryset = available_users_qs
 
-        # En editar: precargar los usuarios actuales del grupo
+        # ✅ En editar: precargar usuarios del grupo
         if self.instance.pk and not self.is_bound:
             self.fields["funcionarios"].initial = self.instance.user_set.all()
+
+    def clean_name(self):
+        name = (self.cleaned_data.get("name") or "").strip()
+        if not name:
+            raise forms.ValidationError("Debes ingresar el nombre del grupo.")
+        return name
 
     def save(self, commit=True):
         group = super().save(commit=commit)
 
         if commit:
             selected_users = self.cleaned_data.get("funcionarios")
-
             if selected_users is not None:
-                # 1) Quitar del grupo a los que ya no están seleccionados
                 current_ids = set(group.user_set.values_list("id", flat=True))
                 new_ids = set(selected_users.values_list("id", flat=True))
                 remove_ids = current_ids - new_ids
                 if remove_ids:
                     group.user_set.remove(*User.objects.filter(id__in=remove_ids))
 
-                # 2) Asegurar "1 solo grupo por funcionario":
-                #    si seleccionas alguien que estaba en otro grupo, se lo movemos a este.
                 for u in selected_users:
-                    u.groups.clear()      # <- queda en un solo grupo
+                    u.groups.clear()   # deja 1 solo grupo por funcionario (tu regla)
                     u.groups.add(group)
 
         return group
+
 
 # =========================
 # Funcionarios

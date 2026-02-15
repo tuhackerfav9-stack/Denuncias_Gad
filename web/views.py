@@ -520,6 +520,7 @@ class GrupoListView(LoginRequiredMixin, CustomPermissionRequiredMixin, ListView)
     paginate_by = 15
 
 
+
 class GrupoCreateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRequiredMixin, CreateView):
     model = Group
     form_class = GrupoForm
@@ -531,13 +532,12 @@ class GrupoCreateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRequ
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
 
-        # SOLO funcionarios SIN grupo (crear)
+        # ✅ SOLO funcionarios (tabla puente) SIN grupo
         available = User.objects.filter(
+            funcionario_link__isnull=False,   # <- viene de related_name en FuncionarioWebUser
             is_active=True,
-            is_staff=True,          # <- AJUSTA si tu funcionario no es is_staff
-            is_superuser=False,
             groups__isnull=True
-        ).order_by("first_name", "last_name", "username")
+        ).distinct().order_by("username")
 
         kwargs["available_users_qs"] = available
         return kwargs
@@ -554,12 +554,11 @@ class GrupoUpdateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRequ
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
 
-        # EDITAR: permitir mover funcionarios desde otros grupos (todos)
+        # ✅ EDITAR: todos los funcionarios (para poder moverlos)
         available = User.objects.filter(
-            is_active=True,
-            is_staff=True,          # <- AJUSTA si tu funcionario no es is_staff
-            is_superuser=False
-        ).order_by("first_name", "last_name", "username")
+            funcionario_link__isnull=False,
+            is_active=True
+        ).distinct().order_by("username")
 
         kwargs["available_users_qs"] = available
         return kwargs
