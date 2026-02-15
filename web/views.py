@@ -1048,16 +1048,15 @@ class TiposDenunciaDetailView(FuncionarioRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         tipo = self.object
 
-        # Departamento asignado (por la tabla puente TipoDenunciaDepartamento)
+        # ✅ Relación correcta: TipoDenunciaDepartamento.tipo_denuncia
         rel = (TipoDenunciaDepartamento.objects
                .select_related("departamento")
                .filter(tipo_denuncia=tipo)
                .first())
         ctx["departamento_asignado"] = rel.departamento if rel else None
 
-        # Total de denuncias asociadas (AJUSTA el nombre del modelo/campo a tu sistema)
-        # Si tu modelo se llama Denuncia y el FK es tipo_denuncia:
-        ctx["total_denuncias"] = Denuncia.objects.filter(tipo_denuncia=tipo).count()
+        # ✅ Conteo correcto usando la tabla real Denuncias.tipo_denuncia
+        ctx["total_denuncias"] = Denuncias.objects.filter(tipo_denuncia=tipo).count()
 
         return ctx
 
