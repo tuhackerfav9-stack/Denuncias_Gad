@@ -6,22 +6,59 @@
             <div class="card shadow-sm">
                 <div class="card-header bg-danger text-white">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-trash me-2"></i>Eliminar Usuario Web
+                        <i class="bi bi-trash me-2"></i>Eliminar / Desactivar Usuario Web
                     </h5>
                 </div>
+
                 <div class="card-body">
-                    <p>¿Está seguro que desea eliminar el usuario <strong>{{ object.username }}</strong>?</p>
+                    <p class="mb-2">
+                        Usuario: <strong>{{ object.username }}</strong>
+                    </p>
+
+                    {% if can_hard_delete %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Este usuario <strong>puede</strong> eliminarse definitivamente porque no tiene denuncias tratadas.
+                            Si no marcas la opción, se desactivará (soft delete).
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-shield-exclamation me-2"></i>
+                            Este usuario <strong>NO</strong> puede eliminarse definitivamente porque tiene denuncias tratadas (historial/respuestas).
+                            Se aplicará <strong>desactivación</strong> para no romper el sistema.
+                        </div>
+                    {% endif %}
+
                     <form method="post">
                         {% csrf_token %}
+
+                        {% if can_hard_delete %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" value="1" id="hardDelete" name="hard_delete">
+                            <label class="form-check-label" for="hardDelete">
+                                Eliminar definitivamente (hard delete)
+                            </label>
+                            <div class="form-text text-muted">
+                                Recomendado solo si estás seguro. Esto borra el usuario.
+                            </div>
+                        </div>
+                        {% endif %}
+
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'web:webuser_list' %}" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left me-2"></i>Cancelar
                             </a>
+
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash me-2"></i>Eliminar
+                                {% if can_hard_delete %}
+                                    <i class="bi bi-trash me-2"></i>Continuar
+                                {% else %}
+                                    <i class="bi bi-person-x me-2"></i>Desactivar
+                                {% endif %}
                             </button>
                         </div>
                     </form>
+
                 </div>
             </div>
         </div>

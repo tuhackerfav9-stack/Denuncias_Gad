@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+
+      <div class="card shadow-sm">
+        <div class="card-header {% if can_hard_delete %}bg-danger{% else %}bg-secondary{% endif %} text-white">
+          <h5 class="card-title mb-0">
+            {% if can_hard_delete %}
+              <i class="bi bi-trash me-2"></i>Eliminar Usuario (Hard Delete)
+            {% else %}
+              <i class="bi bi-person-x me-2"></i>Desactivar Usuario (Soft Delete)
+            {% endif %}
+          </h5>
+        </div>
+
+        <div class="card-body">
+          {% if can_hard_delete %}
+            <p>
+              ¿Seguro que deseas <b>eliminar definitivamente</b> al usuario <strong>{{ object.username }}</strong>?
+            </p>
+            <div class="alert alert-warning small">
+              <i class="bi bi-exclamation-triangle me-1"></i>
+              Esto borra el enlace y el dominio (si aplica). No podrás recuperarlo.
+            </div>
+          {% else %}
+            <p>
+              Este usuario <strong>{{ object.username }}</strong> tiene <b>denuncias tratadas</b>,
+              por eso <b>NO</b> se puede eliminar.
+            </p>
+            <div class="alert alert-info small">
+              <i class="bi bi-info-circle me-1"></i>
+              Se aplicará <b>desactivación</b> (auth_user + funcionarios + usuarios), manteniendo trazabilidad.
+            </div>
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+
+            {% if can_hard_delete %}
+              <input type="hidden" name="hard_delete" value="1">
+              <div class="d-flex justify-content-between">
+                <a href="{% url 'web:unified_user_list' %}" class="btn btn-secondary">
+                  <i class="bi bi-arrow-left me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-danger">
+                  <i class="bi bi-trash me-2"></i>Eliminar definitivamente
+                </button>
+              </div>
+            {% else %}
+              <div class="d-flex justify-content-between">
+                <a href="{% url 'web:unified_user_list' %}" class="btn btn-secondary">
+                  <i class="bi bi-arrow-left me-2"></i>Volver
+                </a>
+                <button type="submit" class="btn btn-outline-secondary">
+                  <i class="bi bi-person-x me-2"></i>Desactivar usuario
+                </button>
+              </div>
+            {% endif %}
+          </form>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

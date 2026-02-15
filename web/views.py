@@ -1723,6 +1723,12 @@ class DepartamentosDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, Delete
 # =========================================
 # WEB USERS (Django auth_user CRUD)
 # =========================================
+from django.db.models import Prefetch
+from django.contrib.auth.models import User
+
+from db.models import FuncionarioWebUser
+from web.services.delete_rules import can_hard_delete_user
+
 
 class WebUserListView(LoginRequiredMixin, CustomPermissionRequiredMixin, ListView):
     model = User
@@ -1733,8 +1739,27 @@ class WebUserListView(LoginRequiredMixin, CustomPermissionRequiredMixin, ListVie
     login_url = "web:login"
 
     def get_queryset(self):
-        return User.objects.all().order_by("username").prefetch_related("groups", "user_permissions")
+        # Prefetch de la tabla puente para que luego no haya N+1 al mostrar funcionario
+        return (
+            User.objects.all()
+            .order_by("username")
+            .prefetch_related("groups", "user_permissions")
+            .prefetch_related(
+                Prefetch(
+                    "funcionariowebuser_set",  # <-- si tu related_name es otro, cámbialo
+                    queryset=FuncionarioWebUser.objects.select_related("funcionario"),
+                )
+            )
+        )
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+
+        # Inyectamos el flag can_delete en cada user de la página actual
+        for u in ctx["page_obj"]:
+            u.can_delete = can_hard_delete_user(u)
+
+        return ctx
 
 class WebUserCreateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRequiredMixin, CreateView):
     model = User

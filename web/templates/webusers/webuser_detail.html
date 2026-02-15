@@ -4,30 +4,37 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card shadow-sm">
-                <div class="card-header bg-info ">
+                <div class="card-header bg-info">
                     <h5 class="card-title mb-0 text-white">
                         <i class="bi bi-person me-2"></i>Detalle de Usuario Web
                     </h5>
                 </div>
+
                 <div class="card-body">
                     <h6 class="mb-3">
                         <i class="bi bi-info-circle me-2"></i>Información Personal
                     </h6>
-                    <dl class="row">
+
+                    <dl class="row mb-0">
                         <dt class="col-sm-3">Usuario</dt>
                         <dd class="col-sm-9">{{ object.username }}</dd>
+
                         <dt class="col-sm-3">Correo</dt>
                         <dd class="col-sm-9">{{ object.email }}</dd>
+
                         <dt class="col-sm-3">Nombre</dt>
                         <dd class="col-sm-9">{{ object.first_name }}</dd>
+
                         <dt class="col-sm-3">Apellido</dt>
                         <dd class="col-sm-9">{{ object.last_name }}</dd>
                     </dl>
 
                     <hr class="my-4">
+
                     <h6 class="mb-3">
-                        <i class="bi bi-gear me-2"></i>Permisos y Roles
+                        <i class="bi bi-gear me-2"></i>Roles y Permisos
                     </h6>
+
                     <dl class="row">
                         <dt class="col-sm-3">Personal</dt>
                         <dd class="col-sm-9">
@@ -37,20 +44,13 @@
                                 <span class="badge bg-secondary">No</span>
                             {% endif %}
                         </dd>
+
                         <dt class="col-sm-3">Superusuario</dt>
                         <dd class="col-sm-9">
                             {% if object.is_superuser %}
                                 <span class="badge bg-success"><i class="bi bi-check me-1"></i>Sí</span>
                             {% else %}
                                 <span class="badge bg-danger">No</span>
-                            {% endif %}
-                        </dd>
-                        <dt class="col-sm-3">Activo</dt>
-                        <dd class="col-sm-9">
-                            {% if object.is_active %}
-                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Activo</span>
-                            {% else %}
-                                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Inactivo</span>
                             {% endif %}
                         </dd>
                     </dl>
@@ -68,28 +68,40 @@
                     </div>
                     {% endif %}
 
-                    {% if permissions %}
-                    <div class="mb-3">
-                        <label class="form-label">
-                            <i class="bi bi-key me-1"></i>Permisos
-                        </label>
-                        <div class="border rounded p-3 bg-light">
-                            {% for perm in permissions %}
-                                <span class="badge bg-warning text-dark me-2 mb-2">{{ perm.codename }}</span>
-                            {% empty %}
-                                <span class="text-muted">Sin permisos específicos asignados</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">
+                        <i class="bi bi-person-badge me-2"></i>Información de Funcionario
+                    </h6>
+
+                    {% with func=object.funcionarios_set.first %}
+                        {% if func %}
+                            <div class="border rounded p-3 bg-light">
+                                <div class="fw-semibold">{{ func.nombres }} {{ func.apellidos }}</div>
+
+                                {% if func.cargo %}
+                                    <div class="text-muted"><i class="bi bi-briefcase me-1"></i>{{ func.cargo }}</div>
+                                {% endif %}
+
+                                {% if func.departamento_id %}
+                                    <div class="text-muted"><i class="bi bi-diagram-3 me-1"></i>Departamento ID: {{ func.departamento_id }}</div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="text-muted fst-italic">No asignado a funcionario</div>
+                        {% endif %}
+                    {% endwith %}
 
                     <hr class="my-4">
+
                     <h6 class="mb-3">
-                        <i class="bi bi-calendar me-2"></i>Información de Fechas
+                        <i class="bi bi-calendar me-2"></i>Fechas
                     </h6>
-                    <dl class="row">
+
+                    <dl class="row mb-0">
                         <dt class="col-sm-3">Registrado</dt>
                         <dd class="col-sm-9"><small class="text-muted">{{ object.date_joined|date:"d/m/Y H:i" }}</small></dd>
+
                         <dt class="col-sm-3">Último acceso</dt>
                         <dd class="col-sm-9">
                             {% if object.last_login %}
@@ -104,15 +116,17 @@
                         <a href="{% url 'web:webuser_list' %}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left me-2"></i>Volver
                         </a>
-                        <div>
+
+                        <div class="btn-group" role="group">
                             <a href="{% url 'web:webuser_update' object.pk %}" class="btn btn-warning">
                                 <i class="bi bi-pencil me-2"></i>Editar
                             </a>
                             <a href="{% url 'web:webuser_delete' object.pk %}" class="btn btn-danger">
-                                <i class="bi bi-trash me-2"></i>Eliminar
+                                <i class="bi bi-trash me-2"></i>Eliminar / Desactivar
                             </a>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>

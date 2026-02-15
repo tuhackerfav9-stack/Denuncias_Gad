@@ -1,6 +1,8 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
 
+from web.views_unified_users import UnifiedUserCreateView, UnifiedUserDeleteView, UnifiedUserDetailView, UnifiedUserListView, UnifiedUserUpdateView
+
 
 from .views import (
     TipoDenunciaDepartamentoCreateView, TipoDenunciaDepartamentoDeleteView, TipoDenunciaDepartamentoDetailView, TipoDenunciaDepartamentoListView, TipoDenunciaDepartamentoUpdateView, api_respuestas_denuncia, home_view, dashboard_view, CustomLoginView,
@@ -107,5 +109,12 @@ urlpatterns = [
     path("tipo-denuncia-departamento/<int:pk>/", TipoDenunciaDepartamentoDetailView.as_view(), name="tipo_denuncia_departamento_detail"),
     path("tipo-denuncia-departamento/<int:pk>/update/", TipoDenunciaDepartamentoUpdateView.as_view(), name="tipo_denuncia_departamento_update"),
     path("tipo-denuncia-departamento/<int:pk>/delete/", TipoDenunciaDepartamentoDeleteView.as_view(), name="tipo_denuncia_departamento_delete"),
+
+    #ruta maestra para funiconario-usuarios-auth_user y la que las une
+    path("usuarios-web/", UnifiedUserListView.as_view(), name="unified_user_list"),
+    path("usuarios-web/nuevo/", UnifiedUserCreateView.as_view(), name="unified_user_create"),
+    path("usuarios-web/<int:pk>/", UnifiedUserDetailView.as_view(), name="unified_user_detail"),
+    path("usuarios-web/<int:pk>/editar/", UnifiedUserUpdateView.as_view(), name="unified_user_update"),
+    path("usuarios-web/<int:pk>/eliminar/", UnifiedUserDeleteView.as_view(), name="unified_user_delete"),
 
 ]

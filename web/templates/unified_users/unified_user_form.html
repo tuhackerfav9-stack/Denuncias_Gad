@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-info">
+          <h5 class="card-title mb-0 text-white">
+            <i class="bi bi-person-plus me-2"></i>
+            {% if object %}Editar{% else %}Crear{% endif %} Usuario Web (Maestro)
+          </h5>
+        </div>
+
+        <div class="card-body">
+          <form method="post" action=".">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                {% for error in form.non_field_errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <h6 class="mb-3"><i class="bi bi-person-badge me-2"></i>Datos generales</h6>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label"><i class="bi bi-person-circle me-1"></i>Usuario</label>
+                {{ form.username }}
+                {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors.0 }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label class="form-label"><i class="bi bi-lock me-1"></i>Contraseña</label>
+                {{ form.password }}
+                {% if form.password.errors %}<div class="text-danger small">{{ form.password.errors.0 }}</div>{% endif %}
+                {% if object %}
+                  <div class="form-text">Dejar en blanco para no cambiar la contraseña</div>
+                {% else %}
+                  <div class="form-text text-warning"><i class="bi bi-exclamation-circle me-1"></i>Campo obligatorio</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label"><i class="bi bi-envelope me-1"></i>Correo</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label class="form-label"><i class="bi bi-person me-1"></i>Nombres</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}<div class="text-danger small">{{ form.first_name.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label"><i class="bi bi-person me-1"></i>Apellidos</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}<div class="text-danger small">{{ form.last_name.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+
+            <hr class="my-4">
+
+            <h6 class="mb-3"><i class="bi bi-building me-2"></i>Datos del funcionario</h6>
+
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label"><i class="bi bi-credit-card-2-front me-1"></i>Cédula</label>
+                {{ form.cedula }}
+                {% if form.cedula.errors %}<div class="text-danger small">{{ form.cedula.errors.0 }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label class="form-label"><i class="bi bi-telephone me-1"></i>Teléfono</label>
+                {{ form.telefono }}
+                {% if form.telefono.errors %}<div class="text-danger small">{{ form.telefono.errors.0 }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label class="form-label"><i class="bi bi-person-workspace me-1"></i>Cargo</label>
+                {{ form.cargo }}
+                {% if form.cargo.errors %}<div class="text-danger small">{{ form.cargo.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label"><i class="bi bi-diagram-3 me-1"></i>Departamento</label>
+                {{ form.departamento }}
+                {% if form.departamento.errors %}<div class="text-danger small">{{ form.departamento.errors.0 }}</div>{% endif %}
+                <div class="form-text">Este valor se sincroniza con el dominio del funcionario.</div>
+              </div>
+            </div>
+
+            <hr class="my-4">
+
+            <h6 class="mb-3"><i class="bi bi-shield-lock me-2"></i>Roles y estado</h6>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label"><i class="bi bi-people me-1"></i>Grupo</label>
+                {{ form.group }}
+                {% if form.group.errors %}<div class="text-danger small">{{ form.group.errors.0 }}</div>{% endif %}
+                <div class="form-text">Regla: el funcionario queda en 1 solo grupo (se reemplaza).</div>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <div class="form-check mt-4">
+                  {{ form.is_superuser }}
+                  <label class="form-check-label"><i class="bi bi-shield-lock me-1"></i>Superadmin</label>
+                </div>
+                {% if form.is_superuser.errors %}<div class="text-danger small">{{ form.is_superuser.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <div class="form-check">
+                  {{ form.activo }}
+                  <label class="form-check-label"><i class="bi bi-check-circle me-1"></i>Activo</label>
+                </div>
+                {% if form.activo.errors %}<div class="text-danger small">{{ form.activo.errors.0 }}</div>{% endif %}
+                <div class="form-text">Al desactivar se sincroniza en auth_user + funcionarios + usuarios.</div>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+              <a href="{% url 'web:unified_user_list' %}" class="btn btn-outline-secondary me-md-2">
+                <i class="bi bi-arrow-left me-1"></i>Cancelar
+              </a>
+              <button type="submit" class="btn btn-info text-white">
+                <i class="bi bi-check-circle me-1"></i>
+                {% if object %}Actualizar{% else %}Crear{% endif %}
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
