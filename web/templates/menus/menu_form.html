@@ -5,16 +5,13 @@
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-      <h3 class="mb-1">
-        {% if object %}Editar menú{% else %}Crear menú{% endif %}
-      </h3>
+      <h3 class="mb-1">{% if object %}Editar menú{% else %}Crear menú{% endif %}</h3>
       <p class="text-muted mb-0">
         Define nombre, URL, icono, orden y el menú padre (si aplica). Luego asigna qué grupos lo verán.
       </p>
     </div>
   </div>
 
-  {# ✅ errores generales del form (non_field_errors) #}
   {% if form.non_field_errors %}
     <div class="alert alert-danger">
       <strong>Revisa esto:</strong>
@@ -25,30 +22,35 @@
   <form method="post" novalidate>
     {% csrf_token %}
 
+    {# ✅ ESTO ES CLAVE: carga JS/CSS de django-select2 #}
+    {{ form.media }}
+
     <div class="card">
       <div class="card-body">
 
         <h5 class="mb-3">Datos del menú</h5>
 
         <div class="row">
-          <div class="col-md-6">
-            {{ form.nombre|as_crispy_field }}
-          </div>
-          <div class="col-md-6">
-            {{ form.url|as_crispy_field }}
-          </div>
+          <div class="col-md-6">{{ form.nombre|as_crispy_field }}</div>
+          <div class="col-md-6">{{ form.url|as_crispy_field }}</div>
         </div>
 
         <div class="row">
           <div class="col-md-6">
             {{ form.icono|as_crispy_field }}
             <small class="text-muted">
-              Ej: <code>icon-grid</code>, <code>icon-layout</code>, <code>mdi mdi-home</code>
+              Ej: <code>bi bi-flag</code>, <code>mdi mdi-home</code>, <code>ti-layout</code>
             </small>
+
+            {# Preview del icono (si la librería existe en tu base) #}
+            <div class="mt-2 d-flex align-items-center gap-2">
+              <span class="text-muted">Preview:</span>
+              <span id="iconPreview" class="fs-4"></span>
+            </div>
           </div>
-          <div class="col-md-3">
-            {{ form.orden|as_crispy_field }}
-          </div>
+
+          <div class="col-md-3">{{ form.orden|as_crispy_field }}</div>
+
           <div class="col-md-3">
             {{ form.padre|as_crispy_field }}
             <small class="text-muted">
@@ -61,35 +63,12 @@
 
         <h5 class="mb-2">Visibilidad por grupos</h5>
         <p class="text-muted mb-3">
-          Selecciona los grupos que podrán ver este menú. <br>
-          <strong>Si no eliges ningún grupo, se mostrará a todos</strong> (incluye funcionarios).
+          Selecciona los grupos que podrán ver este menú.
+          <br><strong>Si no eliges ningún grupo, se mostrará a todos</strong>.
         </p>
 
-        {# ✅ Permisos como checklist (mejor UX) #}
-        {% if form.permisos.errors %}
-          <div class="alert alert-danger py-2">
-            <strong>Error en grupos:</strong> {{ form.permisos.errors }}
-          </div>
-        {% endif %}
-
-        <div class="row">
-          <div class="col-12">
-            <div class="border rounded p-3">
-              {% for checkbox in form.permisos %}
-                <div class="form-check mb-2">
-                  {{ checkbox.tag }}
-                  <label class="form-check-label" for="{{ checkbox.id_for_label }}">
-                    {{ checkbox.choice_label }}
-                  </label>
-                </div>
-              {% empty %}
-                <div class="text-muted">
-                  No hay grupos creados todavía. Crea primero los grupos (FUNCIONARIO, TICS_ADMIN).
-                </div>
-              {% endfor %}
-            </div>
-          </div>
-        </div>
+        {# ✅ Aquí NO iteres como checkbox; es Select2 #}
+        {{ form.permisos|as_crispy_field }}
 
         <div class="d-flex gap-2 mt-4">
           <button type="submit" class="btn btn-primary">
@@ -109,35 +88,19 @@
 
 {% block extra_js %}
 <script>
-  // 🎨 Colores estilo "Salcedo" (azul + naranja)
-  const SALCEDO_BLUE = "#0B3A6E";
-  const SALCEDO_ORANGE = "#F28C28";
-
-  // ✅ si el backend usa messages, los mostramos con iziToast
-  {% if messages %}
-    {% for message in messages %}
-      (function() {
-        let type = "{{ message.tags|default:'info' }}";
-        let title = "Notificación";
-        let color = SALCEDO_BLUE;
-
-        if (type.includes("success")) { title = "Éxito"; color = SALCEDO_BLUE; }
-        else if (type.includes("error") || type.includes("danger")) { title = "Error"; color = "#D32F2F"; }
-        else if (type.includes("warning")) { title = "Atención"; color = SALCEDO_ORANGE; }
-        else { title = "Info"; color = SALCEDO_BLUE; }
-
-        iziToast.show({
-          title: title,
-          message: "{{ message|escapejs }}",
-          position: "topRight",
-          timeout: 3500,
-          backgroundColor: color,
-          messageColor: "#fff",
-          titleColor: "#fff",
-          progressBarColor: SALCEDO_ORANGE
-        });
-      })();
-    {% endfor %}
-  {% endif %}
+  // Preview icono: toma lo escrito en el input y lo pone como clase
+  (function(){
+    const input = document.getElementById("id_icono");
+    const preview = document.getElementById("iconPreview");
+    function paint(){
+      const v = (input?.value || "").trim();
+      preview.className = v; // ej: "bi bi-house"
+      preview.innerHTML = v ? "" : "<span class='text-muted'>—</span>";
+    }
+    if(input){
+      input.addEventListener("input", paint);
+      paint();
+    }
+  })();
 </script>
 {% endblock %}
