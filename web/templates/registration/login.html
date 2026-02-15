@@ -51,7 +51,7 @@
   height: 58px;
   border-radius: 16px;
   border: 1px solid #E5E7EB;
-  padding: 22px 60px 8px 18px;
+  padding: 22px 70px 8px 18px;
   font-size: 15px;
   background: #fff;
   transition: all .2s ease;
@@ -96,6 +96,19 @@
   color:#9CA3AF;
   transition:.2s ease;
 }
+.field-icon-btn{
+  cursor: pointer;
+}
+
+.field-icon-btn:hover{
+  border-color:#cbd5e1;
+  color:#6b7280;
+}
+
+.field-icon-btn:active{
+  transform: scale(.98);
+}
+
 
 
     /* Input con icono a la derecha (NO dentro del campo) */
@@ -280,13 +293,13 @@
                     >
                     <label for="id_password">Contraseña <span class="text-danger">*</span></label>
 
-                    <div class="field-icon" id="iconPass">
-                    <!-- SVG candado -->
-                    <svg height="22" width="22" viewBox="0 0 24 24" fill="none">
+                    <button class="field-icon field-icon-btn" type="button" id="togglePass" aria-label="Mostrar/ocultar contraseña">
+                    <svg id="passIcon" height="22" width="22" viewBox="0 0 24 24" fill="none">
                         <path d="M12.0011 17.3498C12.9013 17.3498 13.6311 16.6201 13.6311 15.7198C13.6311 14.8196 12.9013 14.0898 12.0011 14.0898C11.1009 14.0898 10.3711 14.8196 10.3711 15.7198C10.3711 16.6201 11.1009 17.3498 12.0011 17.3498Z" fill="currentColor"/>
                         <path d="M18.28 9.53V8.28C18.28 5.58 17.63 2 12 2C6.37 2 5.72 5.58 5.72 8.28V9.53C2.92 9.88 2 11.3 2 14.79V16.65C2 20.75 3.25 22 7.35 22H16.65C20.75 22 22 20.75 22 16.65V14.79C22 11.3 21.08 9.88 18.28 9.53Z" fill="currentColor"/>
                     </svg>
-                    </div>
+                    </button>
+
                 </div>
             </div>
 
@@ -326,7 +339,8 @@
       const u = document.getElementById("id_username");
       const p = document.getElementById("id_password");
       const iconU = document.getElementById("iconUser");
-      const iconP = document.getElementById("iconPass");
+      const iconP = document.getElementById("togglePass");
+
       if(!form || !u || !p) return;
 
       function mark(el, icon, invalid){
@@ -356,6 +370,18 @@
         }
       });
     })();
+    // ===========
+// Toggle contraseña (candado -> mostrar/ocultar)
+// ===========
+(function(){
+  const btn = document.getElementById("togglePass");
+  const input = document.getElementById("id_password");
+  if(!btn || !input) return;
+
+  btn.addEventListener("click", function(){
+    input.type = (input.type === "password") ? "text" : "password";
+  });
+})();
 
     // ===========
     // Toast SOLO desde Django messages (ej: usuario/clave incorrectos)
