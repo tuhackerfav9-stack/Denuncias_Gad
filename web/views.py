@@ -1503,7 +1503,7 @@ class FuncionariosDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, DeleteV
 # =========================================
 # DEPARTAMENTOS (CRUD)
 # =========================================
-#  Cambio: db.* -> FuncionarioRequiredMixin
+
 class DepartamentosListView(FuncionarioRequiredMixin, ListView):
     model = Departamentos
     template_name = "departamentos/departamento_list.html"
