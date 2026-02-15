@@ -201,13 +201,16 @@
           <div class="text-center mb-4">
             <h5 class="login-title d-flex align-items-center justify-content-center gap-2 mb-0">
               <!-- iconito puntitos -->
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <circle cx="6" cy="6" r="2"></circle>
-                <circle cx="6" cy="18" r="2"></circle>
-                <circle cx="18" cy="12" r="2"></circle>
-                <circle cx="12" cy="12" r="2" opacity=".65"></circle>
-                <circle cx="12" cy="6" r="2" opacity=".35"></circle>
-              </svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                <!-- 3 puntos llenos azules -->
+                <circle cx="6" cy="6" r="2.2" fill="#0d6efd"></circle>
+                <circle cx="6" cy="18" r="2.2" fill="#0d6efd"></circle>
+                <circle cx="18" cy="18" r="2.2" fill="#0d6efd"></circle>
+
+                <!-- punto contorno azul (centro-derecha) -->
+                <circle cx="18" cy="12" r="2.2" fill="#ffffff" stroke="#0d6efd" stroke-width="2"></circle>
+                </svg>
+
               Ingreso al Sistema
             </h5>
           </div>
@@ -294,11 +297,21 @@
                     <label for="id_password">Contraseña <span class="text-danger">*</span></label>
 
                     <button class="field-icon field-icon-btn" type="button" id="togglePass" aria-label="Mostrar/ocultar contraseña">
-                    <svg id="passIcon" height="22" width="22" viewBox="0 0 24 24" fill="none">
-                        <path d="M12.0011 17.3498C12.9013 17.3498 13.6311 16.6201 13.6311 15.7198C13.6311 14.8196 12.9013 14.0898 12.0011 14.0898C11.1009 14.0898 10.3711 14.8196 10.3711 15.7198C10.3711 16.6201 11.1009 17.3498 12.0011 17.3498Z" fill="currentColor"/>
-                        <path d="M18.28 9.53V8.28C18.28 5.58 17.63 2 12 2C6.37 2 5.72 5.58 5.72 8.28V9.53C2.92 9.88 2 11.3 2 14.79V16.65C2 20.75 3.25 22 7.35 22H16.65C20.75 22 22 20.75 22 16.65V14.79C22 11.3 21.08 9.88 18.28 9.53Z" fill="currentColor"/>
-                    </svg>
-                    </button>
+  <svg id="passIcon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+    <!-- Arco -->
+    <path d="M8 10V8a4 4 0 0 1 8 0v2"
+          fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Cuerpo -->
+    <rect x="6" y="10" width="12" height="10" rx="2"
+          fill="none" stroke="currentColor" stroke-width="2"/>
+    <!-- Ranura -->
+    <path d="M12 14v3"
+          fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round"/>
+  </svg>
+</button>
+
 
                 </div>
             </div>
