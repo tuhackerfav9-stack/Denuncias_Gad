@@ -63,16 +63,16 @@
 
           <div class="col-12 col-lg-6">
             <div class="d-flex justify-content-between align-items-center">
-              <div class="flex-grow-1">
-                {{ form.icono|as_crispy_field }}
-                <small class="text-muted">
-                  Ej: <code>bi bi-house</code>. (Se guarda automáticamente la clase seleccionada)
-                </small>
-              </div>
-              <div class="ms-3 text-nowrap">
-                <div class="text-muted small">Preview</div>
-                <div id="iconPreview" class="fs-4"></div>
-              </div>
+              <div class="col-md-6">
+  {{ form.icono|as_crispy_field }}
+  <small class="text-muted">Busca un icono y selecciónalo.</small>
+
+  <div class="mt-2 d-flex align-items-center gap-2">
+    <span class="text-muted">Preview:</span>
+    <i id="iconPreview" class=""></i>
+  </div>
+</div>
+
             </div>
           </div>
 
@@ -114,53 +114,37 @@
 {% endblock %}
 
 {% block extra_js %}
+
+
 <script>
 (function(){
-  // ✅ Select2 para iconos (igual estilo que Padre)
-  const $icon = window.jQuery ? window.jQuery("#id_icono") : null;
+  const select = document.getElementById("id_icono");
   const preview = document.getElementById("iconPreview");
 
-  function paintPreview(cls){
-    if(!preview) return;
-    preview.className = cls || "";
-    preview.innerHTML = cls ? "" : "<span class='text-muted'>—</span>";
+  function paint(){
+    const v = (select?.value || "").trim();
+    preview.className = v;
   }
 
-  function formatIcon(state){
-    // state.id == value del option (ej: "bi bi-house")
-    if(!state.id) return state.text;
-    const cls = state.id;
-    return window.jQuery(
-      `<span><i class="${cls}" style="font-size:18px; margin-right:8px;"></i>${state.text}</span>`
-    );
-  }
-
-  if($icon && $icon.length){
-    // Si ya tienes select2 global, esto lo deja bonito y con buscador
-    $icon.select2({
-      width: "100%",
-      placeholder: "Buscar icono...",
-      allowClear: true,
-      templateResult: formatIcon,
-      templateSelection: formatIcon,
-      dropdownParent: $icon.closest(".card-body") // ✅ evita que se corte
-    });
-
-    // Preview inicial
-    paintPreview($icon.val());
-
-    // Preview al cambiar
-    $icon.on("change", function(){
-      paintPreview(this.value);
-    });
-  } else {
-    // fallback si no hay jQuery (raro en select2, pero por si acaso)
-    const iconSelect = document.getElementById("id_icono");
-    if(iconSelect){
-      paintPreview(iconSelect.value);
-      iconSelect.addEventListener("change", ()=> paintPreview(iconSelect.value));
-    }
+  if(select){
+    select.addEventListener("change", paint);
+    paint();
   }
 })();
 </script>
+<script>
+$(function(){
+  const $sel = $("#id_icono");
+  function formatIcon (state) {
+    if (!state.id) return state.text;
+    return $(`<span><i class="${state.id}" style="margin-right:8px"></i>${state.text}</span>`);
+  }
+  $sel.select2({
+    width: "100%",
+    templateResult: formatIcon,
+    templateSelection: formatIcon
+  });
+});
+</script>
+
 {% endblock %}
