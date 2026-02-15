@@ -238,3 +238,12 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = ["https://*.onrender.com"]
 
+#------------------------------
+# para ver erroes en la terminal de render
+#------------------------------
+LOGGING = {
+  "version": 1,
+  "disable_existing_loggers": False,
+  "handlers": {"console": {"class": "logging.StreamHandler"}},
+  "loggers": {"django.request": {"handlers": ["console"], "level": "ERROR", "propagate": True}},
+}
