@@ -22,7 +22,38 @@
   <form method="post" novalidate>
     {% csrf_token %}
 
-    {# ✅ ESTO ES CLAVE: carga JS/CSS de django-select2 #}
+    <style>
+  /* ✅ Select2 siempre a 100% dentro del grid */
+  .select2-container { width: 100% !important; }
+
+  /* ✅ Que no se “desborde” y respete bordes */
+  .select2-container--default .select2-selection--single,
+  .select2-container--default .select2-selection--multiple {
+    width: 100% !important;
+    min-height: calc(1.5em + .75rem + 2px); /* parecido a form-control */
+    padding: .375rem .75rem;
+    border: 1px solid #ced4da;
+    border-radius: .375rem;
+    display: flex;
+    align-items: center;
+  }
+
+  /* ✅ Texto no choque con la línea */
+  .select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding-left: 0 !important;
+    line-height: 1.5 !important;
+  }
+
+  /* ✅ Flecha alineada */
+  .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100% !important;
+    top: 0 !important;
+  }
+
+  /* ✅ Para que el dropdown no se corte por overflow del card */
+  .select2-container { z-index: 9999; }
+</style>
+
     {{ form.media }}
 
     <div class="card">
@@ -37,7 +68,192 @@
 
         <div class="row">
           <div class="col-md-6">
+            
             {{ form.icono|as_crispy_field }}
+            <div class="mt-2">
+  <label class="form-label mb-1">Buscar icono (español)</label>
+  <input id="iconSearch" type="text" class="form-control" placeholder="Ej: usuario, casa, alerta, configuración...">
+
+  <div class="mt-2 small text-muted">
+    Tip: escribe una palabra y elige un icono. Se guardará en el campo <code>icono</code>.
+  </div>
+
+  <div id="iconGrid" class="mt-3" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;max-height:260px;overflow:auto;border:1px solid #e5e7eb;border-radius:10px;padding:10px;">
+  </div>
+</div>
+
+<script>
+(function(){
+  const inputIcono = document.getElementById("id_icono");
+  const preview = document.getElementById("iconPreview");
+  const search = document.getElementById("iconSearch");
+  const grid = document.getElementById("iconGrid");
+
+  // ✅ 100 iconos (BI) con nombre en español
+  const ICONS = [
+    {label:"Casa / Inicio", cls:"bi bi-house"},
+    {label:"Tablero / Dashboard", cls:"bi bi-speedometer2"},
+    {label:"Menú / Lista", cls:"bi bi-list"},
+    {label:"Denuncia / Reporte", cls:"bi bi-megaphone"},
+    {label:"Documento", cls:"bi bi-file-earmark-text"},
+    {label:"Carpeta", cls:"bi bi-folder"},
+    {label:"Usuario", cls:"bi bi-person"},
+    {label:"Usuario verificado", cls:"bi bi-person-check"},
+    {label:"Usuarios / Grupo", cls:"bi bi-people"},
+    {label:"Funcionario / Credencial", cls:"bi bi-person-badge"},
+    {label:"Configuración", cls:"bi bi-gear"},
+    {label:"Herramientas", cls:"bi bi-tools"},
+    {label:"Seguridad / Escudo", cls:"bi bi-shield-lock"},
+    {label:"Candado", cls:"bi bi-lock"},
+    {label:"Llave", cls:"bi bi-key"},
+    {label:"Notificación", cls:"bi bi-bell"},
+    {label:"Campana activa", cls:"bi bi-bell-fill"},
+    {label:"Alerta", cls:"bi bi-exclamation-triangle"},
+    {label:"Error", cls:"bi bi-x-circle"},
+    {label:"Correcto", cls:"bi bi-check-circle"},
+    {label:"Información", cls:"bi bi-info-circle"},
+    {label:"Ayuda", cls:"bi bi-question-circle"},
+    {label:"Buscar", cls:"bi bi-search"},
+    {label:"Filtro", cls:"bi bi-funnel"},
+    {label:"Mapa", cls:"bi bi-map"},
+    {label:"Ubicación", cls:"bi bi-geo-alt"},
+    {label:"Teléfono", cls:"bi bi-telephone"},
+    {label:"Correo", cls:"bi bi-envelope"},
+    {label:"Chat", cls:"bi bi-chat-dots"},
+    {label:"Mensaje", cls:"bi bi-chat-left-text"},
+    {label:"Enviar", cls:"bi bi-send"},
+    {label:"Calendario", cls:"bi bi-calendar-event"},
+    {label:"Reloj", cls:"bi bi-clock"},
+    {label:"Historial", cls:"bi bi-clock-history"},
+    {label:"Estadística", cls:"bi bi-bar-chart"},
+    {label:"Gráfico", cls:"bi bi-graph-up"},
+    {label:"Descargar", cls:"bi bi-download"},
+    {label:"Subir", cls:"bi bi-upload"},
+    {label:"Imprimir", cls:"bi bi-printer"},
+    {label:"Ojo / Ver", cls:"bi bi-eye"},
+    {label:"Ocultar", cls:"bi bi-eye-slash"},
+    {label:"Editar", cls:"bi bi-pencil-square"},
+    {label:"Eliminar", cls:"bi bi-trash"},
+    {label:"Agregar", cls:"bi bi-plus-circle"},
+    {label:"Quitar", cls:"bi bi-dash-circle"},
+    {label:"Refrescar", cls:"bi bi-arrow-repeat"},
+    {label:"Ir", cls:"bi bi-box-arrow-in-right"},
+    {label:"Salir", cls:"bi bi-box-arrow-right"},
+    {label:"Enlace", cls:"bi bi-link-45deg"},
+    {label:"Adjuntar", cls:"bi bi-paperclip"},
+    {label:"Imagen", cls:"bi bi-image"},
+    {label:"Cámara", cls:"bi bi-camera"},
+    {label:"Micrófono", cls:"bi bi-mic"},
+    {label:"Sonido", cls:"bi bi-volume-up"},
+    {label:"Silencio", cls:"bi bi-volume-mute"},
+    {label:"Favorito", cls:"bi bi-star"},
+    {label:"Bandera", cls:"bi bi-flag"},
+    {label:"Etiqueta", cls:"bi bi-tag"},
+    {label:"Carrito", cls:"bi bi-cart"},
+    {label:"Dinero", cls:"bi bi-cash"},
+    {label:"Banco", cls:"bi bi-bank"},
+    {label:"Edificio", cls:"bi bi-building"},
+    {label:"Carretera", cls:"bi bi-signpost-2"},
+    {label:"Alumbrado", cls:"bi bi-lightbulb"},
+    {label:"Agua", cls:"bi bi-droplet"},
+    {label:"Basura", cls:"bi bi-trash3"},
+    {label:"Tráfico", cls:"bi bi-traffic-cone"},
+    {label:"Seguridad ciudadana", cls:"bi bi-shield"},
+    {label:"Policía", cls:"bi bi-person-rolodex"},
+    {label:"Salud", cls:"bi bi-heart-pulse"},
+    {label:"Hospital", cls:"bi bi-hospital"},
+    {label:"Incendio", cls:"bi bi-fire"},
+    {label:"Advertencia", cls:"bi bi-exclamation-diamond"},
+    {label:"Checklist", cls:"bi bi-card-checklist"},
+    {label:"Lista de tareas", cls:"bi bi-ui-checks"},
+    {label:"Tabla", cls:"bi bi-table"},
+    {label:"Cuadrícula", cls:"bi bi-grid"},
+    {label:"Capas", cls:"bi bi-layers"},
+    {label:"Bloques", cls:"bi bi-columns"},
+    {label:"Archivo", cls:"bi bi-archive"},
+    {label:"Caja", cls:"bi bi-box"},
+    {label:"Servidor", cls:"bi bi-hdd-network"},
+    {label:"Base de datos", cls:"bi bi-database"},
+    {label:"Nube", cls:"bi bi-cloud"},
+    {label:"WiFi", cls:"bi bi-wifi"},
+    {label:"Antena", cls:"bi bi-broadcast"},
+    {label:"Código", cls:"bi bi-code-slash"},
+    {label:"Terminal", cls:"bi bi-terminal"},
+    {label:"Bug", cls:"bi bi-bug"},
+    {label:"Velocidad", cls:"bi bi-lightning"},
+    {label:"Energía", cls:"bi bi-battery-charging"},
+    {label:"Archivo PDF", cls:"bi bi-file-earmark-pdf"},
+    {label:"Excel", cls:"bi bi-file-earmark-spreadsheet"},
+    {label:"Foto / Evidencia", cls:"bi bi-file-earmark-image"},
+    {label:"Video", cls:"bi bi-camera-video"},
+    {label:"Ubicación precisa", cls:"bi bi-geo"},
+    {label:"Ruta", cls:"bi bi-map-fill"},
+    {label:"Ruta derecha", cls:"bi bi-arrow-right"},
+    {label:"Ruta izquierda", cls:"bi bi-arrow-left"},
+    {label:"Arriba", cls:"bi bi-arrow-up"},
+    {label:"Abajo", cls:"bi bi-arrow-down"},
+    {label:"Expandir", cls:"bi bi-arrows-fullscreen"},
+    {label:"Contraer", cls:"bi bi-fullscreen-exit"},
+    {label:"Copiar", cls:"bi bi-clipboard"},
+    {label:"Guardar", cls:"bi bi-save"},
+    {label:"Comprobar", cls:"bi bi-check2-square"},
+    {label:"Bloquear", cls:"bi bi-slash-circle"},
+  ];
+
+  function setPreview(cls){
+    if(preview){
+      preview.className = cls || "";
+      preview.innerHTML = cls ? "" : "<span class='text-muted'>—</span>";
+    }
+  }
+
+  function pick(cls){
+    inputIcono.value = cls;
+    inputIcono.dispatchEvent(new Event("input"));
+    setPreview(cls);
+  }
+
+  function render(list){
+    grid.innerHTML = "";
+    list.forEach(item => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn-light text-start";
+      btn.style.border = "1px solid #e5e7eb";
+      btn.style.borderRadius = "10px";
+      btn.style.padding = "10px";
+      btn.style.display = "flex";
+      btn.style.gap = "10px";
+      btn.style.alignItems = "center";
+
+      btn.innerHTML = `
+        <i class="${item.cls}" style="font-size:20px;"></i>
+        <div style="line-height:1.1">
+          <div style="font-weight:600">${item.label}</div>
+          <div class="text-muted" style="font-size:12px"><code>${item.cls}</code></div>
+        </div>
+      `;
+      btn.addEventListener("click", () => pick(item.cls));
+      grid.appendChild(btn);
+    });
+  }
+
+  // init
+  render(ICONS);
+  setPreview((inputIcono.value || "").trim());
+
+  // buscar por español o por clase
+  search.addEventListener("input", function(){
+    const q = this.value.trim().toLowerCase();
+    if(!q) return render(ICONS);
+    render(ICONS.filter(i =>
+      i.label.toLowerCase().includes(q) || i.cls.toLowerCase().includes(q)
+    ));
+  });
+
+})();
+</script>
+
             <small class="text-muted">
               Ej: <code>bi bi-flag</code>, <code>mdi mdi-home</code>, <code>ti-layout</code>
             </small>
