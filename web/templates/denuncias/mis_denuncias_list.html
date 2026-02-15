@@ -90,7 +90,7 @@
                                 <option value="">Todos los estados</option>
                                 <option value="pendiente" {% if estado_actual == 'pendiente' %}selected{% endif %}>Pendiente</option>
                                 <option value="en_proceso" {% if estado_actual == 'en_proceso' %}selected{% endif %}>En Proceso</option>
-                                <option value="resuelto" {% if estado_actual == 'resuelto' %}selected{% endif %}>Resuelto</option>
+                                <option value="resuelta" {% if estado_actual == 'resuelta' %}selected{% endif %}>Resuelta</option>
                             </select>
                         </div>
                         <div class="col-md-4">
@@ -137,7 +137,7 @@
                                     <th>Ciudadano</th>
                                     <th>Descripción</th>
                                     <th>Estado</th>
-                                    <th class="text-center">Acciones</th>
+                                    
                                 </tr>
                             </thead>
                             <tbody>
@@ -174,26 +174,15 @@
                                             <span class="badge bg-info">
                                                 <i class="bi bi-arrow-repeat me-1"></i>En Proceso
                                             </span>
-                                        {% elif denuncia.estado == 'resuelto' %}
+                                        {% elif denuncia.estado == 'resuelta' %}
                                             <span class="badge bg-success">
-                                                <i class="bi bi-check-circle me-1"></i>Resuelto
+                                                <i class="bi bi-check-circle me-1"></i>Resuelta
                                             </span>
                                         {% else %}
                                             <span class="badge bg-secondary">{{ denuncia.estado }}</span>
                                         {% endif %}
                                     </td>
-                                    <td class="text-center align-middle">
-                                        <div class="btn-group" role="group">
-                                            {% if denuncia.estado != 'resuelto' %}
-                                            <a href="{% url 'web:denuncia_detail' denuncia.pk %}" class="btn btn-sm btn-outline-info" title="Ver detalles completo">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            <a href="{% url 'web:denuncia_update' denuncia.pk %}" class="btn btn-sm btn-outline-warning" title="Gestionar">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                            {% endif %}
-                                        </div>
-                                    </td>
+                                    
                                 </tr>
                                 {% empty %}
                                 <tr>
