@@ -852,11 +852,9 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
         context["puede_responder"] = puede_responder
 
         # Firma OneToOne
-        try:
-            context["firma"] = denuncia.denunciafirmas
-        except DenunciaFirmas.DoesNotExist:
-            context["firma"] = None
-
+        firma = DenunciaFirmas.objects.filter(denuncia_id=denuncia.id).first()
+        context["firma"] = firma
+        
         return context
 
 class DenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateView):
