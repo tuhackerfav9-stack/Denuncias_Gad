@@ -518,7 +518,9 @@ class GrupoListView(LoginRequiredMixin, CustomPermissionRequiredMixin, ListView)
     login_url = "web:login"
     ordering = ["name"]
     paginate_by = 10
-
+    
+    def get_queryset(self):
+        return Group.objects.order_by("name")
 
 
 class GrupoCreateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRequiredMixin, CreateView):

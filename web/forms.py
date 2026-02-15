@@ -283,6 +283,12 @@ class GrupoForm(forms.ModelForm):
             }
         )
     )
+    
+    name = forms.CharField(
+        required=True,
+        label="Nombre",
+        widget=forms.TextInput(attrs={"placeholder": "Ej: Seguridad Ciudadana"})
+    )
 
     class Meta:
         model = Group
