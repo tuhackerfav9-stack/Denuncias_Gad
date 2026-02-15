@@ -1,74 +1,82 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-12 col-lg-6 mx-auto">
-            <div class="card shadow-sm border-danger">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Eliminación
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-warning" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
-                    </div>
-                    
-                    <p class="mb-3">¿Está seguro de que desea eliminar el siguiente tipo de denuncia?</p>
-                    
-                    <div class="card bg-light mb-3">
-                        <div class="card-body">
-                            <dl class="row mb-0">
-                                <dt class="col-sm-5">Nombre:</dt>
-                                <dd class="col-sm-7"><strong>{{ tipo_denuncia.nombre }}</strong></dd>
-                                
-                                <dt class="col-sm-5">Descripción:</dt>
-                                <dd class="col-sm-7">{{ tipo_denuncia.descripcion|default:"Sin descripción" }}</dd>
-                                
-                                <dt class="col-sm-5">Estado:</dt>
-                                <dd class="col-sm-7">
-                                    {% if tipo_denuncia.activo %}
-                                        <span class="badge bg-success">Activo</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">Inactivo</span>
-                                    {% endif %}
-                                </dd>
-                                
-                                <dt class="col-sm-5">Fecha de Creación:</dt>
-                                <dd class="col-sm-7">{{ tipo_denuncia.created_at|date:"d/m/Y H:i" }}</dd>
-                            </dl>
-                        </div>
-                    </div>
-
-                    {% if total_denuncias > 0 %}
-                    <div class="alert alert-danger" role="alert">
-                        <i class="bi bi-exclamation-circle-fill me-2"></i>
-                        <strong>¡CUIDADO!</strong> Este tipo de denuncia tiene <strong>{{ total_denuncias }}</strong> 
-                        {{ total_denuncias|pluralize:"denuncia asociada,denuncias asociadas" }}.
-                        Al eliminar este tipo, podrías afectar los registros existentes en el sistema.
-                    </div>
-                    {% else %}
-                    <div class="alert alert-info" role="alert">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Este tipo de denuncia no tiene denuncias asociadas, por lo que se puede eliminar sin problemas.
-                    </div>
-                    {% endif %}
-
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="d-flex justify-content-end gap-2 mt-4">
-                            <a href="{% url 'web:tipos_denuncia_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle me-2"></i>Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash me-2"></i>Sí, eliminar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+  <div class="row">
+    <div class="col-12 col-lg-6 mx-auto">
+      <div class="card shadow-sm border-danger">
+        <div class="card-header bg-danger text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Eliminación
+          </h5>
         </div>
+
+        <div class="card-body">
+          <div class="alert alert-warning" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+          </div>
+
+          {# ✅ toma el objeto aunque venga como object o tipo_denuncia #}
+          {% with td=tipo_denuncia|default:object %}
+            <p class="mb-3">
+              ¿Está seguro de que desea eliminar el siguiente tipo de denuncia?
+            </p>
+
+            <div class="card bg-light mb-3">
+              <div class="card-body">
+                <dl class="row mb-0">
+                  <dt class="col-sm-5">Nombre:</dt>
+                  <dd class="col-sm-7"><strong>{{ td.nombre }}</strong></dd>
+
+                  <dt class="col-sm-5">Descripción:</dt>
+                  <dd class="col-sm-7">{{ td.descripcion|default:"Sin descripción" }}</dd>
+
+                  <dt class="col-sm-5">Estado:</dt>
+                  <dd class="col-sm-7">
+                    {% if td.activo %}
+                      <span class="badge bg-success">Activo</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Inactivo</span>
+                    {% endif %}
+                  </dd>
+
+                  <dt class="col-sm-5">Fecha de Creación:</dt>
+                  <dd class="col-sm-7">{{ td.created_at|date:"d/m/Y H:i" }}</dd>
+                </dl>
+              </div>
+            </div>
+
+            {% if total_denuncias|default:0 > 0 %}
+              <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-circle-fill me-2"></i>
+                <strong>¡CUIDADO!</strong> Este tipo de denuncia tiene
+                <strong>{{ total_denuncias }}</strong>
+                {{ total_denuncias|pluralize:"denuncia asociada,denuncias asociadas" }}.
+                Al eliminar este tipo, podrías afectar los registros existentes en el sistema.
+              </div>
+            {% else %}
+              <div class="alert alert-info" role="alert">
+                <i class="bi bi-info-circle me-2"></i>
+                Este tipo de denuncia no tiene denuncias asociadas, por lo que se puede eliminar sin problemas.
+              </div>
+            {% endif %}
+          {% endwith %}
+
+          <form method="post">
+            {% csrf_token %}
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <a href="{% url 'web:tipos_denuncia_list' %}" class="btn btn-secondary">
+                <i class="bi bi-x-circle me-2"></i>Cancelar
+              </a>
+              <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash me-2"></i>Sí, eliminar
+              </button>
+            </div>
+          </form>
+
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
