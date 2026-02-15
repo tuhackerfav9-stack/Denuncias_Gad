@@ -25,66 +25,26 @@
     {{ form.media }}
 
     <style>
-      /* ✅ Select2 siempre a 100% dentro del grid */
-      .select2-container { width: 100% !important; z-index: 9999; }
-
+      /* ✅ Select2 siempre a 100% y sin desbordes raros */
+      .select2-container { width: 100% !important; }
       .select2-container--default .select2-selection--single,
       .select2-container--default .select2-selection--multiple {
-        width: 100% !important;
         min-height: calc(1.5em + .75rem + 2px);
-        padding: .375rem .75rem;
         border: 1px solid #ced4da;
         border-radius: .375rem;
         display: flex;
         align-items: center;
       }
-
       .select2-container--default .select2-selection--single .select2-selection__rendered {
-        padding-left: 0 !important;
         line-height: 1.5 !important;
       }
-
       .select2-container--default .select2-selection--single .select2-selection__arrow {
         height: 100% !important;
         top: 0 !important;
       }
 
-      /* ✅ Ocultar el input real de icono pero mantenerlo para guardar */
-      .icon-hidden {
-        position: absolute !important;
-        left: -9999px !important;
-        width: 1px !important;
-        height: 1px !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-      }
-
-      /* ✅ Grid iconos */
-      .icon-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 10px;
-        max-height: 260px;
-        overflow: auto;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 10px;
-        background: #fff;
-      }
-
-      .icon-card {
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 10px;
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        background: #f8f9fa;
-      }
-
-      .icon-card:hover { background: #eef5ff; }
-
-      .icon-card code { font-size: 12px; }
+      /* ✅ evita que el dropdown se “corte” */
+      .card, .card-body { overflow: visible !important; }
     </style>
 
     <div class="card">
@@ -92,52 +52,38 @@
 
         <h5 class="mb-3">Datos del menú</h5>
 
-        <div class="row">
-          <div class="col-md-6">
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
             {{ form.nombre|as_crispy_field }}
           </div>
-          <div class="col-md-6">
+
+          <div class="col-12 col-md-6">
             {{ form.url|as_crispy_field }}
           </div>
-        </div>
 
-        <div class="row">
-          <!-- ✅ ICONOS: un solo bloque (buscador + preview + grid) -->
-          <div class="col-md-6">
-
-            {# Campo real (oculto) para que Django guarde en BD #}
-            <div class="icon-hidden">
-              {{ form.icono|as_crispy_field }}
-            </div>
-
+          <div class="col-12 col-lg-6">
             <div class="d-flex justify-content-between align-items-center">
-              <label class="form-label mb-1">Icono</label>
-
-              <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small">Preview:</span>
-                <span id="iconPreview" class="fs-4"></span>
+              <div class="flex-grow-1">
+                {{ form.icono|as_crispy_field }}
+                <small class="text-muted">
+                  Ej: <code>bi bi-house</code>. (Se guarda automáticamente la clase seleccionada)
+                </small>
+              </div>
+              <div class="ms-3 text-nowrap">
+                <div class="text-muted small">Preview</div>
+                <div id="iconPreview" class="fs-4"></div>
               </div>
             </div>
-
-            <input id="iconSearch" type="text" class="form-control"
-                   placeholder="Buscar icono (español): usuario, casa, alerta, configuración...">
-
-            <div class="mt-2 small text-muted">
-              Tip: escribe y elige un icono. Se guardará automáticamente.
-              <span class="ms-1">Ej: <code>bi bi-flag</code>, <code>mdi mdi-home</code>, <code>ti-layout</code></span>
-            </div>
-
-            <div id="iconGrid" class="icon-grid mt-3"></div>
           </div>
 
-          <div class="col-md-3">
+          <div class="col-12 col-md-6 col-lg-3">
             {{ form.orden|as_crispy_field }}
           </div>
 
-          <div class="col-md-3">
+          <div class="col-12 col-md-6 col-lg-3">
             {{ form.padre|as_crispy_field }}
             <small class="text-muted">
-              Si es un submenú, elige aquí su padre. Si es menú principal, déjalo vacío.
+              Si es submenú, elige su padre. Si es principal, déjalo vacío.
             </small>
           </div>
         </div>
@@ -169,159 +115,52 @@
 
 {% block extra_js %}
 <script>
-  // 🎨 Colores estilo "Salcedo" (azul + naranja)
-  const SALCEDO_BLUE = "#0B3A6E";
-  const SALCEDO_ORANGE = "#F28C28";
-
-  // ✅ iziToast con messages (sin perder tu lógica)
-  {% if messages %}
-    {% for message in messages %}
-      (function() {
-        let type = "{{ message.tags|default:'info' }}";
-        let title = "Notificación";
-        let color = SALCEDO_BLUE;
-
-        if (type.includes("success")) { title = "Éxito"; color = SALCEDO_BLUE; }
-        else if (type.includes("error") || type.includes("danger")) { title = "Error"; color = "#D32F2F"; }
-        else if (type.includes("warning")) { title = "Atención"; color = SALCEDO_ORANGE; }
-        else { title = "Info"; color = SALCEDO_BLUE; }
-
-        iziToast.show({
-          title: title,
-          message: "{{ message|escapejs }}",
-          position: "topRight",
-          timeout: 3500,
-          backgroundColor: color,
-          messageColor: "#fff",
-          titleColor: "#fff",
-          progressBarColor: SALCEDO_ORANGE
-        });
-      })();
-    {% endfor %}
-  {% endif %}
-</script>
-
-<script>
 (function(){
-  const inputIcono = document.getElementById("id_icono");     // ✅ existe pero está oculto
+  // ✅ Select2 para iconos (igual estilo que Padre)
+  const $icon = window.jQuery ? window.jQuery("#id_icono") : null;
   const preview = document.getElementById("iconPreview");
-  const search = document.getElementById("iconSearch");
-  const grid = document.getElementById("iconGrid");
 
-  const ICONS = [
-    {label:"Casa / Inicio", cls:"bi bi-house"},
-    {label:"Tablero / Dashboard", cls:"bi bi-speedometer2"},
-    {label:"Menú / Lista", cls:"bi bi-list"},
-    {label:"Denuncia / Reporte", cls:"bi bi-megaphone"},
-    {label:"Documento", cls:"bi bi-file-earmark-text"},
-    {label:"Carpeta", cls:"bi bi-folder"},
-    {label:"Usuario", cls:"bi bi-person"},
-    {label:"Usuario verificado", cls:"bi bi-person-check"},
-    {label:"Usuarios / Grupo", cls:"bi bi-people"},
-    {label:"Funcionario / Credencial", cls:"bi bi-person-badge"},
-    {label:"Configuración", cls:"bi bi-gear"},
-    {label:"Herramientas", cls:"bi bi-tools"},
-    {label:"Seguridad / Escudo", cls:"bi bi-shield-lock"},
-    {label:"Candado", cls:"bi bi-lock"},
-    {label:"Llave", cls:"bi bi-key"},
-    {label:"Notificación", cls:"bi bi-bell"},
-    {label:"Alerta", cls:"bi bi-exclamation-triangle"},
-    {label:"Error", cls:"bi bi-x-circle"},
-    {label:"Correcto", cls:"bi bi-check-circle"},
-    {label:"Información", cls:"bi bi-info-circle"},
-    {label:"Ayuda", cls:"bi bi-question-circle"},
-    {label:"Buscar", cls:"bi bi-search"},
-    {label:"Filtro", cls:"bi bi-funnel"},
-    {label:"Mapa", cls:"bi bi-map"},
-    {label:"Ubicación", cls:"bi bi-geo-alt"},
-    {label:"Teléfono", cls:"bi bi-telephone"},
-    {label:"Correo", cls:"bi bi-envelope"},
-    {label:"Chat", cls:"bi bi-chat-dots"},
-    {label:"Enviar", cls:"bi bi-send"},
-    {label:"Calendario", cls:"bi bi-calendar-event"},
-    {label:"Historial", cls:"bi bi-clock-history"},
-    {label:"Estadística", cls:"bi bi-bar-chart"},
-    {label:"Gráfico", cls:"bi bi-graph-up"},
-    {label:"Descargar", cls:"bi bi-download"},
-    {label:"Subir", cls:"bi bi-upload"},
-    {label:"Imprimir", cls:"bi bi-printer"},
-    {label:"Editar", cls:"bi bi-pencil-square"},
-    {label:"Eliminar", cls:"bi bi-trash"},
-    {label:"Agregar", cls:"bi bi-plus-circle"},
-    {label:"Refrescar", cls:"bi bi-arrow-repeat"},
-    {label:"Salir", cls:"bi bi-box-arrow-right"},
-    {label:"Enlace", cls:"bi bi-link-45deg"},
-    {label:"Adjuntar", cls:"bi bi-paperclip"},
-    {label:"Imagen", cls:"bi bi-image"},
-    {label:"Cámara", cls:"bi bi-camera"},
-    {label:"Micrófono", cls:"bi bi-mic"},
-    {label:"Silencio", cls:"bi bi-volume-mute"},
-    {label:"Favorito", cls:"bi bi-star"},
-    {label:"Bandera", cls:"bi bi-flag"},
-    {label:"Etiqueta", cls:"bi bi-tag"},
-    {label:"Dinero", cls:"bi bi-cash"},
-    {label:"Banco", cls:"bi bi-bank"},
-    {label:"Edificio", cls:"bi bi-building"},
-    {label:"Carretera", cls:"bi bi-signpost-2"},
-    {label:"Agua", cls:"bi bi-droplet"},
-    {label:"Incendio", cls:"bi bi-fire"},
-    {label:"Checklist", cls:"bi bi-card-checklist"},
-    {label:"Tabla", cls:"bi bi-table"},
-    {label:"Cuadrícula", cls:"bi bi-grid"},
-    {label:"Capas", cls:"bi bi-layers"},
-    {label:"Servidor", cls:"bi bi-hdd-network"},
-    {label:"Base de datos", cls:"bi bi-database"},
-    {label:"Nube", cls:"bi bi-cloud"},
-    {label:"WiFi", cls:"bi bi-wifi"},
-    {label:"Código", cls:"bi bi-code-slash"},
-    {label:"Terminal", cls:"bi bi-terminal"},
-    {label:"Bug", cls:"bi bi-bug"},
-    {label:"Guardar", cls:"bi bi-save"}
-  ];
-
-  function setPreview(cls){
+  function paintPreview(cls){
     if(!preview) return;
     preview.className = cls || "";
     preview.innerHTML = cls ? "" : "<span class='text-muted'>—</span>";
   }
 
-  function pick(cls){
-    if(!inputIcono) return;
-    inputIcono.value = cls;
-    inputIcono.dispatchEvent(new Event("input"));
-    setPreview(cls);
+  function formatIcon(state){
+    // state.id == value del option (ej: "bi bi-house")
+    if(!state.id) return state.text;
+    const cls = state.id;
+    return window.jQuery(
+      `<span><i class="${cls}" style="font-size:18px; margin-right:8px;"></i>${state.text}</span>`
+    );
   }
 
-  function render(list){
-    grid.innerHTML = "";
-    list.forEach(item => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "icon-card w-100 text-start";
-      btn.innerHTML = `
-        <i class="${item.cls}" style="font-size:20px;"></i>
-        <div style="line-height:1.15">
-          <div style="font-weight:600">${item.label}</div>
-          <div class="text-muted"><code>${item.cls}</code></div>
-        </div>
-      `;
-      btn.addEventListener("click", () => pick(item.cls));
-      grid.appendChild(btn);
+  if($icon && $icon.length){
+    // Si ya tienes select2 global, esto lo deja bonito y con buscador
+    $icon.select2({
+      width: "100%",
+      placeholder: "Buscar icono...",
+      allowClear: true,
+      templateResult: formatIcon,
+      templateSelection: formatIcon,
+      dropdownParent: $icon.closest(".card-body") // ✅ evita que se corte
     });
+
+    // Preview inicial
+    paintPreview($icon.val());
+
+    // Preview al cambiar
+    $icon.on("change", function(){
+      paintPreview(this.value);
+    });
+  } else {
+    // fallback si no hay jQuery (raro en select2, pero por si acaso)
+    const iconSelect = document.getElementById("id_icono");
+    if(iconSelect){
+      paintPreview(iconSelect.value);
+      iconSelect.addEventListener("change", ()=> paintPreview(iconSelect.value));
+    }
   }
-
-  // init
-  render(ICONS);
-  setPreview((inputIcono?.value || "").trim());
-
-  search.addEventListener("input", function(){
-    const q = this.value.trim().toLowerCase();
-    if(!q) return render(ICONS);
-    render(ICONS.filter(i =>
-      i.label.toLowerCase().includes(q) || i.cls.toLowerCase().includes(q)
-    ));
-  });
-
 })();
 </script>
 {% endblock %}

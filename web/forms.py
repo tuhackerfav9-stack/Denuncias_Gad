@@ -103,14 +103,89 @@ from django.contrib.auth.models import Group
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from .models import Menus
 
+ICON_CHOICES = [
+    ("", "— Sin icono —"),
+    ("bi bi-house", "Casa / Inicio"),
+    ("bi bi-speedometer2", "Tablero / Dashboard"),
+    ("bi bi-list", "Menú / Lista"),
+    ("bi bi-megaphone", "Denuncia / Reporte"),
+    ("bi bi-file-earmark-text", "Documento"),
+    ("bi bi-folder", "Carpeta"),
+    ("bi bi-person", "Usuario"),
+    ("bi bi-person-check", "Usuario verificado"),
+    ("bi bi-people", "Usuarios / Grupo"),
+    ("bi bi-person-badge", "Funcionario / Credencial"),
+    ("bi bi-gear", "Configuración"),
+    ("bi bi-tools", "Herramientas"),
+    ("bi bi-shield-lock", "Seguridad / Escudo"),
+    ("bi bi-bell", "Notificación"),
+    ("bi bi-exclamation-triangle", "Alerta"),
+    ("bi bi-check-circle", "Correcto"),
+    ("bi bi-x-circle", "Error"),
+    ("bi bi-info-circle", "Información"),
+    ("bi bi-question-circle", "Ayuda"),
+    ("bi bi-search", "Buscar"),
+    ("bi bi-funnel", "Filtro"),
+    ("bi bi-map", "Mapa"),
+    ("bi bi-geo-alt", "Ubicación"),
+    ("bi bi-telephone", "Teléfono"),
+    ("bi bi-envelope", "Correo"),
+    ("bi bi-chat-dots", "Chat"),
+    ("bi bi-send", "Enviar"),
+    ("bi bi-calendar-event", "Calendario"),
+    ("bi bi-clock-history", "Historial"),
+    ("bi bi-bar-chart", "Estadística"),
+    ("bi bi-download", "Descargar"),
+    ("bi bi-upload", "Subir"),
+    ("bi bi-printer", "Imprimir"),
+    ("bi bi-pencil-square", "Editar"),
+    ("bi bi-trash", "Eliminar"),
+    ("bi bi-plus-circle", "Agregar"),
+    ("bi bi-arrow-repeat", "Refrescar"),
+    ("bi bi-box-arrow-right", "Salir"),
+    ("bi bi-link-45deg", "Enlace"),
+    ("bi bi-paperclip", "Adjuntar"),
+    ("bi bi-image", "Imagen"),
+    ("bi bi-camera", "Cámara"),
+    ("bi bi-mic", "Micrófono"),
+    ("bi bi-volume-mute", "Silencio"),
+    ("bi bi-star", "Favorito"),
+    ("bi bi-flag", "Bandera"),
+    ("bi bi-tag", "Etiqueta"),
+    ("bi bi-cash", "Dinero"),
+    ("bi bi-bank", "Banco"),
+    ("bi bi-building", "Edificio"),
+    ("bi bi-signpost-2", "Carretera"),
+    ("bi bi-droplet", "Agua"),
+    ("bi bi-fire", "Incendio"),
+    ("bi bi-card-checklist", "Checklist"),
+    ("bi bi-table", "Tabla"),
+    ("bi bi-grid", "Cuadrícula"),
+    ("bi bi-layers", "Capas"),
+    ("bi bi-hdd-network", "Servidor"),
+    ("bi bi-database", "Base de datos"),
+    ("bi bi-cloud", "Nube"),
+    ("bi bi-wifi", "WiFi"),
+    ("bi bi-code-slash", "Código"),
+    ("bi bi-terminal", "Terminal"),
+    ("bi bi-bug", "Bug"),
+    ("bi bi-save", "Guardar"),
+]
+
+
 class MenuForm(forms.ModelForm):
+    icono = forms.ChoiceField(
+        choices=ICON_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"})
+    )
+
     class Meta:
         model = Menus
         fields = ["nombre", "url", "icono", "padre", "orden", "permisos"]
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Denuncias"}),
             "url": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: web:denuncia_list"}),
-            "icono": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: bi bi-flag"}),
             "padre": ModelSelect2Widget(
                 model=Menus,
                 search_fields=["nombre__icontains"],
@@ -123,7 +198,6 @@ class MenuForm(forms.ModelForm):
                 attrs={"class": "form-control"},
             ),
         }
-
 
 # =========================
 # Grupos
