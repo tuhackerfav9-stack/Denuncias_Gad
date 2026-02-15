@@ -42,7 +42,7 @@
                      <div class="border rounded p-3 bg-light">
                         <div class="d-flex flex-wrap gap-2">
                             {% for user in grupo.user_set.all %}
-                                <span class="badge bg-primary bg-opacity-75" title="{{ user.username }}">
+                                <span class="badge bg-info bg-opacity-75" title="{{ user.username }}">
                                     <i class="bi bi-person-fill me-1"></i>{{ user.get_full_name|default:user.username }}
                                 </span>
                             {% empty %}
