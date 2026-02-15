@@ -20,6 +20,9 @@ from .views import (
     WebUserListView, WebUserCreateView, WebUserDetailView, WebUserUpdateView, WebUserDeleteView,denuncia_pdf, tomar_denuncia
 )
 
+from .views import rechazar_denuncia, llm_rechazo_response
+
+
 app_name = "web"
 
 urlpatterns = [
@@ -28,6 +31,8 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(next_page="web:login"), name="logout"),
     path("dashboard/", dashboard_view, name="dashboard"),
     path("api/denuncias/<uuid:denuncia_id>/respuestas/", api_respuestas_denuncia, name="api_respuestas_denuncia"),
+    path("rechazar-denuncia/<uuid:denuncia_id>/", rechazar_denuncia, name="rechazar_denuncia"),
+    path("api/generate-llm-rechazo/<uuid:denuncia_id>/", llm_rechazo_response, name="generate_llm_rechazo"),
 
 
     # AJAX

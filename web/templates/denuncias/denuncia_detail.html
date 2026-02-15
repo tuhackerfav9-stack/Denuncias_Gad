@@ -386,6 +386,11 @@
                 <button type="button" class="btn btn-sm btn-info text-white" id="btnRespuestaIA">
                   <i class="bi bi-stars me-1"></i> Generar respuesta con IA
                 </button>
+
+                <button type="button" class="btn btn-sm btn-danger text-white" id="btnRechazarDenuncia">
+                  <i class="bi bi-x-circle me-1"></i> Rechazar
+                </button>
+
               {% else %}
                 <button type="button" class="btn btn-sm btn-outline-info" disabled>
                   <i class="bi bi-plus-circle me-1"></i> Nueva respuesta
@@ -393,6 +398,10 @@
                 <button type="button" class="btn btn-sm btn-info text-white" disabled>
                   <i class="bi bi-stars me-1"></i> Generar respuesta con IA
                 </button>
+                <button type="button" class="btn btn-sm btn-danger text-white" id="btnRechazarDenuncia">
+                  <i class="bi bi-x-circle me-1"></i> Rechazar
+                </button>
+
               {% endif %}
             {% endif %}
           </div>
@@ -456,6 +465,53 @@
     </div>
   </div>
 </div>
+
+<!-- Modal: Rechazar Denuncia -->
+<div class="modal fade" id="rechazoModal" tabindex="-1" role="dialog" aria-labelledby="rechazoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title" id="rechazoModalLabel">
+            Describa la razón por la cual se rechaza la denuncia
+          </h5>
+        </div>
+
+        <button type="button" class="btn btn-sm btn-info text-white" id="btnRechazoIA">
+          <i class="bi bi-stars me-1"></i> Generar respuesta con IA
+        </button>
+
+        <button type="button" class="close ml-2" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <form action="{% url 'web:rechazar_denuncia' denuncia.id %}" method="post">
+        <div class="modal-body">
+          {% csrf_token %}
+
+          <div class="mb-2">
+            <label class="form-label">Motivo del rechazo</label>
+            <textarea id="rechazoMotivo" name="motivo" class="form-control" rows="4"
+                      placeholder="Escriba el motivo del rechazo..." required></textarea>
+          </div>
+
+          <small class="text-muted">
+            Este mensaje quedará registrado en el historial y se notificará al ciudadano.
+          </small>
+        </div>
+
+        <div class="modal-footer d-flex justify-content-end">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger text-white">Enviar</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
 <script>
   function getCookie(name) {
     let cookieValue = null;
@@ -563,6 +619,78 @@
       });
     }
   });
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const rechazoBtn = document.getElementById('btnRechazarDenuncia');
+  const rechazoIA = document.getElementById('btnRechazoIA');
+  const rechazoMotivo = document.getElementById('rechazoMotivo');
+
+  const $rechazoModal = window.jQuery ? window.jQuery('#rechazoModal') : null;
+
+  // reutiliza csrftoken y tomarDenuncia() que ya tienes arriba
+
+  // Abrir modal de rechazo
+  if (rechazoBtn && $rechazoModal && $rechazoModal.length) {
+    rechazoBtn.addEventListener('click', async function() {
+      rechazoBtn.disabled = true;
+      const res = await tomarDenuncia();
+      rechazoBtn.disabled = false;
+
+      if (!res.ok) { alert(res.msg); return; }
+      $rechazoModal.modal('show');
+    });
+  }
+
+  // IA para rechazo (genera texto y lo pone en el textarea del motivo)
+  if (rechazoIA && rechazoMotivo && $rechazoModal && $rechazoModal.length) {
+    rechazoIA.addEventListener('click', async function() {
+      const original = rechazoIA.innerHTML;
+      rechazoIA.disabled = true;
+      rechazoIA.innerHTML = '<span class="spinner-border spinner-border-sm mr-1" role="status"></span> Generando...';
+
+      // tomar denuncia antes de generar
+      const res = await tomarDenuncia();
+      if (!res.ok) {
+        rechazoIA.disabled = false;
+        rechazoIA.innerHTML = original;
+        alert(res.msg);
+        return;
+      }
+
+      try {
+        const resp = await fetch("{% url 'web:generate_llm_rechazo' denuncia.id %}", {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+          },
+          body: JSON.stringify({ motivo: rechazoMotivo.value || "" })
+        });
+
+        const data = await resp.json();
+        if (data && data.success) {
+          // aquí te dejo 2 opciones:
+          // 1) llenar el motivo con una versión resumida:
+          // rechazoMotivo.value = data.response;
+
+          // 2) mejor: poner un motivo corto + el mensaje calido abajo:
+          rechazoMotivo.value = data.response;
+        } else {
+          alert((data && data.error) ? data.error : "No se pudo generar.");
+        }
+      } catch (e) {
+        console.error(e);
+        alert("Error al generar con IA.");
+      } finally {
+        rechazoIA.disabled = false;
+        rechazoIA.innerHTML = original;
+      }
+    });
+  }
+});
 </script>
 
 {% endblock %}
