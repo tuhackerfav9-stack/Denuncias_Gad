@@ -1079,7 +1079,13 @@ class TiposDenunciaDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, Delete
     template_name = "tipos_denuncia/tipos_denuncia_confirm_delete.html"
     success_url = reverse_lazy("web:tipos_denuncia_list")
     login_url = "web:login"
+    context_object_name = "tipo_denuncia"  # ✅ para que tu template lo reciba también
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        tipo = self.object
+        ctx["total_denuncias"] = Denuncias.objects.filter(tipo_denuncia=tipo).count()  # ✅ modelo real
+        return ctx
 
 # =========================================
 # IA (LLM)
