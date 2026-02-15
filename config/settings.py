@@ -64,11 +64,15 @@ INSTALLED_APPS = [
 
     # librerias
     "crispy_forms",
-    "crispy_bootstrap5",
+    #"crispy_bootstrap5",
+    "crispy_bootstrap4",
 
     # notificaciones push
     "notificaciones",
 ]
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
+CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
