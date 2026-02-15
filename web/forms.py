@@ -259,18 +259,66 @@ class MenuForm(forms.ModelForm):
 # =========================
 # Grupos
 # =========================
+
 class GrupoForm(forms.ModelForm):
+    funcionarios = forms.ModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        label="Funcionarios",
+        widget=forms.SelectMultiple(attrs={
+            "class": "form-select",
+            "multiple": "multiple",
+            "size": "8"
+        })
+    )
+
     class Meta:
         model = Group
-        fields = ["name", "permissions"]
+        fields = ["name"]  # <- OJO: ya NO permissions
+
         widgets = {
-            "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nombre del grupo"}),
-            "permissions": ModelSelect2MultipleWidget(
-                model=Permission,
-                search_fields=["name__icontains"],
-                attrs={"class": "form-control"},
-            ),
+            "name": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Ej: Seguridad Ciudadana"
+            })
         }
+
+    def __init__(self, *args, **kwargs):
+        # queryset que manda la vista (create/update)
+        available_users_qs = kwargs.pop("available_users_qs", None)
+        super().__init__(*args, **kwargs)
+
+        self.fields["name"].label = "Nombre del Grupo"
+        self.fields["name"].widget.attrs.update({"autocomplete": "off"})
+
+        if available_users_qs is not None:
+            self.fields["funcionarios"].queryset = available_users_qs
+
+        # En editar: precargar los usuarios actuales del grupo
+        if self.instance.pk and not self.is_bound:
+            self.fields["funcionarios"].initial = self.instance.user_set.all()
+
+    def save(self, commit=True):
+        group = super().save(commit=commit)
+
+        if commit:
+            selected_users = self.cleaned_data.get("funcionarios")
+
+            if selected_users is not None:
+                # 1) Quitar del grupo a los que ya no están seleccionados
+                current_ids = set(group.user_set.values_list("id", flat=True))
+                new_ids = set(selected_users.values_list("id", flat=True))
+                remove_ids = current_ids - new_ids
+                if remove_ids:
+                    group.user_set.remove(*User.objects.filter(id__in=remove_ids))
+
+                # 2) Asegurar "1 solo grupo por funcionario":
+                #    si seleccionas alguien que estaba en otro grupo, se lo movemos a este.
+                for u in selected_users:
+                    u.groups.clear()      # <- queda en un solo grupo
+                    u.groups.add(group)
+
+        return group
 
 # =========================
 # Funcionarios

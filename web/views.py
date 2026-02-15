@@ -507,7 +507,6 @@ def dashboard_view(request):
     return render(request, "dashboard.html", context)
     
 
-
 # =========================================
 # Grupos
 # =========================================
@@ -529,13 +528,19 @@ class GrupoCreateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRequ
     permission_required = "auth.add_group"
     login_url = "web:login"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        form = context.get("form")
-        if form:
-            selected_ids = [str(pk) for pk in form.data.getlist("permissions")] if form.is_bound else []
-            context["selected_ids"] = selected_ids
-        return context
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+
+        # SOLO funcionarios SIN grupo (crear)
+        available = User.objects.filter(
+            is_active=True,
+            is_staff=True,          # <- AJUSTA si tu funcionario no es is_staff
+            is_superuser=False,
+            groups__isnull=True
+        ).order_by("first_name", "last_name", "username")
+
+        kwargs["available_users_qs"] = available
+        return kwargs
 
 
 class GrupoUpdateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRequiredMixin, UpdateView):
@@ -546,16 +551,18 @@ class GrupoUpdateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRequ
     permission_required = "auth.change_group"
     login_url = "web:login"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        form = context.get("form")
-        if form:
-            if form.is_bound:
-                selected_ids = form.data.getlist("permissions")
-            else:
-                selected_ids = list(form.instance.permissions.values_list("id", flat=True)) if form.instance.pk else []
-            context["selected_ids"] = [str(pk) for pk in selected_ids]
-        return context
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+
+        # EDITAR: permitir mover funcionarios desde otros grupos (todos)
+        available = User.objects.filter(
+            is_active=True,
+            is_staff=True,          # <- AJUSTA si tu funcionario no es is_staff
+            is_superuser=False
+        ).order_by("first_name", "last_name", "username")
+
+        kwargs["available_users_qs"] = available
+        return kwargs
 
 
 class GrupoDetailView(LoginRequiredMixin, CustomPermissionRequiredMixin, DetailView):

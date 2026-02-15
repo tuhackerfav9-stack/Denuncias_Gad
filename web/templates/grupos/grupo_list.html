@@ -22,7 +22,7 @@
                                     <th>#</th>
                                     <th>Nombre</th>
                                     <th class="text-center">Usuarios</th>
-                                    <th class="text-center">Permisos</th>
+                                    
                                     <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
@@ -34,9 +34,7 @@
                                     <td class="text-center">
                                         <span class="badge bg-secondary rounded-pill">{{ grupo.user_set.count }}</span>
                                     </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-info text-white rounded-pill">{{ grupo.permissions.count }}</span>
-                                    </td>
+                                    
                                     <td class="text-center">
                                         <div class="btn-group" role="group">
                                             <a href="{% url 'web:grupo_detail' grupo.pk %}" class="btn btn-sm btn-outline-info" title="Ver detalles">
@@ -56,7 +54,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center py-4">
+                                    <td colspan="4" class="text-center py-4">
                                         <div class="text-muted">
                                             <i class="bi bi-people fa-2x mb-2"></i>
                                             <p>No hay grupos registrados</p>

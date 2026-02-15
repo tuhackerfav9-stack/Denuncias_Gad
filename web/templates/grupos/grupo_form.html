@@ -33,7 +33,31 @@
                             {% endif %}
                             <div class="form-text">Asigna un nombre descriptivo para este grupo de usuarios.</div>
                         </div>
+                        <div class="mb-4">
+                            <label for="{{ form.funcionarios.id_for_label }}" class="form-label">
+                                <i class="bi bi-person-badge me-1"></i>Funcionarios del Grupo
+                            </label>
 
+                            {{ form.funcionarios }}
+
+                            {% if form.funcionarios.errors %}
+                                <div class="text-danger small mt-1">{{ form.funcionarios.errors.0 }}</div>
+                            {% endif %}
+
+                            {% if object %}
+                                <div class="form-text">
+                                En edición puedes mover funcionarios desde otros grupos (quedarán solo en este).
+                                </div>
+                            {% else %}
+                                <div class="form-text">
+                                Solo aparecen funcionarios que aún no pertenecen a ningún grupo.
+                                </div>
+                            {% endif %}
+                            </div>
+
+
+
+                        <!--                    
                         <div class="mb-4">
                             <label class="form-label">
                                 <i class="bi bi-key me-1"></i>Permisos Asignados
@@ -48,8 +72,7 @@
                                     <i class="bi bi-eraser me-1"></i>Limpiar selección
                                 </button>
                             </div>
-
-                            <!-- Chips de permisos seleccionados -->
+ 
                             <div id="permisosSeleccionados" class="mb-2">
                                 {% for perm in form.permissions.field.queryset %}
                                     {% if perm.id|stringformat:"s" in selected_ids %}
@@ -59,7 +82,7 @@
                                 {% endfor %}
                             </div>
 
-                            <!-- Modal de permisos por modelo -->
+                             
                             <div class="modal fade" id="permisosModal" tabindex="-1" aria-labelledby="permisosModalLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-lg modal-dialog-scrollable">
                                     <div class="modal-content">
@@ -121,7 +144,7 @@
                                 <div class="text-danger small mt-1">{{ form.permissions.errors.0 }}</div>
                             {% endif %}
                         </div>
-
+-->
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <a href="{% url 'web:grupo_list' %}" class="btn btn-outline-secondary me-md-2">
                                 <i class="bi bi-arrow-left me-1"></i>Cancelar
@@ -138,6 +161,7 @@
     </div>
 </div>
 
+<!--
 <script>
     // Manejo de checkboxes y chips
     (function() {
@@ -190,4 +214,5 @@
         renderChips();
     })();
 </script>
+-->
 {% endblock %}
