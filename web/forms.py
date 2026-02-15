@@ -228,8 +228,6 @@ ICON_CHOICES = [
 ]
 
 
-
-
 # =========================
 # Grupos
 # =========================
@@ -283,7 +281,7 @@ class GrupoForm(forms.ModelForm):
             }
         )
     )
-    
+
     name = forms.CharField(
         required=True,
         label="Nombre",
@@ -292,7 +290,7 @@ class GrupoForm(forms.ModelForm):
 
     class Meta:
         model = Group
-        fields = ["name"]  # seguimos sin permissions
+        fields =  ["name", "funcionarios"] # seguimos sin permissions
 
         widgets = {
             "name": forms.TextInput(attrs={
