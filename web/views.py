@@ -92,7 +92,7 @@ def tomar_denuncia_si_libre(denuncia, funcionario, motivo="Denuncia tomada para 
         return False, "No autorizado"
 
     # Ya está tomada por otro
-    if denuncia.asignado_funcionario_id and denuncia.asignado_funcionario_id != funcionario.id:
+    if denuncia.asignado_funcionario_id and denuncia.asignado_funcionario_id != funcionario.pk:
         nombre_otro = f"{denuncia.asignado_funcionario.nombres} {denuncia.asignado_funcionario.apellidos}"
         return False, f"Esta denuncia ya está siendo atendida por {nombre_otro}."
 
@@ -845,7 +845,7 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
         else:
             puede_responder = bool(
                 funcionario and (
-                    (not denuncia.asignado_funcionario_id) or (denuncia.asignado_funcionario_id == funcionario.id)
+                    (not denuncia.asignado_funcionario_id) or  (denuncia.asignado_funcionario_id == funcionario.pk)
                 )
             )
 
@@ -854,7 +854,7 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
         # Firma OneToOne
         firma = DenunciaFirmas.objects.filter(denuncia_id=denuncia.id).first()
         context["firma"] = firma
-        
+
         return context
 
 class DenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateView):
