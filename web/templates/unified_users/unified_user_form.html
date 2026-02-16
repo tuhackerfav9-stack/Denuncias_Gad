@@ -6,7 +6,7 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
       <h3 class="mb-1">
-        {% if object %}Editar Usuario Web (Maestro){% else %}Crear Usuario Web (Maestro){% endif %}
+        {% if object %}Editar Funcionario Web {% else %}Crear Funcionario Web {% endif %}
       </h3>
       <p class="text-muted mb-0">
         Crea/edita el usuario del sistema y sincroniza sus datos con Funcionario, Usuarios y la tabla puente.
@@ -82,7 +82,13 @@
             <label class="form-label">
               <i class="bi bi-lock me-1"></i>Contraseña{% if not object %}<span class="req-dot">*</span>{% endif %}
             </label>
-            {{ form.password }}
+            <div class="input-group">
+              {{ form.password }}
+              <button class="btn btn-outline-secondary" type="button" id="togglePasswordBtn" aria-label="Mostrar/Ocultar contraseña">
+                <i class="bi bi-eye" id="togglePasswordIcon"></i>
+              </button>
+            </div>
+
             {% if form.password.errors %}<div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>{% endif %}
 
             {% if object %}
@@ -226,4 +232,24 @@
     </div>
   </form>
 </div>
+<script>
+  (function () {
+    const input = document.getElementById("id_password");
+    const btn = document.getElementById("togglePasswordBtn");
+    const icon = document.getElementById("togglePasswordIcon");
+
+    // Si por alguna razón el form no tiene password, no hacemos nada
+    if (!input || !btn || !icon) return;
+
+    btn.addEventListener("click", function () {
+      const isHidden = input.type === "password";
+      input.type = isHidden ? "text" : "password";
+
+      // Cambiar icono
+      icon.classList.toggle("bi-eye", !isHidden);
+      icon.classList.toggle("bi-eye-slash", isHidden);
+    });
+  })();
+</script>
+
 {% endblock %}
