@@ -1857,28 +1857,63 @@ class WebUserDeleteView(DeleteView):
 #-----------------------------
 # pdf
 #---------------------------------
-from django.template.loader import render_to_string
-from django.http import HttpResponse, Http404
 from django.template.loader import get_template
-from xhtml2pdf import pisa
+from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
+from django.conf import settings
+from django.utils import timezone
+from xhtml2pdf import pisa
+import os
+
+# Si tienes el modelo Respuesta en otra app, ajusta el import:
+from db.models import DenunciaRespuestas  # <-- AJUSTA ESTA RUTA
+
+def link_callback(uri, rel):
+    """
+    Convierte rutas de static/media en rutas absolutas del sistema de archivos
+    para que xhtml2pdf pueda incrustarlas (logos, imágenes, etc.)
+    """
+    if uri.startswith(settings.MEDIA_URL):
+        path = os.path.join(settings.MEDIA_ROOT, uri.replace(settings.MEDIA_URL, ""))
+        return path
+
+    if uri.startswith(settings.STATIC_URL):
+        path = os.path.join(settings.STATIC_ROOT, uri.replace(settings.STATIC_URL, ""))
+        # Si STATIC_ROOT no está recolectado en dev, caemos a STATICFILES_DIRS
+        if not os.path.isfile(path):
+            for d in getattr(settings, "STATICFILES_DIRS", []):
+                candidate = os.path.join(d, uri.replace(settings.STATIC_URL, ""))
+                if os.path.isfile(candidate):
+                    return candidate
+        return path
+
+    return uri
 
 def denuncia_pdf(request, pk):
     denuncia = get_object_or_404(Denuncias, pk=pk)
 
-    if denuncia.estado != "resuelta":
-        raise Http404("La denuncia no está resuelta")
+    # Tú dijiste: solo se imprime si está resuelta (o rechazada si manejas eso)
+    if denuncia.estado not in ["resuelta", "rechazada"]:
+        raise Http404("La denuncia no está en estado final")
+
+    # Respuesta final (última)
+    respuesta = DenunciaRespuestas.objects.filter(denuncia=denuncia).order_by("-fecha_respuesta").first()
 
     template = get_template("denuncias/denuncia_pdf.html")
-    html = template.render({"denuncia": denuncia})
+    html = template.render({
+        "denuncia": denuncia,
+        "respuesta": respuesta,
+        "now": timezone.now(),
+    })
 
     response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = (
-        f'attachment; filename="denuncia_{denuncia.id}.pdf"'
-    )
+    response["Content-Disposition"] = f'attachment; filename="denuncia_{denuncia.id}.pdf"'
 
     pisa_status = pisa.CreatePDF(
-        html, dest=response, encoding="utf-8"
+        html,
+        dest=response,
+        encoding="utf-8",
+        link_callback=link_callback
     )
 
     if pisa_status.err:

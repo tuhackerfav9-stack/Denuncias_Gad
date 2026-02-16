@@ -1,40 +1,392 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <style>
-    body {
+    /* =======================================================
+       ESTILOS COMPATIBLES CON xhtml2pdf (simple y estable)
+    ======================================================= */
+    @page {
+      size: A4;
+      margin: 2.2cm 1.8cm 2.2cm 1.8cm;
+    }
+
+    body{
       font-family: Arial, sans-serif;
+      font-size: 11px;
+      color: #1f2937;
+      line-height: 1.35;
+    }
+
+    .header{
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+
+    .brand-row{
+      width: 100%;
+    }
+    .brand-left{
+      width: 60%;
+      vertical-align: middle;
+    }
+    .brand-right{
+      width: 40%;
+      text-align: right;
+      vertical-align: middle;
+    }
+
+    .logo{
+      width: 150px;
+      height: auto;
+    }
+
+    .doc-title{
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+      padding: 0;
+    }
+
+    .subtitle{
+      font-size: 11px;
+      color: #475569;
+      margin-top: 2px;
+    }
+
+    .badge{
+      display: inline-block;
+      padding: 4px 8px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      border-radius: 10px;
+      font-size: 10px;
+    }
+
+    .section-title{
       font-size: 12px;
+      font-weight: 700;
+      color: #0ea5e9; /* info-like */
+      margin: 14px 0 8px 0;
+      border-left: 4px solid #0ea5e9;
+      padding-left: 8px;
     }
-    h1 {
-      text-align: center;
-    }
-    .box {
-      border: 1px solid #333;
+
+    .box{
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
       padding: 10px;
       margin-bottom: 10px;
+      border-radius: 6px;
+    }
+
+    table{
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .kv td{
+      padding: 6px 6px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    .kv td.key{
+      width: 32%;
+      color: #334155;
+      font-weight: 700;
+    }
+
+    .note{
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 8px;
+    }
+
+    .divider{
+      height: 1px;
+      background: #e2e8f0;
+      margin: 12px 0;
+    }
+
+    .bigtext{
+      font-size: 11px;
+      white-space: pre-wrap;
+    }
+
+    /* salto de página */
+    .page-break{
+      page-break-before: always;
+    }
+
+    /* footer */
+    .footer{
+      position: fixed;
+      bottom: -1cm;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 9px;
+      color: #64748b;
     }
   </style>
 </head>
+
 <body>
 
-<h1>Denuncia #{{ denuncia.id }}</h1>
+  <div class="footer">
+    Sistema de Denuncias - GAD Municipal de Salcedo | Documento de respaldo físico |
+    Página <pdf:pagenumber /> de <pdf:pagecount />
+  </div>
 
-<div class="box">
-  <strong>Ciudadano:</strong>
-  {{ denuncia.ciudadano.nombres }} {{ denuncia.ciudadano.apellidos }} <br>
+  <!-- =======================================================
+       PÁGINA 1: DATOS DE LA DENUNCIA + FUNCIONARIO ASIGNADO
+  ======================================================= -->
+  <div class="header">
+    <table class="brand-row">
+      <tr>
+        <td class="brand-left">
+          <img class="logo" src="{% static 'assets/img/logo_gad_municipal_claro.png' %}" alt="GAD Salcedo" />
+        </td>
+        <td class="brand-right">
+          <div class="badge">Denuncia #{{ denuncia.id }}</div><br/>
+          <div class="subtitle">
+            Generado: {{ now|date:"d/m/Y H:i" }}
+          </div>
+        </td>
+      </tr>
+    </table>
 
-  <strong>Cédula:</strong> {{ denuncia.ciudadano.cedula }} <br>
-  <strong>Tipo:</strong> {{ denuncia.tipo_denuncia.nombre }} <br>
-  <strong>Estado:</strong> {{ denuncia.estado }} <br>
-  <strong>Fecha:</strong> {{ denuncia.created_at|date:"d/m/Y H:i" }}
-</div>
+    <p class="doc-title">Reporte Oficial de Denuncia</p>
+    <div class="subtitle">Documento para archivo e impresión (respaldo físico).</div>
+  </div>
 
-<div class="box">
-  <strong>Descripción:</strong><br>
-  {{ denuncia.descripcion }}
-</div>
+  <div class="section-title">1) Datos de la denuncia</div>
+  <div class="box">
+    <table class="kv">
+      <tr>
+        <td class="key">Tipo de denuncia</td>
+        <td>{{ denuncia.tipo_denuncia.nombre }}</td>
+      </tr>
+      <tr>
+        <td class="key">Estado</td>
+        <td>{{ denuncia.estado|upper }}</td>
+      </tr>
+      <tr>
+        <td class="key">Fecha de creación</td>
+        <td>{{ denuncia.created_at|date:"d/m/Y H:i" }}</td>
+      </tr>
+
+      {% if denuncia.referencia %}
+      <tr>
+        <td class="key">Referencia</td>
+        <td>{{ denuncia.referencia }}</td>
+      </tr>
+      {% endif %}
+
+      {% if denuncia.latitud and denuncia.longitud %}
+      <tr>
+        <td class="key">Ubicación</td>
+        <td>Lat: {{ denuncia.latitud }} | Lng: {{ denuncia.longitud }}</td>
+      </tr>
+      {% endif %}
+    </table>
+
+    <div class="divider"></div>
+
+    <div class="key" style="font-weight:700;margin-bottom:6px;">Descripción</div>
+    <div class="bigtext">{{ denuncia.descripcion }}</div>
+
+    <div class="note">
+      Nota: Este documento consolida los datos para fines administrativos y de control.
+    </div>
+  </div>
+
+  <div class="section-title">2) Funcionario responsable / que atendió</div>
+  <div class="box">
+    {% if respuesta and respuesta.funcionario %}
+      <table class="kv">
+        <tr>
+          <td class="key">Funcionario</td>
+          <td>
+            {{ respuesta.funcionario.nombre|default:"" }} {{ respuesta.funcionario.apellido|default:"" }}
+          </td>
+        </tr>
+        {% if respuesta.funcionario.correo %}
+        <tr>
+          <td class="key">Correo</td>
+          <td>{{ respuesta.funcionario.correo }}</td>
+        </tr>
+        {% endif %}
+        {% if respuesta.funcionario.cargo %}
+        <tr>
+          <td class="key">Cargo</td>
+          <td>{{ respuesta.funcionario.cargo }}</td>
+        </tr>
+        {% endif %}
+        {% if respuesta.funcionario.telefono %}
+        <tr>
+          <td class="key">Teléfono</td>
+          <td>{{ respuesta.funcionario.telefono }}</td>
+        </tr>
+        {% endif %}
+        {% if respuesta.funcionario.departamento %}
+        <tr>
+          <td class="key">Departamento</td>
+          <td>{{ respuesta.funcionario.departamento }}</td>
+        </tr>
+        {% endif %}
+      </table>
+      <div class="note">
+        Si algún campo no aparece es porque no existe en el modelo o está vacío.
+      </div>
+    {% else %}
+      <div class="note">
+        No se encontró un registro de respuesta asociada para determinar el funcionario.
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- =======================================================
+       PÁGINA 2: DATOS DEL CIUDADANO
+  ======================================================= -->
+  <div class="page-break"></div>
+
+  <div class="header">
+    <table class="brand-row">
+      <tr>
+        <td class="brand-left">
+          <img class="logo" src="{% static 'assets/img/logo_gad_municipal_claro.png' %}" alt="GAD Salcedo" />
+        </td>
+        <td class="brand-right">
+          <div class="badge">Denuncia #{{ denuncia.id }}</div><br/>
+          <div class="subtitle">Ficha del ciudadano</div>
+        </td>
+      </tr>
+    </table>
+
+    <p class="doc-title">Datos del Ciudadano</p>
+    <div class="subtitle">Información declarada para la denuncia.</div>
+  </div>
+
+  <div class="section-title">3) Identificación del ciudadano</div>
+  <div class="box">
+    <table class="kv">
+      <tr>
+        <td class="key">Nombres</td>
+        <td>{{ denuncia.ciudadano.nombres }}</td>
+      </tr>
+      <tr>
+        <td class="key">Apellidos</td>
+        <td>{{ denuncia.ciudadano.apellidos }}</td>
+      </tr>
+      <tr>
+        <td class="key">Cédula</td>
+        <td>{{ denuncia.ciudadano.cedula }}</td>
+      </tr>
+
+      {% if denuncia.ciudadano.correo %}
+      <tr>
+        <td class="key">Correo</td>
+        <td>{{ denuncia.ciudadano.correo }}</td>
+      </tr>
+      {% endif %}
+
+      {% if denuncia.ciudadano.telefono %}
+      <tr>
+        <td class="key">Teléfono</td>
+        <td>{{ denuncia.ciudadano.telefono }}</td>
+      </tr>
+      {% endif %}
+
+      {% if denuncia.ciudadano.direccion %}
+      <tr>
+        <td class="key">Dirección</td>
+        <td>{{ denuncia.ciudadano.direccion }}</td>
+      </tr>
+      {% endif %}
+    </table>
+
+    <div class="note">
+      Nota: Se recomienda verificar datos de contacto antes de cualquier comunicación formal.
+    </div>
+  </div>
+
+  <!-- =======================================================
+       PÁGINA 3: RESPUESTA FINAL (RESUELTA / RECHAZADA)
+  ======================================================= -->
+  <div class="page-break"></div>
+
+  <div class="header">
+    <table class="brand-row">
+      <tr>
+        <td class="brand-left">
+          <img class="logo" src="{% static 'assets/img/logo_gad_municipal_claro.png' %}" alt="GAD Salcedo" />
+        </td>
+        <td class="brand-right">
+          <div class="badge">Denuncia #{{ denuncia.id }}</div><br/>
+          <div class="subtitle">Cierre / respuesta final</div>
+        </td>
+      </tr>
+    </table>
+
+    <p class="doc-title">Respuesta Final</p>
+    <div class="subtitle">Documento de cierre administrativo.</div>
+  </div>
+
+  <div class="section-title">4) Resultado</div>
+  <div class="box">
+    <table class="kv">
+      <tr>
+        <td class="key">Estado final</td>
+        <td><strong>{{ denuncia.estado|upper }}</strong></td>
+      </tr>
+
+      {% if respuesta %}
+      <tr>
+        <td class="key">Fecha de respuesta</td>
+        <td>{{ respuesta.fecha_respuesta|date:"d/m/Y H:i" }}</td>
+      </tr>
+      {% endif %}
+    </table>
+
+    <div class="divider"></div>
+
+    <div class="key" style="font-weight:700;margin-bottom:6px;">Detalle de la respuesta</div>
+
+    {% if respuesta %}
+      <div class="bigtext">{{ respuesta.mensaje }}</div>
+    {% else %}
+      <div class="note">No existe un texto de respuesta registrado.</div>
+    {% endif %}
+  </div>
+
+  <div class="section-title">5) Funcionario que emitió la respuesta</div>
+  <div class="box">
+    {% if respuesta and respuesta.funcionario %}
+      <table class="kv">
+        <tr>
+          <td class="key">Funcionario</td>
+          <td>
+            {{ respuesta.funcionario.nombre|default:"" }} {{ respuesta.funcionario.apellido|default:"" }}
+          </td>
+        </tr>
+        {% if respuesta.funcionario.correo %}
+        <tr>
+          <td class="key">Correo</td>
+          <td>{{ respuesta.funcionario.correo }}</td>
+        </tr>
+        {% endif %}
+      </table>
+
+      <div class="note">
+        Firma sugerida: ____________________________ (Funcionario) &nbsp;&nbsp;&nbsp;
+        Sello: ____________________________
+      </div>
+    {% else %}
+      <div class="note">No se pudo determinar el funcionario que respondió.</div>
+    {% endif %}
+  </div>
 
 </body>
 </html>
