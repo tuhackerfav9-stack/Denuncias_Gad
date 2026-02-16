@@ -304,14 +304,14 @@ class GrupoForm(forms.ModelForm):
         available_users_qs = kwargs.pop("available_users_qs", None)
         super().__init__(*args, **kwargs)
 
-        # ✅ name requerido + mensaje bonito
+        #   name requerido + mensaje bonito
         self.fields["name"].required = True
         self.fields["name"].error_messages["required"] = "Debes ingresar el nombre del grupo."
 
         if available_users_qs is not None:
             self.fields["funcionarios"].queryset = available_users_qs
 
-        # ✅ En editar: precargar usuarios del grupo
+        #   En editar: precargar usuarios del grupo
         if self.instance.pk and not self.is_bound:
             self.fields["funcionarios"].initial = self.instance.user_set.all()
 
@@ -554,7 +554,7 @@ class WebUserForm(forms.ModelForm):
             user.save()
             self.save_m2m()
 
-            # ✅ crear/sincronizar dominio con departamento
+            #   crear/sincronizar dominio con departamento
             dep = self.cleaned_data.get("departamento")
             ensure_domain_for_web_user(user, departamento_id=dep.id if dep else None)
 

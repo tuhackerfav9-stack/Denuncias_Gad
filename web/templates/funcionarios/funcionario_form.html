@@ -152,7 +152,7 @@
   const telefonoInput = document.getElementById("id_telefono");
   const usuarioSelect = document.getElementById("id_usuario");
 
-  // ✅ En edición bloquea usuario UUID (no romper vínculo)
+  //   En edición bloquea usuario UUID (no romper vínculo)
   const isEdit = {{ object.pk|default:"null" }};
   if (isEdit && usuarioSelect) {
     usuarioSelect.setAttribute("disabled", "disabled");

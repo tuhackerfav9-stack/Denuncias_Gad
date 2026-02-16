@@ -84,7 +84,7 @@ class UnifiedUserCreateView(LoginRequiredMixin, TemplateView):
             activo=form.cleaned_data["activo"],
         )
 
-        messages.success(request, "✅ Usuario creado (auth_user + usuarios + funcionarios + puente).")
+        messages.success(request, "  Usuario creado (auth_user + usuarios + funcionarios + puente).")
         return redirect("web:unified_user_list")
 
 
@@ -160,7 +160,7 @@ class UnifiedUserUpdateView(LoginRequiredMixin, TemplateView):
             activo=form.cleaned_data["activo"],
         )
 
-        messages.success(request, "✅ Usuario actualizado y sincronizado en las 4 tablas.")
+        messages.success(request, "  Usuario actualizado y sincronizado en las 4 tablas.")
         return redirect("web:unified_user_list")
 
 
@@ -179,13 +179,13 @@ class UnifiedUserDeleteView(LoginRequiredMixin, TemplateView):
 
         if hard_requested and allowed:
             hard_delete_unified_user(u)
-            messages.success(request, "✅ Usuario eliminado definitivamente.")
+            messages.success(request, "  Usuario eliminado definitivamente.")
             return redirect("web:unified_user_list")
 
         soft_disable_unified_user(u)
         if not allowed:
             messages.warning(request, "⚠️ Tiene denuncias tratadas: NO se puede eliminar. Se desactivó.")
         else:
-            messages.info(request, "✅ Se desactivó (soft delete).")
+            messages.info(request, "  Se desactivó (soft delete).")
 
         return redirect("web:unified_user_list")

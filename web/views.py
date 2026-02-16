@@ -104,7 +104,7 @@ def tomar_denuncia_si_libre(denuncia, funcionario, motivo="Denuncia tomada para 
 
         denuncia.asignado_funcionario = funcionario
 
-        # ✅ Cuando se toma por atención, pasa a en_proceso si aún no está resuelta/rechazada
+        #   Cuando se toma por atención, pasa a en_proceso si aún no está resuelta/rechazada
         if denuncia.estado in ["pendiente", "asignada", "en_revision"]:
             denuncia.estado = "en_proceso"
 
@@ -536,7 +536,7 @@ class GrupoCreateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRequ
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
 
-        # ✅ SOLO funcionarios (tabla puente) SIN grupo
+        #   SOLO funcionarios (tabla puente) SIN grupo
         available = User.objects.filter(
             funcionario_link__isnull=False,   # <- viene de related_name en FuncionarioWebUser
             is_active=True,
@@ -558,7 +558,7 @@ class GrupoUpdateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRequ
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
 
-        # ✅ EDITAR: todos los funcionarios (para poder moverlos)
+        #   EDITAR: todos los funcionarios (para poder moverlos)
         available = User.objects.filter(
             funcionario_link__isnull=False,
             is_active=True
@@ -615,7 +615,7 @@ class MenuCreateView(LoginRequiredMixin, SuperUserRequiredMixin, CreateView):
     login_url = "web:login"
 
     def form_valid(self, form):
-        messages.success(self.request, "✅ Menú creado correctamente.")
+        messages.success(self.request, "  Menú creado correctamente.")
         return super().form_valid(form)
 
 
@@ -628,7 +628,7 @@ class MenuUpdateView(LoginRequiredMixin, SuperUserRequiredMixin, UpdateView):
     login_url = "web:login"
 
     def form_valid(self, form):
-        messages.success(self.request, "✅ Menú actualizado correctamente.")
+        messages.success(self.request, "  Menú actualizado correctamente.")
         return super().form_valid(form)
 
 
@@ -910,7 +910,7 @@ class DenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateView)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # ✅ Para volver exacto a donde estabas (lista con filtros/página)
+        #   Para volver exacto a donde estabas (lista con filtros/página)
         next_url = self.request.GET.get("next")
         if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={self.request.get_host()}):
             context["return_url"] = next_url
@@ -930,7 +930,7 @@ class DenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateView)
         return context
 
     def get_success_url(self):
-        # ✅ Al guardar, vuelve con filtros/página si venían
+        #   Al guardar, vuelve con filtros/página si venían
         next_url = self.request.GET.get("next")
         if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={self.request.get_host()}):
             return next_url
@@ -959,7 +959,7 @@ class DenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateView)
                 denuncia_id=self.object.id,
             )
 
-        messages.success(self.request, "✅ Denuncia actualizada correctamente.")
+        messages.success(self.request, "  Denuncia actualizada correctamente.")
         return super().form_valid(form)
 
 
@@ -995,7 +995,7 @@ def crear_respuesta_denuncia(request, pk):
             if not funcionario.departamento_id or denuncia.asignado_departamento_id != funcionario.departamento_id:
                 return render(request, "errors/403.html", status=403)
 
-        # ✅ Si nadie la está tratando, el primero que responde la “toma”
+        #   Si nadie la está tratando, el primero que responde la “toma”
         if denuncia.asignado_funcionario_id is None:
             denuncia.asignado_funcionario = funcionario
 
@@ -1007,7 +1007,7 @@ def crear_respuesta_denuncia(request, pk):
             )
             return redirect("web:denuncia_detail", pk=pk)
 
-        # ✅ Si responde, pasar a EN_PROCESO si estaba pendiente/en_revision/asignada
+        #   Si responde, pasar a EN_PROCESO si estaba pendiente/en_revision/asignada
         if denuncia.estado in ["pendiente", "en_revision", "asignada"]:
             denuncia.estado = "en_proceso"
 
@@ -1036,7 +1036,7 @@ def crear_respuesta_denuncia(request, pk):
         )
 
     notificar_respuesta(denuncia)
-    messages.success(request, "✅ Respuesta enviada correctamente.")
+    messages.success(request, "  Respuesta enviada correctamente.")
     return redirect("web:denuncia_detail", pk=pk)
 
 
@@ -1184,7 +1184,7 @@ class TiposDenunciaCreateView(CrudMessageMixin, FuncionarioRequiredMixin, Create
         now = timezone.now()
         obj.created_at = now
         obj.updated_at = now
-        obj.activo = True  # ✅ por si acaso (regla del sistema)
+        obj.activo = True  #   por si acaso (regla del sistema)
         obj.save()
         return super().form_valid(form)
 
@@ -1198,14 +1198,14 @@ class TiposDenunciaDetailView(FuncionarioRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         tipo = self.object
 
-        # ✅ Relación correcta: TipoDenunciaDepartamento.tipo_denuncia
+        #   Relación correcta: TipoDenunciaDepartamento.tipo_denuncia
         rel = (TipoDenunciaDepartamento.objects
                .select_related("departamento")
                .filter(tipo_denuncia=tipo)
                .first())
         ctx["departamento_asignado"] = rel.departamento if rel else None
 
-        # ✅ Conteo correcto usando la tabla real Denuncias.tipo_denuncia
+        #   Conteo correcto usando la tabla real Denuncias.tipo_denuncia
         ctx["total_denuncias"] = Denuncias.objects.filter(tipo_denuncia=tipo).count()
 
         return ctx
@@ -1229,12 +1229,12 @@ class TiposDenunciaDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, Delete
     template_name = "tipos_denuncia/tipos_denuncia_confirm_delete.html"
     success_url = reverse_lazy("web:tipos_denuncia_list")
     login_url = "web:login"
-    context_object_name = "tipo_denuncia"  # ✅ para que tu template lo reciba también
+    context_object_name = "tipo_denuncia"  #   para que tu template lo reciba también
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         tipo = self.object
-        ctx["total_denuncias"] = Denuncias.objects.filter(tipo_denuncia=tipo).count()  # ✅ modelo real
+        ctx["total_denuncias"] = Denuncias.objects.filter(tipo_denuncia=tipo).count()  #   modelo real
         return ctx
 
 # =========================================
@@ -1262,7 +1262,7 @@ def llm_response(request, denuncia_id):
             "ciudadano", "tipo_denuncia", "asignado_departamento", "asignado_funcionario"
         ).get(id=denuncia_id)
 
-        # ✅ tomar denuncia (si está libre) o bloquear si ya la tomó otro
+        #   tomar denuncia (si está libre) o bloquear si ya la tomó otro
         if not request.user.is_superuser:
             ok, msg = tomar_denuncia_si_libre(
                 denuncia,
@@ -1408,7 +1408,7 @@ Responde en español, solo texto plano, con tono empático.
     )
 
     notificar_respuesta(denuncia)
-    messages.success(request, "✅ Denuncia marcada como resuelta.")
+    messages.success(request, "  Denuncia marcada como resuelta.")
     return redirect("web:denuncia_detail", pk=denuncia_id)
 
 #-----------------------------------
@@ -1434,7 +1434,7 @@ def rechazar_denuncia(request, denuncia_id):
             id=denuncia_id,
         )
 
-        # ✅ tomar denuncia (si está libre) o bloquear si ya la tomó otro
+        #   tomar denuncia (si está libre) o bloquear si ya la tomó otro
         if not request.user.is_superuser:
             ok, msg = tomar_denuncia_si_libre(
                 denuncia,
@@ -1480,7 +1480,7 @@ def rechazar_denuncia(request, denuncia_id):
         )
 
     notificar_respuesta(denuncia)
-    messages.success(request, "✅ Denuncia rechazada correctamente.")
+    messages.success(request, "  Denuncia rechazada correctamente.")
     return redirect("web:denuncia_detail", pk=denuncia_id)
 
 
@@ -1502,7 +1502,7 @@ def llm_rechazo_response(request, denuncia_id):
             "ciudadano", "tipo_denuncia", "asignado_departamento", "asignado_funcionario"
         ).get(id=denuncia_id)
 
-        # ✅ tomar denuncia (si está libre) o bloquear si ya la tomó otro
+        #   tomar denuncia (si está libre) o bloquear si ya la tomó otro
         if not request.user.is_superuser:
             ok, msg = tomar_denuncia_si_libre(
                 denuncia,
@@ -1773,7 +1773,7 @@ class WebUserCreateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRe
     def form_valid(self, form):
         user = form.save(commit=False)
 
-        # ✅ Forzar reglas internas (para que el signal dispare)
+        #   Forzar reglas internas (para que el signal dispare)
         user.is_staff = True
         user.is_active = True
         user.is_superuser = False  # si quieres permitir super admin, lo hacemos aparte
@@ -1835,17 +1835,17 @@ class WebUserDeleteView(DeleteView):
         allowed = can_hard_delete_user(self.object)
 
         if hard_requested and allowed:
-            # ✅ hard delete real (luego el signal pre_delete limpia el dominio)
-            messages.success(request, "✅ Usuario eliminado definitivamente.")
+            #   hard delete real (luego el signal pre_delete limpia el dominio)
+            messages.success(request, "  Usuario eliminado definitivamente.")
             return super().post(request, *args, **kwargs)
 
-        # ✅ si NO se permite hard delete, o si no lo pidió: soft disable
+        #   si NO se permite hard delete, o si no lo pidió: soft disable
         soft_disable_web_user(self.object)
 
         if not allowed:
             messages.warning(request, "⚠️ No se puede eliminar porque tiene denuncias tratadas. Se desactivó el usuario.")
         else:
-            messages.info(request, "✅ Usuario desactivado (soft delete).")
+            messages.info(request, "  Usuario desactivado (soft delete).")
 
         return redirect(self.success_url)
 
@@ -1853,6 +1853,7 @@ class WebUserDeleteView(DeleteView):
         ctx = super().get_context_data(**kwargs)
         ctx["can_hard_delete"] = can_hard_delete_user(self.object)
         return ctx
+    
 #-----------------------------
 # pdf
 #---------------------------------

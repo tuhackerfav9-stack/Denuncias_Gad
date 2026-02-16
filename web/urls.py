@@ -41,7 +41,7 @@ urlpatterns = [
     path("api/user-data/<int:user_id>/", get_user_data_ajax, name="get_user_data"),
     path("api/generate-llm-response/<uuid:denuncia_id>/", llm_response, name="generate_llm_response"),
     path("resolver-denuncia/<uuid:denuncia_id>/", resolver_denuncia, name="resolver_denuncia"),
-    # ✅ SOLO SI LA USAS (AJAX)
+    #   SOLO SI LA USAS (AJAX)
     path("denuncias/<uuid:denuncia_id>/tomar/", tomar_denuncia, name="tomar_denuncia"),
 
     # Denuncias
