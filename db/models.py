@@ -481,3 +481,63 @@ class DenunciaRespuesta(models.Model):
     class Meta:
         managed = False
         db_table = "denuncia_respuestas"
+
+
+# --- Archivos binarios (NUEVO) ---
+import uuid
+from django.db import models
+
+class BorradorArchivo(models.Model):
+    TIPOS = (
+        ("cedula", "cedula"),
+        ("firma", "firma"),
+        ("foto", "foto"),
+        ("audio", "audio"),
+        ("video", "video"),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    borrador = models.ForeignKey(
+        "DenunciaBorradores",
+        on_delete=models.CASCADE,
+        related_name="archivos",
+        db_column="borrador_id",
+    )
+
+    tipo = models.CharField(max_length=20, choices=TIPOS)
+    filename = models.CharField(max_length=255, null=True, blank=True)
+    content_type = models.CharField(max_length=100, null=True, blank=True)
+    size_bytes = models.BigIntegerField(default=0)
+    data = models.BinaryField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "borrador_archivos"   # ✅ tabla nueva (no existe aún)
+        managed = True                  # ✅ Django la crea
+
+
+class DenunciaArchivo(models.Model):
+    TIPOS = BorradorArchivo.TIPOS
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    denuncia = models.ForeignKey(
+        "Denuncias",
+        on_delete=models.CASCADE,
+        related_name="archivos",
+        db_column="denuncia_id",
+    )
+
+    tipo = models.CharField(max_length=20, choices=TIPOS)
+    filename = models.CharField(max_length=255, null=True, blank=True)
+    content_type = models.CharField(max_length=100, null=True, blank=True)
+    size_bytes = models.BigIntegerField(default=0)
+    data = models.BinaryField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "denuncia_archivos"   # ✅ tabla nueva
+        managed = True
