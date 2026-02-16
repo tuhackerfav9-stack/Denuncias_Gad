@@ -1726,7 +1726,8 @@ class DepartamentosDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, Delete
 from django.db.models import Prefetch
 from django.contrib.auth.models import User
 
-from db.models import FuncionarioWebUser
+from web.models import FuncionarioWebUser
+
 from web.services.delete_rules import can_hard_delete_user
 
 
