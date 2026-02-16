@@ -1,75 +1,112 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block content %}
-<div class="container-fluid mt-4">
-  <div class="row">
-    <div class="col-12 col-lg-8 mx-auto">
-      <div class="card shadow-sm">
-        <div class="card-header bg-info text-white">
-          <h5 class="mb-0">
-            <i class="bi bi-diagram-3 me-2"></i>
-            {% if object %}Editar Asignación{% else %}Nueva Asignación{% endif %}
-          </h5>
-        </div>
+<div class="container mt-4">
 
-        <div class="card-body">
-          <form method="post" novalidate>
-            {% csrf_token %}
-
-            {% if form.non_field_errors %}
-              <div class="alert alert-danger" role="alert">
-                {{ form.non_field_errors }}
-              </div>
-            {% endif %}
-
-            <div class="mb-3">
-              <label for="{{ form.tipo_denuncia.id_for_label }}" class="form-label">
-                {{ form.tipo_denuncia.label }} <span class="text-danger">*</span>
-              </label>
-              {{ form.tipo_denuncia }}
-              {% if form.tipo_denuncia.errors %}
-                <div class="invalid-feedback d-block">
-                  {{ form.tipo_denuncia.errors }}
-                </div>
-              {% endif %}
-              <small class="form-text text-muted">
-                Solo se muestran tipos activos y que aún no tienen departamento asignado.
-              </small>
-            </div>
-
-            <div class="mb-3">
-              <label for="{{ form.departamento.id_for_label }}" class="form-label">
-                {{ form.departamento.label }} <span class="text-danger">*</span>
-              </label>
-              {{ form.departamento }}
-              {% if form.departamento.errors %}
-                <div class="invalid-feedback d-block">
-                  {{ form.departamento.errors }}
-                </div>
-              {% endif %}
-              <small class="form-text text-muted">
-                Solo se muestran departamentos activos.
-              </small>
-            </div>
-
-            <div class="alert alert-info" role="alert">
-              <i class="bi bi-info-circle me-2"></i>
-              <strong>Nota:</strong> Esta asignación determina qué departamento será responsable de atender denuncias de este tipo.
-            </div>
-
-            <div class="d-flex justify-content-end gap-2 mt-4">
-              <a href="{% url 'web:tipo_denuncia_departamento_list' %}" class="btn btn-secondary">
-                <i class="bi bi-x-circle me-2"></i>Cancelar
-              </a>
-              <button type="submit" class="btn btn-info text-white">
-                <i class="bi bi-check-circle me-2"></i>
-                {% if object %}Actualizar{% else %}Crear{% endif %}
-              </button>
-            </div>
-
-          </form>
-        </div>
-      </div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="mb-1">
+        {% if object %}Editar Asignación{% else %}Nueva Asignación{% endif %}
+      </h3>
+      <p class="text-muted mb-0">
+        Asigna un tipo de denuncia a un departamento responsable.
+      </p>
     </div>
   </div>
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger">
+      <strong>Revisa esto:</strong>
+      <div>
+        {{ form.non_field_errors }}
+      </div>
+    </div>
+  {% endif %}
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    <style>
+      /* ✅ Consistencia visual */
+      .card, .card-body { overflow: visible !important; }
+
+      .section-title{
+        font-weight: 600;
+        margin-bottom: .75rem;
+      }
+
+      .help-text{
+        font-size: .875rem;
+        color: #6c757d;
+        margin-top: .25rem;
+      }
+
+      .req-dot{
+        color:#dc3545;
+        font-weight:700;
+        margin-left:.15rem;
+      }
+    </style>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+
+        <h5 class="section-title">
+          <i class="bi bi-diagram-3 me-2"></i>Datos de la asignación
+        </h5>
+
+        <div class="row g-3">
+
+          <!-- Tipo denuncia -->
+          <div class="col-12">
+            <label for="{{ form.tipo_denuncia.id_for_label }}" class="form-label">
+              {{ form.tipo_denuncia.label }}<span class="req-dot">*</span>
+            </label>
+            {{ form.tipo_denuncia }}
+            {% if form.tipo_denuncia.errors %}
+              <div class="text-danger small mt-1">
+                {{ form.tipo_denuncia.errors }}
+              </div>
+            {% endif %}
+            <div class="help-text">
+              Solo se muestran tipos activos que aún no tienen departamento asignado.
+            </div>
+          </div>
+
+          <!-- Departamento -->
+          <div class="col-12">
+            <label for="{{ form.departamento.id_for_label }}" class="form-label">
+              {{ form.departamento.label }}<span class="req-dot">*</span>
+            </label>
+            {{ form.departamento }}
+            {% if form.departamento.errors %}
+              <div class="text-danger small mt-1">
+                {{ form.departamento.errors }}
+              </div>
+            {% endif %}
+            <div class="help-text">
+              Solo se muestran departamentos activos.
+            </div>
+          </div>
+
+        </div>
+
+        <div class="alert alert-info mt-4">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Nota:</strong> Esta asignación define qué departamento será responsable de atender denuncias de este tipo.
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-4 justify-content-end">
+          <a href="{% url 'web:tipo_denuncia_departamento_list' %}" class="btn btn-light">
+            <i class="bi bi-arrow-left me-1"></i>Cancelar
+          </a>
+          <button type="submit" class="btn btn-info text-white">
+            <i class="bi bi-check-circle me-1"></i>
+            {% if object %}Actualizar{% else %}Crear{% endif %}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </form>
 </div>
 {% endblock %}
