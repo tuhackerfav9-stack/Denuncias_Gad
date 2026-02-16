@@ -62,6 +62,25 @@
 
     /* helper: evita layout raro en topRight */
     .iziToast-wrapper { z-index: 999999 !important; }
+
+
+
+    /* Avatar con iniciales */
+.profile-avatar-circle{
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #0dcaf0; /* info */
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
   </style>
 
   {% block extra_css %}{% endblock %}
@@ -88,11 +107,18 @@
 
         <ul class="navbar-nav navbar-nav-right">
           <li class="nav-item nav-profile dropdown">
+
             <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" id="profileDropdown">
               <span class="me-2 d-none d-lg-inline text-dark">
                 {{ user.get_full_name|default:user.username }}
               </span>
-              <img src="{% static 'skydash/assets/images/faces/face28.jpg' %}" alt="profile"/>
+              <div class="profile-avatar-circle">
+                {{ user.first_name|default:user.username|slice:":1"|upper }}
+                {% if user.last_name %}
+                  {{ user.last_name|slice:":1"|upper }}
+                {% endif %}
+              </div>
+
             </a>
 
             <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">

@@ -1,77 +1,136 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-info ">
-                    <h5 class="card-title mb-0 text-white">
-                        <i class="bi bi-{% if object %}pencil{% else %}plus-circle{% endif %} me-2"></i>
-                        {% if object %}Editar{% else %}Crear{% endif %} Departamento
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <form method="post" action=".">
-                        {% csrf_token %}
+<div class="container mt-4">
 
-                        {% if form.non_field_errors %}
-                        <div class="alert alert-danger" role="alert">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            {% for error in form.non_field_errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
-                        <div class="mb-3">
-                            <label for="{{ form.nombre.id_for_label }}" class="form-label">
-                                <i class="bi bi-building me-1"></i>Nombre del Departamento
-                            </label>
-                            {{ form.nombre }}
-                            {% if form.nombre.errors %}
-                                <div class="text-danger small">{{ form.nombre.errors.0 }}</div>
-                            {% endif %}
-                            <div class="form-text">Ingrese el nombre completo del departamento</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="form-check">
-                                {{ form.activo }}
-                                <label for="{{ form.activo.id_for_label }}" class="form-check-label">
-                                    <i class="bi bi-check-circle me-1"></i>Departamento Activo
-                                </label>
-                            </div>
-                            {% if form.activo.errors %}
-                                <div class="text-danger small">{{ form.activo.errors.0 }}</div>
-                            {% endif %}
-                            <div class="form-text">Marque esta casilla si el departamento está activo</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="{{ form.color_hex.id_for_label }}" class="form-label">
-                                <i class="bi bi-palette me-1"></i>Color del Departamento
-                            </label>
-                            <div class="col-md-4">
-                                {{ form.color_hex }}
-                            </div>
-                            {% if form.color_hex.errors %}
-                                <div class="text-danger small">{{ form.color_hex.errors.0 }}</div>
-                            {% endif %}
-                            <div class="form-text">Seleccione un color representativo para el departamento</div>
-                        </div>
-
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'web:departamento_list' %}" class="btn btn-outline-secondary me-md-2">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-info text-white">
-                                <i class="bi bi-check-circle me-1"></i>
-                                {% if object %}Actualizar{% else %}Crear{% endif %} Departamento
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="mb-1">
+        {% if object %}Editar Departamento{% else %}Crear Departamento{% endif %}
+      </h3>
+      <p class="text-muted mb-0">
+        Administra los departamentos responsables de atender denuncias.
+      </p>
     </div>
+  </div>
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger">
+      <strong>Revisa esto:</strong>
+      <div>
+        {% for error in form.non_field_errors %}
+          {{ error }}
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  <form method="post" action="." novalidate>
+    {% csrf_token %}
+
+    <style>
+      .card, .card-body { overflow: visible !important; }
+
+      .section-title{
+        font-weight: 600;
+        margin-bottom: .75rem;
+      }
+
+      .help-text{
+        font-size: .875rem;
+        color: #6c757d;
+        margin-top: .25rem;
+      }
+
+      .req-dot{
+        color:#dc3545;
+        font-weight:700;
+        margin-left:.15rem;
+      }
+
+      .form-check{
+        padding-left: 1.8rem;
+      }
+      .form-check-input{
+        margin-left: -1.8rem;
+      }
+    </style>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+
+        <h5 class="section-title">
+          <i class="bi bi-building me-2"></i>Datos del departamento
+        </h5>
+
+        <div class="row g-3">
+
+          <!-- Nombre -->
+          <div class="col-12 col-md-8">
+            <label class="form-label">
+              <i class="bi bi-building me-1"></i>Nombre del Departamento
+              <span class="req-dot">*</span>
+            </label>
+            {{ form.nombre }}
+            {% if form.nombre.errors %}
+              <div class="text-danger small mt-1">
+                {{ form.nombre.errors.0 }}
+              </div>
+            {% endif %}
+            <div class="help-text">
+              Ingrese el nombre completo del departamento.
+            </div>
+          </div>
+
+          <!-- Color -->
+          <div class="col-12 col-md-4">
+            <label class="form-label">
+              <i class="bi bi-palette me-1"></i>Color representativo
+            </label>
+            {{ form.color_hex }}
+            {% if form.color_hex.errors %}
+              <div class="text-danger small mt-1">
+                {{ form.color_hex.errors.0 }}
+              </div>
+            {% endif %}
+            <div class="help-text">
+              Se usará en badges, etiquetas y visualizaciones.
+            </div>
+          </div>
+
+          <!-- Activo -->
+          <div class="col-12 col-md-6">
+            <div class="form-check mt-2">
+              {{ form.activo }}
+              <label class="form-check-label">
+                <i class="bi bi-check-circle me-1"></i>Departamento Activo
+              </label>
+            </div>
+            {% if form.activo.errors %}
+              <div class="text-danger small mt-1">
+                {{ form.activo.errors.0 }}
+              </div>
+            {% endif %}
+            <div class="help-text">
+              Si está desmarcado, no podrá recibir nuevas denuncias.
+            </div>
+          </div>
+
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+          <button type="submit" class="btn btn-info text-white">
+            <i class="bi bi-check-circle me-1"></i>
+            {% if object %}Actualizar{% else %}Crear{% endif %}
+          </button>
+
+          <a href="{% url 'web:departamento_list' %}" class="btn btn-light">
+            Cancelar
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </form>
 </div>
 {% endblock %}
