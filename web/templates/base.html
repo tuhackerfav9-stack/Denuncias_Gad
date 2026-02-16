@@ -65,14 +65,31 @@
 
 
 
-    /* Avatar con iniciales */
+   /* ✅ Fix: perfil en una sola línea (PC) */
+.nav-profile-link{
+  display: flex !important;
+  align-items: center !important;
+  gap: .5rem;
+  white-space: nowrap;
+}
+
+/* ✅ El nombre NO debe empujar el círculo: se corta con ... */
+.profile-name{
+  max-width: 200px;          /* ajusta si quieres más/menos */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ✅ Avatar fijo, no se estira ni baja */
 .profile-avatar-circle{
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
   border-radius: 50%;
-  background-color: #0dcaf0; /* info */
-  color: #ffffff;
-  display: flex;
+  background-color: var(--bs-info, #41545a); /* azul info */
+  color: #fff;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
@@ -80,6 +97,7 @@
   text-transform: uppercase;
   letter-spacing: .5px;
 }
+
 
   </style>
 
@@ -108,18 +126,19 @@
         <ul class="navbar-nav navbar-nav-right">
           <li class="nav-item nav-profile dropdown">
 
-            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" id="profileDropdown">
-              <span class="me-2 d-none d-lg-inline text-dark">
-                {{ user.get_full_name|default:user.username }}
-              </span>
-              <div class="profile-avatar-circle">
-                {{ user.first_name|default:user.username|slice:":1"|upper }}
-                {% if user.last_name %}
-                  {{ user.last_name|slice:":1"|upper }}
-                {% endif %}
-              </div>
+            <a class="nav-link dropdown-toggle nav-profile-link" href="#" data-bs-toggle="dropdown" id="profileDropdown">
+            <span class="me-2 d-none d-lg-inline text-dark profile-name">
+              {{ user.get_full_name|default:user.username }}
+            </span>
 
-            </a>
+            <div class="profile-avatar-circle">
+              {{ user.first_name|default:user.username|slice:":1"|upper }}
+              {% if user.last_name %}
+                {{ user.last_name|slice:":1"|upper }}
+              {% endif %}
+            </div>
+          </a>
+
 
             <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
               <div class="dropdown-item text-muted small">{{ user.email }}</div>
