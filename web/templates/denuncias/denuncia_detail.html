@@ -82,7 +82,7 @@
             {% endif %}
 
             {# Resolver: SOLO si NO está finalizada (resuelta/rechazada) #}
-            {% if estado != 'resuelta' and estado != 'rechazada' %}
+            {% if estado != 'resuelta' or estado != 'rechazada' %}
               {% if puede_responder %}
                 <form method="post" action="{% url 'web:resolver_denuncia' denuncia.id %}" class="d-inline">
                   {% csrf_token %}
@@ -409,7 +409,7 @@
 
           <div class="d-flex flex-wrap gap-2">
             {# OCULTAR acciones si está resuelta o rechazada #}
-            {% if estado != 'resuelta' and estado != 'rechazada' %}
+            {% if estado != 'resuelta' or estado != 'rechazada' %}
               {% if puede_responder %}
                 <button type="button" class="btn btn-sm btn-outline-info" id="btnNuevaRespuesta">
                   <i class="bi bi-plus-circle me-1"></i> Nueva respuesta
