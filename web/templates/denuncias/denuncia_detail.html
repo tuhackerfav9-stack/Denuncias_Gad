@@ -12,7 +12,11 @@
     overscroll-behavior: contain;
     padding-right: .25rem;
   }
-
+  .chat-bubble{
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
   .evi-thumb { height: 150px; object-fit: cover; }
 
   /* opcional: scrollbar más fino (solo webkit) */
@@ -192,8 +196,10 @@
                 <div class="col">
                   <div class="card h-100 border-0 shadow-sm">
                     {% if 'image' in evidencia.tipo or 'jpg' in evidencia.url_archivo or 'png' in evidencia.url_archivo or 'jpeg' in evidencia.url_archivo %}
-                      <img src="{{ evidencia.url_archivo }}" class="card-img-top rounded evi-thumb" alt="Evidencia">
-                    {% else %}
+                      <img src="{{ evidencia.url_archivo }}" class="card-img-top rounded evi-thumb"
+                         onerror="this.closest('.col').style.display='none';" alt="Evidencia">
+
+                      {% else %}
                       <div class="card-body text-center bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;">
                         <i class="bi bi-file-earmark-text display-4 text-secondary"></i>
                       </div>
@@ -428,7 +434,8 @@
           {% for respuesta in respuestas %}
             <div class="d-flex mb-3 {% if respuesta.funcionario %}flex-row-reverse{% endif %}">
               <div class="p-2 rounded {% if respuesta.funcionario %}bg-info text-white{% else %}bg-white border{% endif %}" style="max-width: 85%;">
-                <p class="mb-1 small">{{ respuesta.mensaje }}</p>
+                <p class="mb-1 small chat-bubble">{{ respuesta.mensaje }}</p>
+
                 <small class="{% if respuesta.funcionario %}text-white-50{% else %}text-muted{% endif %} d-block text-end" style="font-size: 0.7rem;">
                   {{ respuesta.created_at|date:"d M H:i" }}
                   {% if respuesta.funcionario %}
@@ -709,6 +716,10 @@
         }
       });
     }
+
+    const chat = document.querySelector('.chat-body');
+    if (chat) chat.scrollTop = chat.scrollHeight;
+
   });
 </script>
 
