@@ -10,6 +10,7 @@ def notificar_respuesta(denuncia):
         .values_list("fcm_token", flat=True)
     )
 
+    
     if not tokens:
         return 0
 

@@ -1,9 +1,23 @@
+{# denuncia_detail.html #}
 {% extends 'base.html' %}
 {% block content %}
 
+{% with finalizada=denuncia.estado == 'resuelta' or denuncia.estado == 'rechazada' %}
+
 <style>
-  .chat-body { max-height: 400px; overflow-y: auto; }
+  /* Chat: que no se rompa y tenga scroll pro */
+  .chat-body{
+    max-height: 60vh;        /* responsive según pantalla */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: .25rem;
+  }
+
   .evi-thumb { height: 150px; object-fit: cover; }
+
+  /* opcional: scrollbar más fino (solo webkit) */
+  .chat-body::-webkit-scrollbar { width: 8px; }
+  .chat-body::-webkit-scrollbar-thumb { border-radius: 8px; }
 </style>
 
 <div class="container-fluid mt-4">
@@ -21,6 +35,8 @@
 
             {% if denuncia.estado == 'resuelta' %}
               <span class="badge bg-success">Resuelta</span>
+            {% elif denuncia.estado == 'rechazada' %}
+              <span class="badge bg-danger">Rechazada</span>
             {% elif denuncia.estado == 'en_proceso' %}
               <span class="badge bg-info text-white">En proceso</span>
             {% elif denuncia.estado == 'asignada' %}
@@ -33,14 +49,14 @@
           </div>
 
           <small class="text-muted d-block mt-1">
-            Creado el {{ denuncia.created_at|date:"d \d\e F, Y" }} a las {{ denuncia.created_at|date:"H:i" }}
+            Creado el {{ denuncia.created_at|date:"d \\d\\e F, Y" }} a las {{ denuncia.created_at|date:"H:i" }}
           </small>
         </div>
 
         <div class="col-lg-4 text-lg-end">
           <div class="d-flex justify-content-lg-end gap-2 flex-wrap">
 
-            {# Volver: si vienes de lista con querystring, puedes pasar ?next=... desde la lista; si no, vuelve normal #}
+            {# Volver #}
             {% if request.GET.next %}
               <a href="{{ request.GET.next }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-1"></i> Volver
@@ -51,8 +67,8 @@
               </a>
             {% endif %}
 
-            {# Resolver: solo si no está resuelta #}
-            {% if denuncia.estado != 'resuelta' %}
+            {# Resolver: SOLO si NO está finalizada #}
+            {% if not finalizada %}
               {% if puede_responder %}
                 <form method="post" action="{% url 'web:resolver_denuncia' denuncia.id %}" class="d-inline">
                   {% csrf_token %}
@@ -67,8 +83,8 @@
               {% endif %}
             {% endif %}
 
-            {# PDF solo si resuelta (como lo tenías antes) #}
-            {% if denuncia.estado == 'resuelta' %}
+            {# PDF: si está resuelta O rechazada #}
+            {% if finalizada %}
               <a href="{% url 'web:denuncia_pdf' denuncia.id %}" class="btn btn-outline-danger">
                 <i class="bi bi-file-earmark-pdf me-1"></i> PDF
               </a>
@@ -377,7 +393,7 @@
           {% endif %}
 
           <div class="d-flex flex-wrap gap-2">
-            {% if denuncia.estado != 'resuelta' %}
+            {% if not finalizada %}
               {% if puede_responder %}
                 <button type="button" class="btn btn-sm btn-outline-info" id="btnNuevaRespuesta">
                   <i class="bi bi-plus-circle me-1"></i> Nueva respuesta
@@ -401,9 +417,9 @@
                 <button type="button" class="btn btn-sm btn-danger text-white" id="btnRechazarDenuncia" disabled>
                   <i class="bi bi-x-circle me-1"></i> Rechazar
                 </button>
-
-
               {% endif %}
+            {% else %}
+              <span class="badge bg-secondary">Caso finalizado. Comunicación solo lectura.</span>
             {% endif %}
           </div>
         </div>
@@ -542,9 +558,7 @@
       if (anyInp) csrftoken = anyInp.value;
     }
 
-    //const resp = await fetch(`/web/denuncias/${denunciaId}/tomar/`, {
     const resp = await fetch("{% url 'web:tomar_denuncia' denuncia.id %}", {
-
       method: 'POST',
       credentials: 'same-origin',
       headers: {
@@ -698,5 +712,5 @@
   });
 </script>
 
-
+{% endwith %}
 {% endblock %}

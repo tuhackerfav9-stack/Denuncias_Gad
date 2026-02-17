@@ -1051,8 +1051,14 @@ def crear_respuesta_denuncia(request, pk):
             created_at=timezone.now(),
             updated_at=timezone.now(),
         )
+    import logging
+    logger = logging.getLogger(__name__)
 
-    notificar_respuesta(denuncia)
+    try:
+        notificar_respuesta(denuncia)
+    except Exception as e:
+        logger.exception("Fallo push Firebase: %s", e)
+
     messages.success(request, "  Respuesta enviada correctamente.")
     return redirect("web:denuncia_detail", pk=pk)
 
@@ -1502,7 +1508,14 @@ def rechazar_denuncia(request, denuncia_id):
             updated_at=timezone.now(),
         )
 
-    notificar_respuesta(denuncia)
+    import logging
+    logger = logging.getLogger(__name__)
+
+    try:
+        notificar_respuesta(denuncia)
+    except Exception as e:
+        logger.exception("Fallo push Firebase: %s", e)
+
     messages.success(request, "  Denuncia rechazada correctamente.")
     return redirect("web:denuncia_detail", pk=denuncia_id)
 
