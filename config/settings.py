@@ -245,9 +245,21 @@ if not DEBUG:
 #------------------------------
 # para ver erroes en la terminal de render
 #------------------------------
+#LOGGING = {
+#  "version": 1,
+#  "disable_existing_loggers": False,
+#  "handlers": {"console": {"class": "logging.StreamHandler"}},
+#  "loggers": {"django.request": {"handlers": ["console"], "level": "ERROR", "propagate": True}},
+#}
 LOGGING = {
   "version": 1,
   "disable_existing_loggers": False,
   "handlers": {"console": {"class": "logging.StreamHandler"}},
-  "loggers": {"django.request": {"handlers": ["console"], "level": "ERROR", "propagate": True}},
+  "root": {"handlers": ["console"], "level": "INFO"},
+  "loggers": {
+    "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+    "web": {"handlers": ["console"], "level": "DEBUG", "propagate": False},
+    "denuncias_api": {"handlers": ["console"], "level": "DEBUG", "propagate": False},
+    "usuarios_api": {"handlers": ["console"], "level": "DEBUG", "propagate": False},
+  },
 }
