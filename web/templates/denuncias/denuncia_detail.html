@@ -2,7 +2,7 @@
 {% extends 'base.html' %}
 {% block content %}
 
-{% with finalizada=denuncia.estado == 'resuelta' or denuncia.estado == 'rechazada' %}
+{% with es_resuelta=denuncia.estado %}
 
 <style>
   /* Chat: que no se rompa y tenga scroll pro */
