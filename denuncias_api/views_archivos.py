@@ -39,3 +39,4 @@ class BorradorArchivoVerView(APIView):
         if obj.filename:
             resp["Content-Disposition"] = f'inline; filename="{obj.filename}"'
         return resp
+
