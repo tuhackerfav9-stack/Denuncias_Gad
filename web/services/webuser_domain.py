@@ -9,14 +9,10 @@ from web.models import FuncionarioWebUser
 
 def get_departamento(dep_id: int | None):
     if dep_id:
-        dep = Departamentos.objects.filter(id=dep_id).first()
-        if dep:
-            return dep
-    default_id = getattr(settings, "DEFAULT_DEPARTAMENTO_ID", 5)
-    dep = Departamentos.objects.filter(id=default_id).first()
-    if dep is None:
-        dep = Departamentos.objects.filter(activo=True).order_by("id").first()
-    return dep
+        return Departamentos.objects.filter(id=dep_id).first()
+    # si no me dan dep_id, NO invento uno
+    return None
+
 
 
 @transaction.atomic
@@ -55,7 +51,7 @@ def ensure_domain_for_web_user(user: User, departamento_id: int | None = None):
             "nombres": user.first_name or user.username,
             "apellidos": user.last_name or "",
             "telefono": None,
-            "departamento": dep,
+            **({"departamento": dep} if dep else {}),
             "cargo": "OPERADOR",
             "activo": True,
             "created_at": now,
