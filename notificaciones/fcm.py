@@ -11,7 +11,7 @@ def init_firebase():
         return
 
     path = str(getattr(settings, "FIREBASE_SERVICE_ACCOUNT_PATH", "")).strip()
-
+    print("[FCM] path:", path)
     # Si no hay path o no existe el archivo, NO revientes producción
     if not path or not os.path.exists(path):
         print(f"[FCM] Service account no encontrado: {path}. Push deshabilitado.")
@@ -21,7 +21,7 @@ def init_firebase():
     cred = credentials.Certificate(path)
     firebase_admin.initialize_app(cred)
     _initialized = True
-
+    print("[FCM] inicializado OK")
 
 def send_push(tokens: list[str], title: str, body: str, data: dict | None = None):
     if not tokens:
