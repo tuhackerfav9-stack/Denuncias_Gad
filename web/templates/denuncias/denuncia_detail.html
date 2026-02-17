@@ -398,9 +398,10 @@
                 <button type="button" class="btn btn-sm btn-info text-white" disabled>
                   <i class="bi bi-stars me-1"></i> Generar respuesta con IA
                 </button>
-                <button type="button" class="btn btn-sm btn-danger text-white" id="btnRechazarDenuncia">
+                <button type="button" class="btn btn-sm btn-danger text-white" id="btnRechazarDenuncia" disabled>
                   <i class="bi bi-x-circle me-1"></i> Rechazar
                 </button>
+
 
               {% endif %}
             {% endif %}
@@ -437,8 +438,8 @@
                   <i class="bi bi-chat-right-text me-2"></i>Nueva respuesta
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-  <span aria-hidden="true">&times;</span>
-</button>
+                  <span aria-hidden="true">&times;</span>
+                </button>
               </div>
 
               <form action="{% url 'web:denuncia_respuesta_create' denuncia.id %}" method="post">
@@ -513,6 +514,9 @@
 </div>
 
 <script>
+  // =========================
+  // Helpers globales (para que el 2do bloque también funcione)
+  // =========================
   function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -528,59 +532,67 @@
     return cookieValue;
   }
 
+  // CSRF global
+  let csrftoken = getCookie('csrftoken');
+
+  async function tomarDenuncia(denunciaId) {
+    // si no hay cookie, intenta agarrar token del primer form existente
+    if (!csrftoken) {
+      const anyInp = document.querySelector('input[name="csrfmiddlewaretoken"]');
+      if (anyInp) csrftoken = anyInp.value;
+    }
+
+    const resp = await fetch(`/web/denuncias/${denunciaId}/tomar/`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': csrftoken,
+      }
+    });
+
+    if (resp.ok) return { ok: true };
+
+    let data = null;
+    try { data = await resp.json(); } catch (e) {}
+    const msg = (data && data.error) ? data.error : ('No se pudo tomar la denuncia. HTTP ' + resp.status);
+    return { ok: false, msg };
+  }
+
+  // =========================
+  // DOM ready
+  // =========================
   document.addEventListener('DOMContentLoaded', function () {
+    const denunciaId = "{{ denuncia.id }}";
+
+    // -------------------------
+    // Modal Respuesta
+    // -------------------------
     const iaBtn = document.getElementById('btnRespuestaIA');
     const nuevaBtn = document.getElementById('btnNuevaRespuesta');
     const textarea = document.getElementById('respuestaMensaje');
-
-    // Modal con Bootstrap 4 (jQuery)
     const $modal = window.jQuery ? window.jQuery('#respuestaModal') : null;
-
-    // CSRF: intenta cookie; si no, toma el hidden input del form del modal
-    let csrftoken = getCookie('csrftoken');
-    if (!csrftoken) {
-      const inp = document.querySelector('#respuestaModal input[name="csrfmiddlewaretoken"]');
-      if (inp) csrftoken = inp.value;
-    }
-
-    async function tomarDenuncia() {
-      const resp = await fetch("{% url 'web:tomar_denuncia' denuncia.id %}", {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRFToken': csrftoken,
-        }
-      });
-
-      if (resp.ok) return { ok: true };
-
-      let data = null;
-      try { data = await resp.json(); } catch (e) {}
-      const msg = (data && data.error) ? data.error : ('No se pudo tomar la denuncia. HTTP ' + resp.status);
-      return { ok: false, msg };
-    }
 
     // Nueva respuesta
     if (nuevaBtn && $modal && $modal.length) {
       nuevaBtn.addEventListener('click', async function () {
         nuevaBtn.disabled = true;
-        const res = await tomarDenuncia();
+        const res = await tomarDenuncia(denunciaId);
         nuevaBtn.disabled = false;
 
         if (!res.ok) { alert(res.msg); return; }
-        $modal.modal('show'); //   BS4
+        $modal.modal('show');
       });
     }
 
-    // IA
+    // IA respuesta
     if (iaBtn && textarea && $modal && $modal.length) {
       iaBtn.addEventListener('click', async function () {
         iaBtn.disabled = true;
         const original = iaBtn.innerHTML;
         iaBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-1" role="status"></span> Generando...';
 
-        const res = await tomarDenuncia();
+        const res = await tomarDenuncia(denunciaId);
         if (!res.ok) {
           iaBtn.disabled = false;
           iaBtn.innerHTML = original;
@@ -618,79 +630,71 @@
         }
       });
     }
+
+    // -------------------------
+    // Modal Rechazo
+    // -------------------------
+    const rechazoBtn = document.getElementById('btnRechazarDenuncia');
+    const rechazoIA = document.getElementById('btnRechazoIA');
+    const rechazoMotivo = document.getElementById('rechazoMotivo');
+    const $rechazoModal = window.jQuery ? window.jQuery('#rechazoModal') : null;
+
+    // Abrir modal rechazo
+    if (rechazoBtn && $rechazoModal && $rechazoModal.length && !rechazoBtn.disabled) {
+      rechazoBtn.addEventListener('click', async function () {
+        rechazoBtn.disabled = true;
+        const res = await tomarDenuncia(denunciaId);
+        rechazoBtn.disabled = false;
+
+        if (!res.ok) { alert(res.msg); return; }
+        $rechazoModal.modal('show');
+      });
+    }
+
+    // IA para rechazo
+    if (rechazoIA && rechazoMotivo && $rechazoModal && $rechazoModal.length) {
+      rechazoIA.addEventListener('click', async function () {
+        const original = rechazoIA.innerHTML;
+        rechazoIA.disabled = true;
+        rechazoIA.innerHTML = '<span class="spinner-border spinner-border-sm mr-1" role="status"></span> Generando...';
+
+        const res = await tomarDenuncia(denunciaId);
+        if (!res.ok) {
+          rechazoIA.disabled = false;
+          rechazoIA.innerHTML = original;
+          alert(res.msg);
+          return;
+        }
+
+        try {
+          const resp = await fetch("{% url 'web:generate_llm_rechazo' denuncia.id %}", {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({ motivo: rechazoMotivo.value || "" })
+          });
+
+          const data = await resp.json();
+          if (data && data.success) {
+            rechazoMotivo.value = data.response;
+          } else {
+            alert((data && data.error) ? data.error : "No se pudo generar.");
+          }
+        } catch (e) {
+          console.error(e);
+          alert("Error al generar con IA.");
+        } finally {
+          rechazoIA.disabled = false;
+          rechazoIA.innerHTML = original;
+        }
+      });
+    }
   });
 </script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const rechazoBtn = document.getElementById('btnRechazarDenuncia');
-  const rechazoIA = document.getElementById('btnRechazoIA');
-  const rechazoMotivo = document.getElementById('rechazoMotivo');
 
-  const $rechazoModal = window.jQuery ? window.jQuery('#rechazoModal') : null;
-
-  // reutiliza csrftoken y tomarDenuncia() que ya tienes arriba
-
-  // Abrir modal de rechazo
-  if (rechazoBtn && $rechazoModal && $rechazoModal.length) {
-    rechazoBtn.addEventListener('click', async function() {
-      rechazoBtn.disabled = true;
-      const res = await tomarDenuncia();
-      rechazoBtn.disabled = false;
-
-      if (!res.ok) { alert(res.msg); return; }
-      $rechazoModal.modal('show');
-    });
-  }
-
-  // IA para rechazo (genera texto y lo pone en el textarea del motivo)
-  if (rechazoIA && rechazoMotivo && $rechazoModal && $rechazoModal.length) {
-    rechazoIA.addEventListener('click', async function() {
-      const original = rechazoIA.innerHTML;
-      rechazoIA.disabled = true;
-      rechazoIA.innerHTML = '<span class="spinner-border spinner-border-sm mr-1" role="status"></span> Generando...';
-
-      // tomar denuncia antes de generar
-      const res = await tomarDenuncia();
-      if (!res.ok) {
-        rechazoIA.disabled = false;
-        rechazoIA.innerHTML = original;
-        alert(res.msg);
-        return;
-      }
-
-      try {
-        const resp = await fetch("{% url 'web:generate_llm_rechazo' denuncia.id %}", {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken,
-          },
-          body: JSON.stringify({ motivo: rechazoMotivo.value || "" })
-        });
-
-        const data = await resp.json();
-        if (data && data.success) {
-          // aquí te dejo 2 opciones:
-          // 1) llenar el motivo con una versión resumida:
-          // rechazoMotivo.value = data.response;
-
-          // 2) mejor: poner un motivo corto + el mensaje calido abajo:
-          rechazoMotivo.value = data.response;
-        } else {
-          alert((data && data.error) ? data.error : "No se pudo generar.");
-        }
-      } catch (e) {
-        console.error(e);
-        alert("Error al generar con IA.");
-      } finally {
-        rechazoIA.disabled = false;
-        rechazoIA.innerHTML = original;
-      }
-    });
-  }
-});
-</script>
 
 {% endblock %}

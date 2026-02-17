@@ -128,6 +128,7 @@ def tomar_denuncia_si_libre(denuncia, funcionario, motivo="Denuncia tomada para 
             denuncia=denuncia,
             funcionario=funcionario,
             asignado_en=timezone.now(),
+            activo=True,
         )
 
     return True, "OK"
@@ -142,9 +143,10 @@ def tomar_denuncia(request, denuncia_id):
 
     with transaction.atomic():
         denuncia = get_object_or_404(
-            Denuncias.objects.select_for_update().select_related("asignado_funcionario"),
+            Denuncias.objects.select_for_update(),  # ✅ SIN select_related
             id=denuncia_id,
         )
+
 
         ok, msg = tomar_denuncia_si_libre(
             denuncia,
@@ -998,6 +1000,14 @@ def crear_respuesta_denuncia(request, pk):
         #   Si nadie la está tratando, el primero que responde la “toma”
         if denuncia.asignado_funcionario_id is None:
             denuncia.asignado_funcionario = funcionario
+            DenunciaAsignaciones.objects.create(
+                id=get_uuid(),
+                denuncia=denuncia,
+                funcionario=funcionario,
+                asignado_en=timezone.now(),
+                activo=True,
+            )
+
 
         # ❌ Si ya la está tratando otro, bloquear respuesta
         elif denuncia.asignado_funcionario_id != funcionario.pk:
@@ -1428,11 +1438,10 @@ def rechazar_denuncia(request, denuncia_id):
 
     with transaction.atomic():
         denuncia = get_object_or_404(
-            Denuncias.objects.select_for_update().select_related(
-                "ciudadano", "tipo_denuncia", "asignado_departamento", "asignado_funcionario"
-            ),
+            Denuncias.objects.select_for_update(),  # ✅ SIN joins
             id=denuncia_id,
         )
+
 
         #   tomar denuncia (si está libre) o bloquear si ya la tomó otro
         if not request.user.is_superuser:
