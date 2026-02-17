@@ -95,7 +95,10 @@ def tomar_denuncia_si_libre(denuncia, funcionario, motivo="Denuncia tomada para 
 
     # Ya está tomada por otro
     if denuncia.asignado_funcionario_id and denuncia.asignado_funcionario_id != funcionario.pk:
-        nombre_otro = f"{denuncia.asignado_funcionario.nombres} {denuncia.asignado_funcionario.apellidos}"
+        #nombre_otro = f"{denuncia.asignado_funcionario.nombres} {denuncia.asignado_funcionario.apellidos}"
+        otro = Funcionarios.objects.filter(pk=denuncia.asignado_funcionario_id).first()
+        nombre_otro = f"{getattr(otro,'nombres','')} {getattr(otro,'apellidos','')}".strip() or "otro funcionario"
+
         return False, f"Esta denuncia ya está siendo atendida por {nombre_otro}."
 
     # Si está libre, tomarla
@@ -123,13 +126,17 @@ def tomar_denuncia_si_libre(denuncia, funcionario, motivo="Denuncia tomada para 
         )
 
         # Asignaciones (si existe tu tabla)
+        # (opcional) desactiva asignaciones anteriores activas
+        DenunciaAsignaciones.objects.filter(denuncia=denuncia, activo=True).update(activo=False)
+
         DenunciaAsignaciones.objects.create(
             id=get_uuid(),
             denuncia=denuncia,
             funcionario=funcionario,
             asignado_en=timezone.now(),
-            activo=True,
+            activo=True,  # ✅ CLAVE para que no mande NULL
         )
+
 
     return True, "OK"
 

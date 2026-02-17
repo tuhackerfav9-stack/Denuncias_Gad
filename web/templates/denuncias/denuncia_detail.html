@@ -542,7 +542,9 @@
       if (anyInp) csrftoken = anyInp.value;
     }
 
-    const resp = await fetch(`/web/denuncias/${denunciaId}/tomar/`, {
+    //const resp = await fetch(`/web/denuncias/${denunciaId}/tomar/`, {
+    const resp = await fetch("{% url 'web:tomar_denuncia' denuncia.id %}", {
+
       method: 'POST',
       credentials: 'same-origin',
       headers: {
