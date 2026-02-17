@@ -2,21 +2,31 @@
 {% extends 'base.html' %}
 {% block content %}
 
-{% with es_resuelta=denuncia.estado %}
+{% with estado=denuncia.estado %}
 
 <style>
   /* Chat: que no se rompa y tenga scroll pro */
   .chat-body{
-    max-height: 60vh;        /* responsive según pantalla */
+    max-height: 60vh;
     overflow-y: auto;
     overscroll-behavior: contain;
+    padding: .75rem;
     padding-right: .25rem;
   }
+
+  /* IMPORTANTE en flex: evita overflow raro */
+  .chat-msg{
+    max-width: 85%;
+    min-width: 0;
+  }
+
   .chat-bubble{
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
+    white-space: pre-wrap;      /* respeta saltos */
+    overflow-wrap: anywhere;    /* corta URLs largas */
+    word-break: break-word;
+    margin: 0;
+  }
+
   .evi-thumb { height: 150px; object-fit: cover; }
 
   /* opcional: scrollbar más fino (solo webkit) */
@@ -37,18 +47,18 @@
               Denuncia <span class="text-muted">#{{ denuncia.id|truncatechars:8 }}</span>
             </h1>
 
-            {% if denuncia.estado == 'resuelta' %}
+            {% if estado == 'resuelta' %}
               <span class="badge bg-success">Resuelta</span>
-            {% elif denuncia.estado == 'rechazada' %}
+            {% elif estado == 'rechazada' %}
               <span class="badge bg-danger">Rechazada</span>
-            {% elif denuncia.estado == 'en_proceso' %}
+            {% elif estado == 'en_proceso' %}
               <span class="badge bg-info text-white">En proceso</span>
-            {% elif denuncia.estado == 'asignada' %}
+            {% elif estado == 'asignada' %}
               <span class="badge bg-primary">Asignada</span>
-            {% elif denuncia.estado == 'en_revision' %}
+            {% elif estado == 'en_revision' %}
               <span class="badge bg-secondary">En revisión</span>
             {% else %}
-              <span class="badge bg-warning text-dark">{{ denuncia.estado|default:"pendiente"|title }}</span>
+              <span class="badge bg-warning text-dark">{{ estado|default:"pendiente"|title }}</span>
             {% endif %}
           </div>
 
@@ -71,8 +81,8 @@
               </a>
             {% endif %}
 
-            {# Resolver: SOLO si NO está finalizada #}
-            {% if not finalizada %}
+            {# Resolver: SOLO si NO está finalizada (resuelta/rechazada) #}
+            {% if estado != 'resuelta' and estado != 'rechazada' %}
               {% if puede_responder %}
                 <form method="post" action="{% url 'web:resolver_denuncia' denuncia.id %}" class="d-inline">
                   {% csrf_token %}
@@ -88,7 +98,7 @@
             {% endif %}
 
             {# PDF: si está resuelta O rechazada #}
-            {% if finalizada %}
+            {% if estado == 'resuelta' or estado == 'rechazada' %}
               <a href="{% url 'web:denuncia_pdf' denuncia.id %}" class="btn btn-outline-danger">
                 <i class="bi bi-file-earmark-pdf me-1"></i> PDF
               </a>
@@ -197,9 +207,8 @@
                   <div class="card h-100 border-0 shadow-sm">
                     {% if 'image' in evidencia.tipo or 'jpg' in evidencia.url_archivo or 'png' in evidencia.url_archivo or 'jpeg' in evidencia.url_archivo %}
                       <img src="{{ evidencia.url_archivo }}" class="card-img-top rounded evi-thumb"
-                         onerror="this.closest('.col').style.display='none';" alt="Evidencia">
-
-                      {% else %}
+                           onerror="this.closest('.col').style.display='none';" alt="Evidencia">
+                    {% else %}
                       <div class="card-body text-center bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;">
                         <i class="bi bi-file-earmark-text display-4 text-secondary"></i>
                       </div>
@@ -399,7 +408,8 @@
           {% endif %}
 
           <div class="d-flex flex-wrap gap-2">
-            {% if not finalizada %}
+            {# OCULTAR acciones si está resuelta o rechazada #}
+            {% if estado != 'resuelta' and estado != 'rechazada' %}
               {% if puede_responder %}
                 <button type="button" class="btn btn-sm btn-outline-info" id="btnNuevaRespuesta">
                   <i class="bi bi-plus-circle me-1"></i> Nueva respuesta
@@ -412,7 +422,6 @@
                 <button type="button" class="btn btn-sm btn-danger text-white" id="btnRechazarDenuncia">
                   <i class="bi bi-x-circle me-1"></i> Rechazar
                 </button>
-
               {% else %}
                 <button type="button" class="btn btn-sm btn-outline-info" disabled>
                   <i class="bi bi-plus-circle me-1"></i> Nueva respuesta
@@ -432,9 +441,9 @@
 
         <div class="card-body bg-light chat-body">
           {% for respuesta in respuestas %}
-            <div class="d-flex mb-3 {% if respuesta.funcionario %}flex-row-reverse{% endif %}">
-              <div class="p-2 rounded {% if respuesta.funcionario %}bg-info text-white{% else %}bg-white border{% endif %}" style="max-width: 85%;">
-                <p class="mb-1 small chat-bubble">{{ respuesta.mensaje }}</p>
+            <div class="d-flex mb-3 {% if respuesta.funcionario %}justify-content-end{% else %}justify-content-start{% endif %}">
+              <div class="p-2 rounded chat-msg {% if respuesta.funcionario %}bg-info text-white{% else %}bg-white border{% endif %}">
+                <p class="small chat-bubble">{{ respuesta.mensaje }}</p>
 
                 <small class="{% if respuesta.funcionario %}text-white-50{% else %}text-muted{% endif %} d-block text-end" style="font-size: 0.7rem;">
                   {{ respuesta.created_at|date:"d M H:i" }}
@@ -538,7 +547,7 @@
 
 <script>
   // =========================
-  // Helpers globales (para que el 2do bloque también funcione)
+  // Helpers globales
   // =========================
   function getCookie(name) {
     let cookieValue = null;
@@ -559,7 +568,6 @@
   let csrftoken = getCookie('csrftoken');
 
   async function tomarDenuncia(denunciaId) {
-    // si no hay cookie, intenta agarrar token del primer form existente
     if (!csrftoken) {
       const anyInp = document.querySelector('input[name="csrfmiddlewaretoken"]');
       if (anyInp) csrftoken = anyInp.value;
@@ -582,21 +590,15 @@
     return { ok: false, msg };
   }
 
-  // =========================
-  // DOM ready
-  // =========================
   document.addEventListener('DOMContentLoaded', function () {
     const denunciaId = "{{ denuncia.id }}";
 
-    // -------------------------
     // Modal Respuesta
-    // -------------------------
     const iaBtn = document.getElementById('btnRespuestaIA');
     const nuevaBtn = document.getElementById('btnNuevaRespuesta');
     const textarea = document.getElementById('respuestaMensaje');
     const $modal = window.jQuery ? window.jQuery('#respuestaModal') : null;
 
-    // Nueva respuesta
     if (nuevaBtn && $modal && $modal.length) {
       nuevaBtn.addEventListener('click', async function () {
         nuevaBtn.disabled = true;
@@ -608,7 +610,6 @@
       });
     }
 
-    // IA respuesta
     if (iaBtn && textarea && $modal && $modal.length) {
       iaBtn.addEventListener('click', async function () {
         iaBtn.disabled = true;
@@ -654,15 +655,12 @@
       });
     }
 
-    // -------------------------
     // Modal Rechazo
-    // -------------------------
     const rechazoBtn = document.getElementById('btnRechazarDenuncia');
     const rechazoIA = document.getElementById('btnRechazoIA');
     const rechazoMotivo = document.getElementById('rechazoMotivo');
     const $rechazoModal = window.jQuery ? window.jQuery('#rechazoModal') : null;
 
-    // Abrir modal rechazo
     if (rechazoBtn && $rechazoModal && $rechazoModal.length && !rechazoBtn.disabled) {
       rechazoBtn.addEventListener('click', async function () {
         rechazoBtn.disabled = true;
@@ -674,7 +672,6 @@
       });
     }
 
-    // IA para rechazo
     if (rechazoIA && rechazoMotivo && $rechazoModal && $rechazoModal.length) {
       rechazoIA.addEventListener('click', async function () {
         const original = rechazoIA.innerHTML;
@@ -719,7 +716,6 @@
 
     const chat = document.querySelector('.chat-body');
     if (chat) chat.scrollTop = chat.scrollHeight;
-
   });
 </script>
 
