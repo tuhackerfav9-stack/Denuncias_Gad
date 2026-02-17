@@ -1,3 +1,4 @@
+import os
 import firebase_admin
 from firebase_admin import credentials, messaging
 from django.conf import settings
@@ -8,9 +9,19 @@ def init_firebase():
     global _initialized
     if _initialized:
         return
-    cred = credentials.Certificate(str(settings.FIREBASE_SERVICE_ACCOUNT_PATH))
+
+    path = str(getattr(settings, "FIREBASE_SERVICE_ACCOUNT_PATH", "")).strip()
+
+    # Si no hay path o no existe el archivo, NO revientes producción
+    if not path or not os.path.exists(path):
+        print(f"[FCM] Service account no encontrado: {path}. Push deshabilitado.")
+        _initialized = True  # evita intentar siempre
+        return
+
+    cred = credentials.Certificate(path)
     firebase_admin.initialize_app(cred)
     _initialized = True
+
 
 def send_push(tokens: list[str], title: str, body: str, data: dict | None = None):
     if not tokens:
@@ -18,20 +29,25 @@ def send_push(tokens: list[str], title: str, body: str, data: dict | None = None
 
     init_firebase()
 
-    messages = []
-    for t in tokens:
-        messages.append(
-            messaging.Message(
-                notification=messaging.Notification(title=title, body=body),
-                data={k: str(v) for k, v in (data or {}).items()},
-                token=t,
-            )
+    # si no hay app inicializada (porque faltó el json), salimos sin romper
+    if not firebase_admin._apps:
+        return 0
+
+    messages = [
+        messaging.Message(
+            notification=messaging.Notification(title=title, body=body),
+            data={k: str(v) for k, v in (data or {}).items()},
+            token=t,
         )
+        for t in tokens
+    ]
 
-    resp = messaging.send_each(messages)  # ✅
-    # opcional: imprime errores por token
-    for r, tok in zip(resp.responses, tokens):
-        if not r.success:
-            print("FCM ERROR token:", tok, "=>", r.exception)
-
-    return resp.success_count
+    try:
+        resp = messaging.send_each(messages)
+        for r, tok in zip(resp.responses, tokens):
+            if not r.success:
+                print("FCM ERROR token:", tok, "=>", r.exception)
+        return resp.success_count
+    except Exception as e:
+        print("[FCM] Error enviando push:", e)
+        return 0

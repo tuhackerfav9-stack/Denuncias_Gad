@@ -1424,7 +1424,14 @@ Responde en español, solo texto plano, con tono empático.
         updated_at=timezone.now(),
     )
 
-    notificar_respuesta(denuncia)
+    import logging
+    logger = logging.getLogger(__name__)
+
+    try:
+        notificar_respuesta(denuncia)
+    except Exception as e:
+        logger.exception("Fallo al enviar push (Firebase). Continúo sin push: %s", e)
+
     messages.success(request, "  Denuncia marcada como resuelta.")
     return redirect("web:denuncia_detail", pk=denuncia_id)
 
