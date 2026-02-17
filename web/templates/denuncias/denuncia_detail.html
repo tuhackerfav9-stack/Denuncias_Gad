@@ -6,13 +6,19 @@
 
 <style>
   /* Chat: que no se rompa y tenga scroll pro */
-  .chat-body{
+  /*.chat-body{
     max-height: 60vh;
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: .75rem;
     padding-right: .25rem;
-  }
+  }*/
+  .chat-body{
+  height: 60vh;              /* altura fija */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
 
   /* IMPORTANTE en flex: evita overflow raro */
   .chat-msg{
@@ -82,7 +88,7 @@
             {% endif %}
 
             {# Resolver: SOLO si NO está finalizada (resuelta/rechazada) #}
-            {% if estado != 'resuelta' or estado != 'rechazada' %}
+            {% if estado != 'resuelta' and estado != 'rechazada' %}
               {% if puede_responder %}
                 <form method="post" action="{% url 'web:resolver_denuncia' denuncia.id %}" class="d-inline">
                   {% csrf_token %}
@@ -409,7 +415,7 @@
 
           <div class="d-flex flex-wrap gap-2">
             {# OCULTAR acciones si está resuelta o rechazada #}
-            {% if estado != 'resuelta' or estado != 'rechazada' %}
+            {% if estado != 'resuelta' and estado != 'rechazada' %}
               {% if puede_responder %}
                 <button type="button" class="btn btn-sm btn-outline-info" id="btnNuevaRespuesta">
                   <i class="bi bi-plus-circle me-1"></i> Nueva respuesta
