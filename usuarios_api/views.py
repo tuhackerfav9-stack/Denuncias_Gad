@@ -29,6 +29,13 @@ import bcrypt
 
 from db.models import Usuarios
 
+from uuid import uuid4
+from django.core.files.storage import default_storage
+from django.utils.text import get_valid_filename
+from django.conf import settings
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -216,7 +223,6 @@ class RegisterDocumentosView(APIView):
 
     def post(self, request):
         uid = (request.data.get("uid") or "").strip()
-
         if not uid:
             return Response({"detail": "uid es obligatorio"}, status=400)
 
@@ -227,24 +233,85 @@ class RegisterDocumentosView(APIView):
 
         frontal = request.FILES.get("cedula_frontal")
         trasera = request.FILES.get("cedula_trasera")
-
         if not frontal or not trasera:
-            return Response({"detail": "Debes enviar cedula_frontal y cedula_trasera"}, status=400)
+            return Response(
+                {"detail": "Debes enviar cedula_frontal y cedula_trasera"},
+                status=400
+            )
 
-        # Guarda archivos en MEDIA (local)
+        # (opcional pero recomendado) validar que sean imágenes
+        if not (frontal.content_type or "").startswith("image/"):
+            return Response({"detail": "cedula_frontal debe ser imagen"}, status=400)
+        if not (trasera.content_type or "").startswith("image/"):
+            return Response({"detail": "cedula_trasera debe ser imagen"}, status=400)
+
         folder = f"registros/{uid}/"
-        frontal_path = default_storage.save(folder + frontal.name, frontal)
-        trasera_path = default_storage.save(folder + trasera.name, trasera)
 
-        # URLs absolutas para Flutter
-        frontal_url = request.build_absolute_uri(settings.MEDIA_URL + frontal_path)
-        trasera_url = request.build_absolute_uri(settings.MEDIA_URL + trasera_path)
+        # nombres seguros + únicos para evitar choques
+        f_name = f"{uuid4().hex}_{get_valid_filename(frontal.name)}"
+        t_name = f"{uuid4().hex}_{get_valid_filename(trasera.name)}"
 
+        frontal_path = default_storage.save(folder + f_name, frontal)
+        trasera_path = default_storage.save(folder + t_name, trasera)
+
+        # ✅ URL REAL del storage (sirve local, Cloudinary, S3, etc.)
+        frontal_url = default_storage.url(frontal_path)
+        trasera_url = default_storage.url(trasera_path)
+
+        # si el storage devuelve /media/..., lo hacemos absoluto
+        if frontal_url.startswith("/"):
+            frontal_url = request.build_absolute_uri(frontal_url)
+        if trasera_url.startswith("/"):
+            trasera_url = request.build_absolute_uri(trasera_url)
+
+        # guardas en tu borrador
         borrador.cedula_frontal_url = frontal_url
         borrador.cedula_trasera_url = trasera_url
         borrador.save()
 
-        return Response({"detail": "Documentos guardados", "url_frontal": frontal_url, "url_trasera": trasera_url}, status=200)
+        return Response(
+            {
+                "detail": "Documentos guardados",
+                "url_frontal": frontal_url,
+                "url_trasera": trasera_url,
+            },
+            status=200
+        )
+
+#class RegisterDocumentosView(APIView):
+#    permission_classes = [AllowAny]
+#
+#    def post(self, request):
+#        uid = (request.data.get("uid") or "").strip()
+#
+#        if not uid:
+#            return Response({"detail": "uid es obligatorio"}, status=400)
+#
+#        try:
+#            borrador = RegistroCiudadanoBorrador.objects.get(id=uid)
+#        except RegistroCiudadanoBorrador.DoesNotExist:
+#            return Response({"detail": "uid inválido"}, status=404)
+#
+#        frontal = request.FILES.get("cedula_frontal")
+#        trasera = request.FILES.get("cedula_trasera")
+#
+#        if not frontal or not trasera:
+#            return Response({"detail": "Debes enviar cedula_frontal y cedula_trasera"}, status=400)
+#
+#        # Guarda archivos en MEDIA (local)
+#        folder = f"registros/{uid}/"
+#        frontal_path = default_storage.save(folder + frontal.name, frontal)
+#        trasera_path = default_storage.save(folder + trasera.name, trasera)
+#
+#        # URLs absolutas para Flutter
+#        frontal_url = request.build_absolute_uri(settings.MEDIA_URL + frontal_path)
+#        trasera_url = request.build_absolute_uri(settings.MEDIA_URL + trasera_path)
+#
+#        borrador.cedula_frontal_url = frontal_url
+#        borrador.cedula_trasera_url = trasera_url
+#        borrador.save()
+#
+#        return Response({"detail": "Documentos guardados", "url_frontal": frontal_url, "url_trasera": trasera_url}, status=200)
 
 
 class RegisterFinalizarView(APIView):
