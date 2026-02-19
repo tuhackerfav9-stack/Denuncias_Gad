@@ -539,5 +539,5 @@ class DenunciaArchivo(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "denuncia_archivos"   # ✅ tabla nueva
+        db_table = "denuncia_archivos"   # tabla nueva
         managed = True

@@ -1,24 +1,38 @@
+# denuncias_api/views_borradores.py
+
 import uuid
 from datetime import timedelta
 
-from django.utils import timezone
+import requests
 from django.db import transaction
+from django.utils import timezone
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
-from db.models import Ciudadanos, Denuncias, DenunciaBorradores
+from db.models import (
+    Ciudadanos,
+    Denuncias,
+    DenunciaBorradores,
+    DenunciaEvidencias,
+    DenunciaFirmas,
+    BorradorArchivo,
+    DenunciaArchivo,
+)
 
 from .serializers_borradores import (
     DenunciaBorradorCreateSerializer,
     DenunciaBorradorUpdateSerializer,
 )
 
-from db.models import DenunciaEvidencias, DenunciaFirmas
-import requests
+from .utils import get_claim
 
+
+# =========================================================
+# GEO
+# =========================================================
 def reverse_geocode_nominatim(lat: float, lng: float) -> str | None:
     try:
         url = "https://nominatim.openstreetmap.org/reverse"
@@ -38,51 +52,48 @@ def reverse_geocode_nominatim(lat: float, lng: float) -> str | None:
     except Exception:
         return None
 
-# =========================
-# Helpers
-# =========================
-def get_claim(request, key: str, default=None):
-    token = getattr(request, "auth", None)
-    if token is None:
-        return default
-    try:
-        return token.get(key, default)
-    except Exception:
-        return default
 
-
+# =========================================================
+# TTL Borrador
+# =========================================================
 BORRADOR_TTL_MIN = 5
 
 
-def expires_at(b):
+def expires_at(b: DenunciaBorradores):
     return b.created_at + timedelta(minutes=BORRADOR_TTL_MIN)
 
 
-def borrador_expirado(b):
+def borrador_expirado(b: DenunciaBorradores):
     return timezone.now() >= expires_at(b)
 
 
-def seconds_left(b):
+def seconds_left(b: DenunciaBorradores):
     s = int((expires_at(b) - timezone.now()).total_seconds())
     return max(0, s)
 
 
+# =========================================================
+# FINALIZE: borrador -> denuncia
+# =========================================================
 def finalize_borrador_to_denuncia(b: DenunciaBorradores):
     """
     Convierte borrador -> denuncia definitiva y BORRA el borrador.
+    - Soporta BIN (BorradorArchivo -> DenunciaArchivo)
+    - Soporta MEDIA viejo (url_archivo y firma_url ya guardados)
     """
     data = b.datos_json or {}
     now = timezone.now()
 
+    # -------- Validación mínima --------
     tipo_denuncia_id = data.get("tipo_denuncia_id")
     descripcion = data.get("descripcion")
     latitud = data.get("latitud")
     longitud = data.get("longitud")
 
-    # Validación mínima
     if not tipo_denuncia_id or not descripcion or latitud is None or longitud is None:
         return None
 
+    # -------- 1) Crear denuncia --------
     denuncia = Denuncias.objects.create(
         id=uuid.uuid4(),
         ciudadano_id=b.ciudadano_id,
@@ -97,28 +108,94 @@ def finalize_borrador_to_denuncia(b: DenunciaBorradores):
         created_at=now,
         updated_at=now,
     )
-        # ===== firma =====
-    firma_url = data.get("firma_url")
-    firma_base64 = data.get("firma_base64")  # por si luego usas base64
 
-    if firma_url or firma_base64:
-        DenunciaFirmas.objects.create(
-            id=uuid.uuid4(),
-            denuncia_id=denuncia.id,
-            firma_url=firma_url,
-            firma_base64=firma_base64,
-            created_at=now,
-            updated_at=now,
-        )
+    # -------- 2) Firma (BIN o viejo) --------
+    firma_archivo_id = data.get("firma_archivo_id")
 
-    # ===== evidencias =====
+    if firma_archivo_id:
+        try:
+            ba = BorradorArchivo.objects.get(id=firma_archivo_id, borrador_id=b.id)
+
+            da = DenunciaArchivo.objects.create(
+                id=uuid.uuid4(), #id
+                denuncia_id=denuncia.id,
+                tipo="firma",
+                filename=ba.filename,
+                content_type=ba.content_type,
+                size_bytes=ba.size_bytes,
+                data=ba.data,
+            )
+
+            # URL RELATIVA (tu app está montada en /api/denuncias/)
+            firma_url_rel = f"/api/denuncias/archivos/denuncia/{da.id}/"
+
+            DenunciaFirmas.objects.create(
+                id=uuid.uuid4(),
+                denuncia_id=denuncia.id,
+                firma_url=firma_url_rel,
+                firma_base64=None,
+                created_at=now,
+                updated_at=now,
+            )
+        except Exception:
+            # no cortamos el flujo por firma
+            pass
+    else:
+        # Firma modo viejo (por si aún existe)
+        firma_url = data.get("firma_url")
+        firma_base64 = data.get("firma_base64")
+        if firma_url or firma_base64:
+            try:
+                DenunciaFirmas.objects.create(
+                    id=uuid.uuid4(),
+                    denuncia_id=denuncia.id,
+                    firma_url=firma_url,
+                    firma_base64=firma_base64,
+                    created_at=now,
+                    updated_at=now,
+                )
+            except Exception:
+                pass
+
+    # -------- 3) Evidencias (BIN o viejo) --------
     evidencias = data.get("evidencias") or []
     for ev in evidencias:
         try:
+            ev_tipo = (ev.get("tipo") or "foto")
+
+            # BIN: viene archivo_id
+            archivo_id = ev.get("archivo_id")
+            if archivo_id:
+                ba = BorradorArchivo.objects.get(id=archivo_id, borrador_id=b.id)
+
+                da = DenunciaArchivo.objects.create(
+                    id=uuid.uuid4(), #id
+                    denuncia_id=denuncia.id,
+                    tipo=(ev_tipo or ba.tipo or "foto"),
+                    filename=ba.filename,
+                    content_type=ba.content_type,
+                    size_bytes=ba.size_bytes,
+                    data=ba.data,
+                )
+
+                url_rel = f"/api/denuncias/archivos/denuncia/{da.id}/"
+
+                DenunciaEvidencias.objects.create(
+                    id=uuid.uuid4(),
+                    denuncia_id=denuncia.id,
+                    tipo=(ev_tipo or "foto"),
+                    url_archivo=url_rel,
+                    nombre_archivo=(ba.filename or ev.get("nombre_archivo")),
+                    created_at=now,
+                    updated_at=now,
+                )
+                continue
+
+            # MEDIA viejo: ya trae url_archivo
             DenunciaEvidencias.objects.create(
                 id=uuid.uuid4(),
                 denuncia_id=denuncia.id,
-                tipo=(ev.get("tipo") or "foto"),
+                tipo=(ev_tipo or "foto"),
                 url_archivo=(ev.get("url_archivo") or ""),
                 nombre_archivo=ev.get("nombre_archivo"),
                 created_at=now,
@@ -127,9 +204,8 @@ def finalize_borrador_to_denuncia(b: DenunciaBorradores):
         except Exception:
             pass
 
-
-    # Si viene de chat (opcional)
-    if b.conversacion_id:
+    # -------- 4) Si viene de chat: linkear conversación -> denuncia --------
+    if getattr(b, "conversacion_id", None):
         try:
             conv = b.conversacion
             conv.denuncia_id = denuncia.id
@@ -138,13 +214,19 @@ def finalize_borrador_to_denuncia(b: DenunciaBorradores):
         except Exception:
             pass
 
+    # -------- 5) Limpieza: borrar archivos bin del borrador + borrar borrador --------
+    try:
+        BorradorArchivo.objects.filter(borrador_id=b.id).delete()
+    except Exception:
+        pass
+
     b.delete()
     return denuncia
 
 
-# =========================
+# =========================================================
 # Views
-# =========================
+# =========================================================
 class BorradoresCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -153,18 +235,17 @@ class BorradoresCreateView(APIView):
         tipo = get_claim(request, "tipo")
 
         if not uid or tipo != "ciudadano":
-            return Response({"detail": "Solo ciudadanos"}, status=403)
+            return Response({"detail": "Solo ciudadanos"}, status=status.HTTP_403_FORBIDDEN)
 
         if not Ciudadanos.objects.filter(usuario_id=uid).exists():
-            return Response({"detail": "Perfil ciudadano no existe"}, status=400)
+            return Response({"detail": "Perfil ciudadano no existe"}, status=status.HTTP_400_BAD_REQUEST)
 
-        
         ser = DenunciaBorradorCreateSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         v = ser.validated_data
 
         now = timezone.now()
-        data = dict(v)  # lo guardamos tal cual
+        data = dict(v)
         data["origen"] = data.get("origen", "formulario")
 
         if not data.get("direccion_texto"):
@@ -188,7 +269,7 @@ class BorradoresCreateView(APIView):
                 "expira_en_min": BORRADOR_TTL_MIN,
                 "editable": True,
             },
-            status=201
+            status=status.HTTP_201_CREATED
         )
 
 
@@ -198,18 +279,18 @@ class BorradoresUpdateDeleteView(APIView):
     def put(self, request, borrador_id):
         uid = get_claim(request, "uid")
         tipo = get_claim(request, "tipo")
+
         if not uid or tipo != "ciudadano":
-            return Response({"detail": "Solo ciudadanos"}, status=403)
+            return Response({"detail": "Solo ciudadanos"}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             b = DenunciaBorradores.objects.get(id=borrador_id, ciudadano_id=uid)
         except DenunciaBorradores.DoesNotExist:
-            return Response({"detail": "Borrador no existe"}, status=404)
+            return Response({"detail": "Borrador no existe"}, status=status.HTTP_404_NOT_FOUND)
 
         if borrador_expirado(b):
-            return Response({"detail": "Borrador expirado: ya no se puede editar"}, status=409)
+            return Response({"detail": "Borrador expirado: ya no se puede editar"}, status=status.HTTP_409_CONFLICT)
 
-        #  UPDATE PARCIAL (solo lo que cambie)
         ser = DenunciaBorradorUpdateSerializer(data=request.data, partial=True)
         ser.is_valid(raise_exception=True)
         v = ser.validated_data
@@ -222,30 +303,32 @@ class BorradoresUpdateDeleteView(APIView):
         b.save(update_fields=["datos_json", "updated_at"])
 
         return Response(
-            {
-                "detail": "Borrador actualizado",
-                "expira_en_seg": seconds_left(b),
-                "editable": True,
-            },
-            status=200
+            {"detail": "Borrador actualizado", "expira_en_seg": seconds_left(b), "editable": True},
+            status=status.HTTP_200_OK
         )
 
     def delete(self, request, borrador_id):
         uid = get_claim(request, "uid")
         tipo = get_claim(request, "tipo")
+
         if not uid or tipo != "ciudadano":
-            return Response({"detail": "Solo ciudadanos"}, status=403)
+            return Response({"detail": "Solo ciudadanos"}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             b = DenunciaBorradores.objects.get(id=borrador_id, ciudadano_id=uid)
         except DenunciaBorradores.DoesNotExist:
-            return Response({"detail": "Borrador no existe"}, status=404)
+            return Response({"detail": "Borrador no existe"}, status=status.HTTP_404_NOT_FOUND)
 
         if borrador_expirado(b):
-            return Response({"detail": "Borrador expirado: ya no se puede eliminar"}, status=409)
+            return Response({"detail": "Borrador expirado: ya no se puede eliminar"}, status=status.HTTP_409_CONFLICT)
+
+        try:
+            BorradorArchivo.objects.filter(borrador_id=b.id).delete()
+        except Exception:
+            pass
 
         b.delete()
-        return Response({"detail": "Borrador eliminado"}, status=200)
+        return Response({"detail": "Borrador eliminado"}, status=status.HTTP_200_OK)
 
 
 class BorradoresMiosView(APIView):
@@ -254,8 +337,9 @@ class BorradoresMiosView(APIView):
     def get(self, request):
         uid = get_claim(request, "uid")
         tipo = get_claim(request, "tipo")
+
         if not uid or tipo != "ciudadano":
-            return Response({"detail": "Solo ciudadanos"}, status=403)
+            return Response({"detail": "Solo ciudadanos"}, status=status.HTTP_403_FORBIDDEN)
 
         qs = list(DenunciaBorradores.objects.filter(ciudadano_id=uid).order_by("-created_at"))
 
@@ -265,11 +349,11 @@ class BorradoresMiosView(APIView):
         for b in qs:
             if borrador_expirado(b):
                 with transaction.atomic():
-                    # lock para evitar carrera
                     try:
                         b_lock = DenunciaBorradores.objects.select_for_update().get(id=b.id)
                     except DenunciaBorradores.DoesNotExist:
                         continue
+
                     d = finalize_borrador_to_denuncia(b_lock)
                     if d:
                         finalizados_auto += 1
@@ -284,34 +368,37 @@ class BorradoresMiosView(APIView):
                 **data
             })
 
-        return Response(
-            {"finalizados_auto": finalizados_auto, "borradores": borradores},
-            status=200
-        )
+        return Response({"finalizados_auto": finalizados_auto, "borradores": borradores}, status=status.HTTP_200_OK)
 
 
 class BorradoresFinalizarManualView(APIView):
     """
-    Si luego quieres “Enviar ya” antes de los 5 min, lo dejamos disponible.
-    Por ahora simplemente finaliza y crea denuncia.
+    Finalizar manual antes de expirar (crear denuncia ya).
     """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, borrador_id):
         uid = get_claim(request, "uid")
         tipo = get_claim(request, "tipo")
+
         if not uid or tipo != "ciudadano":
-            return Response({"detail": "Solo ciudadanos"}, status=403)
+            return Response({"detail": "Solo ciudadanos"}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             b = DenunciaBorradores.objects.get(id=borrador_id, ciudadano_id=uid)
         except DenunciaBorradores.DoesNotExist:
-            return Response({"detail": "Borrador no existe"}, status=404)
+            return Response({"detail": "Borrador no existe"}, status=status.HTTP_404_NOT_FOUND)
 
         with transaction.atomic():
             b = DenunciaBorradores.objects.select_for_update().get(id=b.id)
             d = finalize_borrador_to_denuncia(b)
             if not d:
-                return Response({"detail": "Borrador incompleto, no se pudo finalizar"}, status=409)
+                return Response(
+                    {"detail": "Borrador incompleto, no se pudo finalizar"},
+                    status=status.HTTP_409_CONFLICT
+                )
 
-        return Response({"detail": "Borrador finalizado", "denuncia_id": str(d.id)}, status=201)
+        return Response(
+            {"detail": "Borrador finalizado", "denuncia_id": str(d.id)},
+            status=status.HTTP_201_CREATED
+        )
