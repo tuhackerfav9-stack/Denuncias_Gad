@@ -24,6 +24,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
+from django.urls import reverse
 
 from chartkick.django import BarChart, ColumnChart, LineChart, PieChart
 
@@ -844,7 +845,7 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
 
         return obj
 
-    def get_context_data(self, **kwargs):
+def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         denuncia = self.object
         user = self.request.user
@@ -856,8 +857,45 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
             .order_by("-asignado_en")
         )
 
-        # Evidencias
-        context["evidencias"] = DenunciaEvidencias.objects.filter(denuncia=denuncia).order_by("-created_at")
+        # ✅ Evidencias
+        evidencias = list(
+            DenunciaEvidencias.objects.filter(denuncia=denuncia).order_by("-created_at")
+        )
+        
+
+        # 🔥 PASO 3: construimos url_archivo para cada evidencia apuntando a WEB
+        for e in evidencias:
+            archivo_id = None
+
+            # Caso A: si DenunciaEvidencias tiene FK "archivo"
+            if hasattr(e, "archivo") and e.archivo:
+                archivo_id = getattr(e.archivo, "id", None)
+
+            # Caso B: si DenunciaEvidencias tiene un uuid directo tipo "archivo_id"
+            if not archivo_id and hasattr(e, "archivo_id"):
+                archivo_id = getattr(e, "archivo_id", None)
+
+            # Caso C: a veces se llama "denuncia_archivo" o parecido (por si acaso)
+            if not archivo_id and hasattr(e, "denuncia_archivo") and e.denuncia_archivo:
+                archivo_id = getattr(e.denuncia_archivo, "id", None)
+
+            if archivo_id:
+                # ✅ esta es tu ruta web: path("archivos/denuncia/<uuid:archivo_id>/", ...)
+                e.url_archivo = reverse("web:web_denuncia_archivo_ver", args=[archivo_id])
+            else:
+                # fallback: si no hay relación, que no reviente
+                e.url_archivo = ""
+
+            # ✅ extra: manda un content_type amigable al template
+            # (si viene del binario)
+            if hasattr(e, "archivo") and e.archivo:
+                e.content_type = getattr(e.archivo, "content_type", None)
+                e.filename = getattr(e.archivo, "filename", None)
+            else:
+                e.content_type = getattr(e, "tipo", None)  # fallback viejo
+                e.filename = getattr(e, "nombre_archivo", None)
+
+        context["evidencias"] = evidencias
 
         # Historial (paginado)
         historial_queryset = (
@@ -885,16 +923,14 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
 
         # 🔒 Lock: puede responder?
         funcionario = get_funcionario_from_web_user(user)
-
         if self._is_admin(user):
             puede_responder = True
         else:
             puede_responder = bool(
                 funcionario and (
-                    (not denuncia.asignado_funcionario_id) or  (denuncia.asignado_funcionario_id == funcionario.pk)
+                    (not denuncia.asignado_funcionario_id) or (denuncia.asignado_funcionario_id == funcionario.pk)
                 )
             )
-
         context["puede_responder"] = puede_responder
 
         # Firma OneToOne
@@ -1967,3 +2003,52 @@ def denuncia_pdf(request, pk):
         return HttpResponse("Error al generar PDF", status=500)
 
     return response
+
+# web/views.py
+from django.http import HttpResponse, Http404
+from django.contrib.auth.decorators import login_required
+
+from db.models import DenunciaArchivo, Denuncias  # ajusta si el import cambia
+
+def _safe_filename(name: str | None) -> str | None:
+    if not name:
+        return None
+    return name.replace("\n", "").replace("\r", "").replace('"', "").strip()
+
+def _file_response(obj):
+    content_type = getattr(obj, "content_type", None) or "application/octet-stream"
+    resp = HttpResponse(bytes(obj.data), content_type=content_type)
+
+    filename = _safe_filename(getattr(obj, "filename", None))
+    if filename:
+        resp["Content-Disposition"] = f'inline; filename="{filename}"'
+
+    resp["X-Content-Type-Options"] = "nosniff"
+    resp["Cache-Control"] = "no-store"
+    return resp
+
+@login_required(login_url="web:login")
+def web_denuncia_archivo_ver(request, archivo_id):
+    """
+    WEB: sirve evidencias BIN para funcionarios/superuser (session auth).
+    """
+    # solo funcionarios o superuser (tu regla)
+    funcionario = get_funcionario_from_web_user(request.user)
+    if not (request.user.is_superuser or funcionario):
+        raise Http404("No autorizado")
+
+    try:
+        obj = DenunciaArchivo.objects.select_related("denuncia").get(id=archivo_id)
+    except DenunciaArchivo.DoesNotExist:
+        raise Http404("Archivo no existe")
+
+    # Admin/TICS ve todo
+    is_admin = request.user.is_superuser or request.user.groups.filter(name="TICS_ADMIN").exists()
+    if not is_admin:
+        # funcionario SOLO puede ver denuncias de su depto
+        if not funcionario or not funcionario.departamento_id:
+            raise Http404("No autorizado")
+        if obj.denuncia.asignado_departamento_id != funcionario.departamento_id:
+            raise Http404("No autorizado")
+
+    return _file_response(obj)

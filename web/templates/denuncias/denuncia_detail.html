@@ -216,7 +216,7 @@
       <div class="card shadow mb-4">
         <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
           <h6 class="m-0 fw-bold text-info"><i class="bi bi-images me-2"></i>Evidencias y Archivos</h6>
-          <span class="badge bg-secondary">{{ evidencias.count }}</span>
+          <span class="badge bg-secondary">{{ evidencias|length }}</span>
         </div>
 
         <div class="card-body">
@@ -225,9 +225,9 @@
               {% for evidencia in evidencias %}
                 <div class="col">
                   <div class="card h-100 border-0 shadow-sm">
-                    {% if 'image' in evidencia.tipo or 'jpg' in evidencia.url_archivo or 'png' in evidencia.url_archivo or 'jpeg' in evidencia.url_archivo %}
+                    {% if evidencia.content_type and 'image' in evidencia.content_type %}
                       <img src="{{ evidencia.url_archivo }}" class="card-img-top rounded evi-thumb"
-                           onerror="this.closest('.col').style.display='none';" alt="Evidencia">
+                          onerror="this.closest('.col').style.display='none';" alt="Evidencia">
                     {% else %}
                       <div class="card-body text-center bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;">
                         <i class="bi bi-file-earmark-text display-4 text-secondary"></i>
@@ -235,7 +235,9 @@
                     {% endif %}
 
                     <div class="card-footer bg-white border-top-0">
-                      <small class="text-muted d-block text-truncate">{{ evidencia.nombre_archivo|default:"Archivo Adjunto" }}</small>
+                      <small class="text-muted d-block text-truncate">
+                        {{ evidencia.filename|default:evidencia.nombre_archivo|default:"Archivo Adjunto" }}
+                      </small>
                       <a href="{{ evidencia.url_archivo }}" target="_blank" class="btn btn-sm btn-outline-info mt-2 w-100">
                         <i class="bi bi-download me-1"></i>Ver / Descargar
                       </a>

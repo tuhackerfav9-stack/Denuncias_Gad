@@ -19,7 +19,7 @@ from .views import (
 
     FuncionariosListView, FuncionariosCreateView, FuncionariosDetailView, FuncionariosUpdateView, FuncionariosDeleteView,
     DepartamentosListView, DepartamentosCreateView, DepartamentosDetailView, DepartamentosUpdateView, DepartamentosDeleteView,
-    WebUserListView, WebUserCreateView, WebUserDetailView, WebUserUpdateView, WebUserDeleteView,denuncia_pdf, public_home_view, tomar_denuncia
+    WebUserListView, WebUserCreateView, WebUserDetailView, WebUserUpdateView, WebUserDeleteView,denuncia_pdf, public_home_view, tomar_denuncia,web_denuncia_archivo_ver
 )
 
 from .views import rechazar_denuncia, llm_rechazo_response
@@ -119,4 +119,7 @@ urlpatterns = [
 
     #sitio web
     path("public/", public_home_view, name="public_home"),
+
+    #ver archivos
+    path("archivos/denuncia/<uuid:archivo_id>/", web_denuncia_archivo_ver, name="web_denuncia_archivo_ver"),
 ]
