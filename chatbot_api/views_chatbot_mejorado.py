@@ -19,7 +19,7 @@ from db.models import (
 )
 
 # =========================
-# JWT helper (igual al tuyo)
+# JWT helper
 # =========================
 def get_claim(request, key: str, default=None):
     token = getattr(request, "auth", None)
@@ -32,7 +32,7 @@ def get_claim(request, key: str, default=None):
 
 
 # =========================
-# Regex extractores (igual idea)
+# Regex extractores
 # =========================
 _re_tipo = re.compile(r"(?:^|\b)tipo\s*:\s*([^\n\.]+)", re.IGNORECASE)
 _re_desc = re.compile(r"(?:^|\b)(?:descripcion|descripción)\s*:\s*(.+)", re.IGNORECASE)
@@ -47,11 +47,61 @@ CONFIRM_WORDS = {"si", "sí", "si.", "sí.", "enviar", "confirmo", "enviar denun
 CANCEL_WORDS = {"no", "no.", "cancelar", "anular", "aun no", "aún no"}
 
 
+# =========================
+# Normalización para matching
+# =========================
+def _norm(s: str) -> str:
+    if not s:
+        return ""
+    x = str(s).strip().lower()
+    # quitar tildes simple
+    x = x.replace("á", "a").replace("à", "a").replace("ä", "a").replace("â", "a")
+    x = x.replace("é", "e").replace("è", "e").replace("ë", "e").replace("ê", "e")
+    x = x.replace("í", "i").replace("ì", "i").replace("ï", "i").replace("î", "i")
+    x = x.replace("ó", "o").replace("ò", "o").replace("ö", "o").replace("ô", "o")
+    x = x.replace("ú", "u").replace("ù", "u").replace("ü", "u").replace("û", "u")
+    x = x.replace("ñ", "n")
+    # solo letras/números/espacios
+    x = re.sub(r"[^a-z0-9\s]", " ", x)
+    x = re.sub(r"\s+", " ", x).strip()
+    return x
+
+
+def _score_match(query: str, candidate: str) -> int:
+    q = _norm(query)
+    c = _norm(candidate)
+    if not q or not c:
+        return 0
+    if q == c:
+        return 100
+    if c in q or q in c:
+        return 85
+
+    q_tokens = set(q.split())
+    c_tokens = set(c.split())
+    inter = len(q_tokens.intersection(c_tokens))
+    union = len(q_tokens.union(c_tokens)) or 1
+    jacc = inter / union
+
+    bonus = 0
+    # bonus por keywords comunes
+    for k in ["basura", "quema", "agua", "bache", "alumbrado", "alcantarillado", "fuga"]:
+        if k in q and k in c:
+            bonus += 8
+
+    return int(50 * jacc + bonus)
+
+
 def _match_tipo_to_id(nombre: str):
+    """
+    Devuelve id real de TiposDenuncia (activo=True) si hace match.
+    Nunca inventa ids.
+    """
     if not nombre:
         return None
 
-    n = str(nombre).strip().lower()
+    raw = str(nombre).strip()
+    n = _norm(raw)
 
     # si viene número
     if n.isdigit():
@@ -59,18 +109,21 @@ def _match_tipo_to_id(nombre: str):
         if t:
             return int(t.id)
 
-    # matching por nombre
-    qs = TiposDenuncia.objects.filter(activo=True)
-    for t in qs:
-        tn = (t.nombre or "").strip().lower()
-        if tn and (tn in n or n in tn):
-            return int(t.id)
+    # scoring sobre todos los tipos activos
+    qs = TiposDenuncia.objects.filter(activo=True).only("id", "nombre")
+    best_id = None
+    best_score = 0
 
-    # fallback simple por keyword
-    if "basura" in n or "aseo" in n:
-        t = TiposDenuncia.objects.filter(activo=True, nombre__icontains="basura").first()
-        if t:
-            return int(t.id)
+    for t in qs:
+        tn = (t.nombre or "").strip()
+        s = _score_match(n, tn)
+        if s > best_score:
+            best_score = s
+            best_id = int(t.id)
+
+    # umbral: si es fuerte, aceptamos; si no, None
+    if best_id is not None and best_score >= 70:
+        return best_id
 
     return None
 
@@ -104,6 +157,9 @@ def _extract_fields_from_text(text: str):
 
 
 def _faltantes(data: dict):
+    """
+    ⚠️ Ajusta aquí si referencia es obligatoria.
+    """
     falt = []
     if not data.get("tipo_denuncia_id"):
         falt.append("tipo_denuncia_id")
@@ -111,6 +167,11 @@ def _faltantes(data: dict):
         falt.append("descripcion")
     if data.get("latitud") is None or data.get("longitud") is None:
         falt.append("ubicacion")
+
+    # ✅ referencia obligatoria (si tu app la requiere)
+    if not data.get("referencia"):
+        falt.append("referencia")
+
     return falt
 
 
@@ -215,7 +276,7 @@ class ChatbotMessageV2View(APIView):
     - Guarda historial
     - Crea/actualiza borrador si hay datos útiles
     - Finaliza si está listo y usuario confirma
-    - Si Flutter manda bot_response (Gemini), lo guardamos como mensaje del bot
+    - Si Flutter manda bot_response (Gemini), lo guardamos como msg bot
     """
 
     permission_classes = [IsAuthenticated]
@@ -262,7 +323,7 @@ class ChatbotMessageV2View(APIView):
         hay_datos_utiles = any(
             k in extracted_text for k in ("tipo_texto", "descripcion", "latitud", "longitud", "referencia")
         ) or any(
-            k in extracted_client for k in ("tipo_denuncia_id", "descripcion", "latitud", "longitud", "referencia")
+            k in extracted_client for k in ("tipo_denuncia_id", "tipo_texto", "descripcion", "latitud", "longitud", "referencia")
         )
 
         if borr is None and (hay_datos_utiles or (texto_norm in CONFIRM_WORDS)):
@@ -277,7 +338,10 @@ class ChatbotMessageV2View(APIView):
 
             # tipo: preferir id directo del cliente
             if extracted_client.get("tipo_denuncia_id"):
-                updates["tipo_denuncia_id"] = int(extracted_client["tipo_denuncia_id"])
+                try:
+                    updates["tipo_denuncia_id"] = int(extracted_client["tipo_denuncia_id"])
+                except Exception:
+                    pass
             elif extracted_client.get("tipo_texto"):
                 tid = _match_tipo_to_id(extracted_client["tipo_texto"])
                 if tid:
@@ -289,7 +353,7 @@ class ChatbotMessageV2View(APIView):
 
             # otros campos (cliente pisa a texto si vienen)
             for k in ["descripcion", "referencia", "latitud", "longitud"]:
-                if k in extracted_text:
+                if k in extracted_text and extracted_text[k] is not None:
                     updates[k] = extracted_text[k]
                 if k in extracted_client and extracted_client[k] is not None:
                     updates[k] = extracted_client[k]
@@ -361,6 +425,8 @@ class ChatbotMessageV2View(APIView):
                     respuesta = "Descríbeme brevemente qué pasó."
                 elif "ubicacion" in falt:
                     respuesta = "📍 Envíame tu ubicación con el botón de Ubicación."
+                elif "referencia" in falt:
+                    respuesta = "Indícame una referencia (ej: frente a..., cerca de..., junto a...)."
                 else:
                     respuesta = "¿Deseas enviar la denuncia ahora? (sí/no)"
             source = "server"
