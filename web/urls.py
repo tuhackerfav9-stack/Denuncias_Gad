@@ -19,7 +19,7 @@ from .views import (
 
     FuncionariosListView, FuncionariosCreateView, FuncionariosDetailView, FuncionariosUpdateView, FuncionariosDeleteView,
     DepartamentosListView, DepartamentosCreateView, DepartamentosDetailView, DepartamentosUpdateView, DepartamentosDeleteView,
-    WebUserListView, WebUserCreateView, WebUserDetailView, WebUserUpdateView, WebUserDeleteView,denuncia_pdf, tomar_denuncia
+    WebUserListView, WebUserCreateView, WebUserDetailView, WebUserUpdateView, WebUserDeleteView,denuncia_pdf, sitio_publico_redirect, tomar_denuncia
 )
 
 from .views import rechazar_denuncia, llm_rechazo_response
@@ -117,4 +117,6 @@ urlpatterns = [
     path("usuarios-web/<int:pk>/editar/", UnifiedUserUpdateView.as_view(), name="unified_user_update"),
     path("usuarios-web/<int:pk>/eliminar/", UnifiedUserDeleteView.as_view(), name="unified_user_delete"),
 
+    #sitio web
+    path("sitio-publico/", sitio_publico_redirect, name="sitio_publico"),
 ]

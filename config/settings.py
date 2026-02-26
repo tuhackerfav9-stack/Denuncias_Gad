@@ -263,3 +263,8 @@ LOGGING = {
     "usuarios_api": {"handlers": ["console"], "level": "DEBUG", "propagate": False},
   },
 }
+
+#------------------------------
+#para ver sitio web
+#------------------------------
+PUBLIC_SITE_URL = "https://denuncias-gad.onrender.com/"

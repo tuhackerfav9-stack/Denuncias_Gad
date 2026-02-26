@@ -73,6 +73,18 @@ def mi_vista(request):
     }
     return render(request, "x.html", context)
 
+
+# =========================================
+# web/views.py
+# =========================================
+from django.conf import settings
+from django.shortcuts import redirect
+
+def sitio_publico_redirect(request):
+    # si no existe en settings, usa el default
+    url = getattr(settings, "PUBLIC_SITE_URL", "https://denuncias-gad.onrender.com/")
+    return redirect(url)
+
 # =========================================
 # OpenAI client (safe if key missing)
 # =========================================
