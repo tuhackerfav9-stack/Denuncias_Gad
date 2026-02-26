@@ -82,7 +82,7 @@ from db.models import Faq
 
 def public_home_view(request):
     faqs = Faq.objects.filter(visible=True).order_by("-created_at")
-    return render(request, "home_public.html", {"faqs": faqs})
+    return render(request, "home.html", {"faqs": faqs})
 
 # =========================================
 # OpenAI client (safe if key missing)
