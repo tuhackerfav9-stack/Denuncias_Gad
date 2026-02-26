@@ -15,10 +15,22 @@
   }*/
   .chat-body{
   height: 60vh;
-  overflow-y: auto;
+  overflow-y: auto !important;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-height: 0;
+
+  scrollbar-width: thin; /* Firefox */
+}
+
+.chat-body::-webkit-scrollbar{
+  width: 8px;
+}
+
+.chat-body::-webkit-scrollbar-thumb{
+  background: rgba(0,0,0,.3);
+  border-radius: 10px;
 }
 
 
@@ -723,7 +735,13 @@
     }
 
     const chat = document.querySelector('.chat-body');
-    if (chat) chat.scrollTop = chat.scrollHeight;
+    if (chat){
+      setTimeout(()=>{
+        chat.scrollTop = chat.scrollHeight;
+      }, 50);
+    }
+    //const chat = document.querySelector('.chat-body');
+    //if (chat) chat.scrollTop = chat.scrollHeight;
   });
 </script>
 
