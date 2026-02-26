@@ -867,34 +867,21 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
         )
 
         for e in evidencias:
-            archivo_id = None
+            # usar la URL tal como viene en BD, pero convertir si es /api/denuncias/archivos/denuncia/<uuid>/
+            e.url_archivo = _resolver_url_archivo_web(e.url_archivo)
+            e.filename = e.nombre_archivo
 
-            # Caso 1: FK archivo
-            if hasattr(e, "archivo") and getattr(e, "archivo", None):
-                archivo_id = getattr(e.archivo, "id", None)
-                e.content_type = getattr(e.archivo, "content_type", None)
-                e.filename = getattr(e.archivo, "filename", None)
+            nombre = (e.nombre_archivo or "").lower()
+            tipo = (e.tipo or "").lower()
 
-            # Caso 2: campo archivo_id directo
-            elif hasattr(e, "archivo_id") and getattr(e, "archivo_id", None):
-                archivo_id = getattr(e, "archivo_id", None)
-                e.content_type = getattr(e, "content_type", None) or getattr(e, "tipo", None)
-                e.filename = getattr(e, "nombre_archivo", None)
-
-            # Caso 3: nombre alterno denuncia_archivo
-            elif hasattr(e, "denuncia_archivo") and getattr(e, "denuncia_archivo", None):
-                archivo_id = getattr(e.denuncia_archivo, "id", None)
-                e.content_type = getattr(e.denuncia_archivo, "content_type", None)
-                e.filename = getattr(e.denuncia_archivo, "filename", None)
-
+            if tipo == "foto" or nombre.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif")):
+                e.content_type = "image/jpeg"
+            elif tipo == "video" or nombre.endswith((".mp4", ".mov", ".avi", ".webm", ".mkv")):
+                e.content_type = "video/mp4"
+            elif tipo == "audio" or nombre.endswith((".mp3", ".wav", ".ogg", ".m4a")):
+                e.content_type = "audio/mpeg"
             else:
-                e.content_type = getattr(e, "content_type", None) or getattr(e, "tipo", None)
-                e.filename = getattr(e, "nombre_archivo", None)
-
-            if archivo_id:
-                e.url_archivo = reverse("web:web_denuncia_archivo_ver", args=[archivo_id])
-            else:
-                e.url_archivo = ""
+                e.content_type = "application/octet-stream"
 
         context["evidencias"] = evidencias
 
@@ -948,9 +935,8 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
         # Firma
         # =========================
         firma = DenunciaFirmas.objects.filter(denuncia_id=denuncia.id).first()
-
         if firma:
-            firma.firma_url = reverse("web:web_denuncia_firma_ver", args=[denuncia.id])
+            firma.firma_url = _resolver_url_archivo_web(firma.firma_url)
 
         context["firma"] = firma
 
@@ -1919,8 +1905,6 @@ class WebUserUpdateView(CrudMessageMixin, LoginRequiredMixin, CustomPermissionRe
 
 
 
-
-
 class WebUserDeleteView(DeleteView):
     model = User
     template_name = "webusers/webuser_confirm_delete.html"
@@ -2031,6 +2015,25 @@ def _safe_filename(name: str | None) -> str | None:
     if not name:
         return None
     return name.replace("\n", "").replace("\r", "").replace('"', "").strip()
+
+def _resolver_url_archivo_web(raw_url: str | None) -> str:
+    """
+    Convierte una URL guardada en BD a una URL usable en WEB.
+    Soporta:
+    - /api/denuncias/archivos/denuncia/<uuid>/
+    - https://.../media/...
+    - /media/...
+    """
+    raw_url = (raw_url or "").strip()
+    if not raw_url:
+        return ""
+
+    m = re.search(r"/api/denuncias/archivos/denuncia/([0-9a-fA-F-]+)/?$", raw_url)
+    if m:
+        archivo_id = m.group(1)
+        return reverse("web:web_denuncia_archivo_ver", args=[archivo_id])
+
+    return raw_url
 
 def _file_response(obj):
     content_type = getattr(obj, "content_type", None) or "application/octet-stream"
