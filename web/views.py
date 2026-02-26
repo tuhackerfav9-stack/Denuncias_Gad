@@ -845,64 +845,68 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
 
         return obj
 
-def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         denuncia = self.object
         user = self.request.user
 
+        # =========================
         # Asignaciones
+        # =========================
         context["asignaciones"] = (
             DenunciaAsignaciones.objects.filter(denuncia=denuncia)
             .select_related("funcionario")
             .order_by("-asignado_en")
         )
 
-        # ✅ Evidencias
+        # =========================
+        # Evidencias
+        # =========================
         evidencias = list(
             DenunciaEvidencias.objects.filter(denuncia=denuncia).order_by("-created_at")
         )
-        
 
-        # 🔥 PASO 3: construimos url_archivo para cada evidencia apuntando a WEB
         for e in evidencias:
             archivo_id = None
 
-            # Caso A: si DenunciaEvidencias tiene FK "archivo"
-            if hasattr(e, "archivo") and e.archivo:
+            # Caso 1: FK archivo
+            if hasattr(e, "archivo") and getattr(e, "archivo", None):
                 archivo_id = getattr(e.archivo, "id", None)
-
-            # Caso B: si DenunciaEvidencias tiene un uuid directo tipo "archivo_id"
-            if not archivo_id and hasattr(e, "archivo_id"):
-                archivo_id = getattr(e, "archivo_id", None)
-
-            # Caso C: a veces se llama "denuncia_archivo" o parecido (por si acaso)
-            if not archivo_id and hasattr(e, "denuncia_archivo") and e.denuncia_archivo:
-                archivo_id = getattr(e.denuncia_archivo, "id", None)
-
-            if archivo_id:
-                # ✅ esta es tu ruta web: path("archivos/denuncia/<uuid:archivo_id>/", ...)
-                e.url_archivo = reverse("web:web_denuncia_archivo_ver", args=[archivo_id])
-            else:
-                # fallback: si no hay relación, que no reviente
-                e.url_archivo = ""
-
-            # ✅ extra: manda un content_type amigable al template
-            # (si viene del binario)
-            if hasattr(e, "archivo") and e.archivo:
                 e.content_type = getattr(e.archivo, "content_type", None)
                 e.filename = getattr(e.archivo, "filename", None)
-            else:
-                e.content_type = getattr(e, "tipo", None)  # fallback viejo
+
+            # Caso 2: campo archivo_id directo
+            elif hasattr(e, "archivo_id") and getattr(e, "archivo_id", None):
+                archivo_id = getattr(e, "archivo_id", None)
+                e.content_type = getattr(e, "content_type", None) or getattr(e, "tipo", None)
                 e.filename = getattr(e, "nombre_archivo", None)
+
+            # Caso 3: nombre alterno denuncia_archivo
+            elif hasattr(e, "denuncia_archivo") and getattr(e, "denuncia_archivo", None):
+                archivo_id = getattr(e.denuncia_archivo, "id", None)
+                e.content_type = getattr(e.denuncia_archivo, "content_type", None)
+                e.filename = getattr(e.denuncia_archivo, "filename", None)
+
+            else:
+                e.content_type = getattr(e, "content_type", None) or getattr(e, "tipo", None)
+                e.filename = getattr(e, "nombre_archivo", None)
+
+            if archivo_id:
+                e.url_archivo = reverse("web:web_denuncia_archivo_ver", args=[archivo_id])
+            else:
+                e.url_archivo = ""
 
         context["evidencias"] = evidencias
 
+        # =========================
         # Historial (paginado)
+        # =========================
         historial_queryset = (
             DenunciaHistorial.objects.filter(denuncia=denuncia)
             .select_related("cambiado_por_funcionario")
             .order_by("-created_at")
         )
+
         paginator = Paginator(historial_queryset, 3)
         page_number = self.request.GET.get("historial_page")
 
@@ -914,31 +918,44 @@ def get_context_data(self, **kwargs):
         context["historial"] = historial_page
         context["historial_paginator"] = paginator
 
+        # =========================
         # Respuestas
+        # =========================
         context["respuestas"] = (
             DenunciaRespuestas.objects.filter(denuncia=denuncia)
             .select_related("funcionario")
             .order_by("-created_at")
         )
 
-        # 🔒 Lock: puede responder?
+        # =========================
+        # Lock: puede responder?
+        # =========================
         funcionario = get_funcionario_from_web_user(user)
+
         if self._is_admin(user):
             puede_responder = True
         else:
             puede_responder = bool(
                 funcionario and (
-                    (not denuncia.asignado_funcionario_id) or (denuncia.asignado_funcionario_id == funcionario.pk)
+                    (not denuncia.asignado_funcionario_id)
+                    or (denuncia.asignado_funcionario_id == funcionario.pk)
                 )
             )
+
         context["puede_responder"] = puede_responder
 
-        # Firma OneToOne
+        # =========================
+        # Firma
+        # =========================
         firma = DenunciaFirmas.objects.filter(denuncia_id=denuncia.id).first()
+
+        if firma:
+            firma.firma_url = reverse("web:web_denuncia_firma_ver", args=[denuncia.id])
+
         context["firma"] = firma
 
         return context
-
+    
 class DenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, UpdateView):
     model = Denuncias
     form_class = DenunciaForm
@@ -2052,3 +2069,41 @@ def web_denuncia_archivo_ver(request, archivo_id):
             raise Http404("No autorizado")
 
     return _file_response(obj)
+
+@login_required(login_url="web:login")
+def web_denuncia_firma_ver(request, denuncia_id):
+    """
+    WEB: sirve la firma BIN para funcionarios/superuser (session auth).
+    """
+    funcionario = get_funcionario_from_web_user(request.user)
+    if not (request.user.is_superuser or funcionario):
+        raise Http404("No autorizado")
+
+    denuncia = get_object_or_404(Denuncias, id=denuncia_id)
+    firma = get_object_or_404(DenunciaFirmas, denuncia_id=denuncia_id)
+
+    # Admin/TICS ve todo
+    is_admin = request.user.is_superuser or request.user.groups.filter(name="TICS_ADMIN").exists()
+    if not is_admin:
+        if not funcionario or not funcionario.departamento_id:
+            raise Http404("No autorizado")
+        if denuncia.asignado_departamento_id != funcionario.departamento_id:
+            raise Http404("No autorizado")
+
+    # Caso 1: la firma guarda binario directo
+    if hasattr(firma, "data") and getattr(firma, "data", None):
+        return _file_response(firma)
+
+    # Caso 2: la firma tiene FK archivo
+    if hasattr(firma, "archivo") and getattr(firma, "archivo", None):
+        return _file_response(firma.archivo)
+
+    # Caso 3: la firma tiene archivo_id que apunta a DenunciaArchivo
+    if hasattr(firma, "archivo_id") and getattr(firma, "archivo_id", None):
+        try:
+            archivo = DenunciaArchivo.objects.get(id=firma.archivo_id)
+            return _file_response(archivo)
+        except DenunciaArchivo.DoesNotExist:
+            raise Http404("Archivo de firma no existe")
+
+    raise Http404("Firma no disponible")

@@ -212,7 +212,7 @@
         </div>
       </div>
 
-      <!-- Evidencias -->
+          <!-- Evidencias -->
       <div class="card shadow mb-4">
         <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
           <h6 class="m-0 fw-bold text-info"><i class="bi bi-images me-2"></i>Evidencias y Archivos</h6>
@@ -225,12 +225,28 @@
               {% for evidencia in evidencias %}
                 <div class="col">
                   <div class="card h-100 border-0 shadow-sm">
-                    {% if evidencia.content_type and 'image' in evidencia.content_type %}
-                      <img src="{{ evidencia.url_archivo }}" class="card-img-top rounded evi-thumb"
-                          onerror="this.closest('.col').style.display='none';" alt="Evidencia">
+
+                    {% if evidencia.url_archivo %}
+                      {% if evidencia.content_type and 'image' in evidencia.content_type %}
+                        <img src="{{ evidencia.url_archivo }}"
+                             class="card-img-top rounded evi-thumb"
+                             alt="Evidencia"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+
+                        <div class="card-body text-center bg-light rounded d-flex align-items-center justify-content-center"
+                             style="height: 150px; display:none;">
+                          <i class="bi bi-file-earmark-text display-4 text-secondary"></i>
+                        </div>
+                      {% else %}
+                        <div class="card-body text-center bg-light rounded d-flex align-items-center justify-content-center"
+                             style="height: 150px;">
+                          <i class="bi bi-file-earmark-text display-4 text-secondary"></i>
+                        </div>
+                      {% endif %}
                     {% else %}
-                      <div class="card-body text-center bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;">
-                        <i class="bi bi-file-earmark-text display-4 text-secondary"></i>
+                      <div class="card-body text-center bg-light rounded d-flex align-items-center justify-content-center"
+                           style="height: 150px;">
+                        <i class="bi bi-file-earmark-x display-4 text-danger"></i>
                       </div>
                     {% endif %}
 
@@ -238,10 +254,18 @@
                       <small class="text-muted d-block text-truncate">
                         {{ evidencia.filename|default:evidencia.nombre_archivo|default:"Archivo Adjunto" }}
                       </small>
-                      <a href="{{ evidencia.url_archivo }}" target="_blank" class="btn btn-sm btn-outline-info mt-2 w-100">
-                        <i class="bi bi-download me-1"></i>Ver / Descargar
-                      </a>
+
+                      {% if evidencia.url_archivo %}
+                        <a href="{{ evidencia.url_archivo }}" target="_blank" class="btn btn-sm btn-outline-info mt-2 w-100">
+                          <i class="bi bi-download me-1"></i>Ver / Descargar
+                        </a>
+                      {% else %}
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-2 w-100" disabled>
+                          <i class="bi bi-x-circle me-1"></i>No disponible
+                        </button>
+                      {% endif %}
                     </div>
+
                   </div>
                 </div>
               {% endfor %}
@@ -250,19 +274,32 @@
             <p class="text-muted text-center py-3">No hay evidencias adjuntas a esta denuncia.</p>
           {% endif %}
 
-          {% if firma %}
+          {% if firma and firma.firma_url %}
             <hr class="my-4">
             <h6 class="fw-bold mb-3"><i class="bi bi-pen me-2"></i>Firma del Ciudadano</h6>
+
             <div class="card border-0 bg-light" style="max-width: 300px;">
-              <img src="{{ firma.firma_url }}" class="img-fluid" alt="Firma">
+              <img src="{{ firma.firma_url }}"
+                   class="img-fluid"
+                   alt="Firma"
+                   onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+              <div class="text-center py-4" style="display:none;">
+                <i class="bi bi-image text-secondary" style="font-size: 2rem;"></i>
+                <div class="small text-muted mt-2">No se pudo cargar la firma</div>
+              </div>
+
               <div class="card-footer text-center bg-transparent">
+                <a href="{{ firma.firma_url }}" target="_blank" class="btn btn-sm btn-outline-info w-100 mb-2">
+                  <i class="bi bi-download me-1"></i>Ver firma
+                </a>
                 <small class="text-muted">Firmado digitalmente</small>
               </div>
             </div>
           {% endif %}
         </div>
       </div>
-
+      
       <!-- Historial -->
       <div class="card shadow mb-4">
         <div class="card-header py-3 bg-white">

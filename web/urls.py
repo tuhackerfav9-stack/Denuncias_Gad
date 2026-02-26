@@ -19,7 +19,7 @@ from .views import (
 
     FuncionariosListView, FuncionariosCreateView, FuncionariosDetailView, FuncionariosUpdateView, FuncionariosDeleteView,
     DepartamentosListView, DepartamentosCreateView, DepartamentosDetailView, DepartamentosUpdateView, DepartamentosDeleteView,
-    WebUserListView, WebUserCreateView, WebUserDetailView, WebUserUpdateView, WebUserDeleteView,denuncia_pdf, public_home_view, tomar_denuncia,web_denuncia_archivo_ver
+    WebUserListView, WebUserCreateView, WebUserDetailView, WebUserUpdateView, WebUserDeleteView,denuncia_pdf, public_home_view, tomar_denuncia,web_denuncia_archivo_ver, web_denuncia_firma_ver
 )
 
 from .views import rechazar_denuncia, llm_rechazo_response
@@ -122,4 +122,5 @@ urlpatterns = [
 
     #ver archivos
     path("archivos/denuncia/<uuid:archivo_id>/", web_denuncia_archivo_ver, name="web_denuncia_archivo_ver"),
+    path("firmas/denuncia/<uuid:denuncia_id>/", web_denuncia_firma_ver, name="web_denuncia_firma_ver"),
 ]
