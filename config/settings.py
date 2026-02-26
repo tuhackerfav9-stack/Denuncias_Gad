@@ -267,4 +267,4 @@ LOGGING = {
 #------------------------------
 #para ver sitio web
 #------------------------------
-PUBLIC_SITE_URL = "https://denuncias-gad.onrender.com/"
+#PUBLIC_SITE_URL = "https://denuncias-gad.onrender.com/"

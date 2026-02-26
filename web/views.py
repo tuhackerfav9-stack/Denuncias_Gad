@@ -77,13 +77,12 @@ def mi_vista(request):
 # =========================================
 # web/views.py
 # =========================================
-from django.conf import settings
-from django.shortcuts import redirect
+from django.shortcuts import render
+from db.models import Faq
 
-def sitio_publico_redirect(request):
-    # si no existe en settings, usa el default
-    url = getattr(settings, "PUBLIC_SITE_URL", "https://denuncias-gad.onrender.com/")
-    return redirect(url)
+def public_home_view(request):
+    faqs = Faq.objects.filter(visible=True).order_by("-created_at")
+    return render(request, "home_public.html", {"faqs": faqs})
 
 # =========================================
 # OpenAI client (safe if key missing)
