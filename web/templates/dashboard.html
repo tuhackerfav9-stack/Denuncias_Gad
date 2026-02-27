@@ -1,6 +1,17 @@
 {% extends 'base.html' %}
 {% block content %}
+<style>
+  .card-link-wrapper {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
 
+.card-link-wrapper:hover {
+    text-decoration: none;
+    color: inherit;
+}
+</style>
 <div class="row">
   <div class="col-12 grid-margin">
     <div class="d-flex justify-content-between align-items-center">
@@ -30,7 +41,7 @@
     <div class="card card-dark-blue">
       <div class="card-body">
         <p class="mb-2">Pendientes</p>
-        <p class="fs-30 mb-1">{{ denuncias_pendientes }}</p>
+        <p class="fs-30 mb-1">{{ denuncias_asignadas }}</p>
         <p class="mb-0 text-white-50">Por revisar</p>
       </div>
     </div>
