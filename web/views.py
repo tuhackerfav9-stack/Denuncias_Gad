@@ -6,7 +6,7 @@ import re
 import uuid
 from datetime import timedelta
 from django.db import transaction
-
+from urllib.parse import urlparse
 from django.db.models.functions import TruncDate, TruncWeek, TruncMonth
 from django.conf import settings
 from django.contrib.auth.decorators import login_required  #  QUITÉ permission_required (ya no lo usamos para db.xxx)
@@ -2274,26 +2274,220 @@ def link_callback(uri, rel):
             return path
 
     return uri  # fallback
+def _guess_ext(content_type=None, filename=None):
+    content_type = (content_type or "").lower()
+    filename = (filename or "").lower()
+
+    if filename.endswith((".jpg", ".jpeg")) or "jpeg" in content_type:
+        return ".jpg"
+    if filename.endswith(".png") or "png" in content_type:
+        return ".png"
+    if filename.endswith(".webp") or "webp" in content_type:
+        return ".webp"
+    if filename.endswith(".gif") or "gif" in content_type:
+        return ".gif"
+    if filename.endswith(".pdf") or "pdf" in content_type:
+        return ".pdf"
+
+    return ".bin"
+
+
+def _write_binary_temp_file(binary_data, content_type=None, filename=None):
+    """
+    Escribe un binario a MEDIA_ROOT/pdf_tmp/ para que xhtml2pdf pueda leerlo.
+    """
+    if not binary_data:
+        return ""
+
+    out_dir = os.path.join(settings.MEDIA_ROOT, "pdf_tmp")
+    os.makedirs(out_dir, exist_ok=True)
+
+    ext = _guess_ext(content_type=content_type, filename=filename)
+    tmp_name = f"{uuid.uuid4().hex}{ext}"
+    tmp_path = os.path.join(out_dir, tmp_name)
+
+    with open(tmp_path, "wb") as f:
+        f.write(bytes(binary_data))
+
+    return tmp_path
+
+
+def _resolve_public_or_media_path_for_pdf(raw_url: str | None) -> str:
+    """
+    Convierte:
+    - https://.../media/archivo.jpg
+    - /media/archivo.jpg
+    a path físico en MEDIA_ROOT.
+    Si no puede, devuelve la URL original.
+    """
+    raw_url = (raw_url or "").strip()
+    if not raw_url:
+        return ""
+
+    parsed = urlparse(raw_url)
+    path = parsed.path if parsed.scheme else raw_url
+
+    if hasattr(settings, "MEDIA_URL") and path.startswith(settings.MEDIA_URL):
+        rel_path = path.replace(settings.MEDIA_URL, "", 1)
+        abs_path = os.path.join(settings.MEDIA_ROOT, rel_path)
+        if os.path.isfile(abs_path):
+            return abs_path
+
+    return raw_url
+
+
+def _resolve_evidencia_to_pdf_path(evidencia):
+    """
+    Resuelve una evidencia a un archivo usable por xhtml2pdf.
+    Soporta:
+    - url_archivo apuntando a /api/denuncias/archivos/denuncia/<uuid>/
+    - url_archivo tipo /media/... o https://.../media/...
+    """
+    raw_url = (getattr(evidencia, "url_archivo", None) or "").strip()
+
+    if raw_url:
+        m = re.search(r"/api/denuncias/archivos/denuncia/([0-9a-fA-F-]+)/?$", raw_url)
+        if m:
+            archivo_id = m.group(1)
+            archivo = DenunciaArchivo.objects.filter(id=archivo_id).first()
+            if archivo and getattr(archivo, "data", None):
+                return _write_binary_temp_file(
+                    archivo.data,
+                    content_type=getattr(archivo, "content_type", None),
+                    filename=getattr(archivo, "filename", None),
+                )
+
+        return _resolve_public_or_media_path_for_pdf(raw_url)
+
+    return ""
+
+
+def _resolve_firma_to_pdf_path(firma):
+    """
+    Resuelve firma a path físico usable por xhtml2pdf.
+    """
+    if not firma:
+        return ""
+
+    firma_url = (getattr(firma, "firma_url", None) or "").strip()
+    if firma_url:
+        m = re.search(r"/api/denuncias/archivos/denuncia/([0-9a-fA-F-]+)/?$", firma_url)
+        if m:
+            archivo_id = m.group(1)
+            archivo = DenunciaArchivo.objects.filter(id=archivo_id).first()
+            if archivo and getattr(archivo, "data", None):
+                return _write_binary_temp_file(
+                    archivo.data,
+                    content_type=getattr(archivo, "content_type", None),
+                    filename=getattr(archivo, "filename", None),
+                )
+
+        return _resolve_public_or_media_path_for_pdf(firma_url)
+
+    if hasattr(firma, "data") and getattr(firma, "data", None):
+        return _write_binary_temp_file(
+            firma.data,
+            content_type=getattr(firma, "content_type", None),
+            filename=getattr(firma, "filename", None),
+        )
+
+    if hasattr(firma, "archivo_id") and getattr(firma, "archivo_id", None):
+        archivo = DenunciaArchivo.objects.filter(id=firma.archivo_id).first()
+        if archivo and getattr(archivo, "data", None):
+            return _write_binary_temp_file(
+                archivo.data,
+                content_type=getattr(archivo, "content_type", None),
+                filename=getattr(archivo, "filename", None),
+            )
+
+    return ""
+
+
+def _evidencia_is_image(evidencia, pdf_path=""):
+    nombre = (getattr(evidencia, "nombre_archivo", None) or "").lower()
+    tipo = (getattr(evidencia, "tipo", None) or "").lower()
+    path = (pdf_path or "").lower()
+
+    return (
+        tipo == "foto"
+        or nombre.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif"))
+        or path.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif"))
+    )
+
 
 def denuncia_pdf(request, pk):
-    denuncia = get_object_or_404(Denuncias, pk=pk)
+    denuncia = get_object_or_404(
+        Denuncias.objects.select_related(
+            "ciudadano",
+            "tipo_denuncia",
+            "asignado_departamento",
+            "asignado_funcionario",
+        ),
+        pk=pk
+    )
 
-    # Si quieres solo resueltas:
-    if denuncia.estado != "resuelta" and denuncia.estado != "rechazada":
+    if denuncia.estado not in ["resuelta", "rechazada"]:
         raise Http404("La denuncia no está finalizada")
 
-    # ✅ Última respuesta (la más reciente)
     respuesta = (
         DenunciaRespuestas.objects
         .filter(denuncia=denuncia)
-        .order_by("-created_at")     # <-- AQUÍ está el fix del 500
+        .select_related("funcionario", "funcionario__departamento")
+        .order_by("-created_at")
         .first()
     )
+
+    # =========================
+    # Documentos del ciudadano
+    # =========================
+    doc_ciudadano = (
+        CiudadanoDocumentos.objects
+        .filter(ciudadano=denuncia.ciudadano)
+        .order_by("-created_at")
+        .first()
+    )
+
+    cedula_frontal_pdf = ""
+    cedula_trasera_pdf = ""
+
+    if doc_ciudadano:
+        cedula_frontal_pdf = _resolve_public_or_media_path_for_pdf(getattr(doc_ciudadano, "url_frontal", ""))
+        cedula_trasera_pdf = _resolve_public_or_media_path_for_pdf(getattr(doc_ciudadano, "url_trasera", ""))
+
+    # =========================
+    # Evidencias
+    # =========================
+    evidencias = list(
+        DenunciaEvidencias.objects
+        .filter(denuncia=denuncia)
+        .order_by("-created_at")
+    )
+
+    evidencias_pdf = []
+    for e in evidencias:
+        pdf_path = _resolve_evidencia_to_pdf_path(e)
+        evidencias_pdf.append({
+            "nombre_archivo": getattr(e, "nombre_archivo", None) or "Archivo adjunto",
+            "tipo": getattr(e, "tipo", None) or "archivo",
+            "pdf_path": pdf_path,
+            "is_image": _evidencia_is_image(e, pdf_path),
+        })
+
+    # =========================
+    # Firma
+    # =========================
+    firma = DenunciaFirmas.objects.filter(denuncia_id=denuncia.id).first()
+    firma_pdf_path = _resolve_firma_to_pdf_path(firma)
 
     template = get_template("denuncias/denuncia_pdf.html")
     html = template.render({
         "denuncia": denuncia,
         "respuesta": respuesta,
+        "doc_ciudadano": doc_ciudadano,
+        "cedula_frontal_pdf": cedula_frontal_pdf,
+        "cedula_trasera_pdf": cedula_trasera_pdf,
+        "evidencias_pdf": evidencias_pdf,
+        "firma_pdf_path": firma_pdf_path,
         "request": request,
     })
 
@@ -2311,7 +2505,6 @@ def denuncia_pdf(request, pk):
         return HttpResponse("Error al generar PDF", status=500)
 
     return response
-
 # web/views.py
 from django.http import HttpResponse, Http404
 from django.contrib.auth.decorators import login_required
