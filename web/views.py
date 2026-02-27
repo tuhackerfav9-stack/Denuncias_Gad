@@ -406,10 +406,10 @@ def dashboard_view(request):
 
     denuncias_pendientes = denuncias_qs.filter(estado="asignada").count()
     denuncias_en_proceso = denuncias_qs.filter(estado="en_proceso").count()
-    denuncias_resueltas = denuncias_qs.filter(estado="rechazada").count()
+    denuncias_resueltas = denuncias_qs.filter(estado="resuelta").count()
 
     # Nueva tarjeta
-    denuncias_asignadas = denuncias_qs.filter(asignado_departamento__isnull=False).count()
+    denuncias_rechazadas = denuncias_qs.filter(estado="rechazada").count()
 
     # =========================
     # 5) Otros KPI
@@ -434,6 +434,7 @@ def dashboard_view(request):
             "Pendientes": denuncias_pendientes,
             "En Proceso": denuncias_en_proceso,
             "Resueltas": denuncias_resueltas,
+            "Resueltas": denuncias_rechazadas,
         },
         title="Denuncias por estado",
         download={"filename": "chart_kpi2"},
@@ -444,6 +445,7 @@ def dashboard_view(request):
             "Resueltas": denuncias_resueltas,
             "Pendientes": denuncias_pendientes,
             "En Proceso": denuncias_en_proceso,
+            "Resueltas": denuncias_rechazadas,
         },
         title="Estado de Denuncias",
         donut=True,
@@ -599,7 +601,7 @@ def dashboard_view(request):
         "denuncias_pendientes": denuncias_pendientes,
         "denuncias_en_proceso": denuncias_en_proceso,
         "denuncias_resueltas": denuncias_resueltas,
-        "denuncias_asignadas": denuncias_asignadas,
+        "denuncias_rechazadas": denuncias_rechazadas,
 
         "total_ciudadanos": total_ciudadanos,
         "ciudadanos_este_mes": ciudadanos_este_mes,

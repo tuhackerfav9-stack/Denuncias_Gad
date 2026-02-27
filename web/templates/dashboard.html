@@ -77,7 +77,7 @@
     background: linear-gradient(135deg, #4b49ac 0%, #5f5dc8 100%);
   }
 
-  .kpi-asignada {
+  .kpi-resuelta {
     background: linear-gradient(135deg, #28a745 0%, #41c56b 100%);
   }
 
@@ -85,7 +85,7 @@
     background: linear-gradient(135deg, #6d6be9 0%, #7a77ee 100%);
   }
 
-  .kpi-resuelta {
+  .kpi-rechazada {
     background: linear-gradient(135deg, #f06f75 0%, #ef7d84 100%);
   }
 
@@ -238,22 +238,14 @@
     </a>
   </div>
 
-  <div class="col-md-6 col-xl-3 grid-margin">
-    <div class="d-flex flex-column h-100" style="gap: 1rem;">
-      <div class="card dashboard-mini-kpi-card kpi-pendiente">
-        <div class="card-body">
-          <p class="kpi-title mb-1">Pendientes</p>
-          <p class="kpi-value mb-1">{{ denuncias_pendientes }}</p>
-          <p class="kpi-subtitle">Por revisar</p>
+  <div class="col-md-6 col-xl-3 grid-margin stretch-card">
+    <div class="card dashboard-kpi-card kpi-resuelta h-100">
+      <div class="card-body">
+        <div>
+          <p class="kpi-title">Pendientes</p>
+          <p class="kpi-value">{{ denuncias_pendientes }}</p>
         </div>
-      </div>
-
-      <div class="card dashboard-mini-kpi-card kpi-asignada">
-        <div class="card-body">
-          <p class="kpi-title mb-1">Asignadas</p>
-          <p class="kpi-value mb-1">{{ denuncias_asignadas }}</p>
-          <p class="kpi-subtitle">Con departamento</p>
-        </div>
+        <p class="kpi-subtitle">Por revisar</p>
       </div>
     </div>
   </div>
@@ -269,15 +261,22 @@
       </div>
     </div>
   </div>
-
-  <div class="col-md-6 col-xl-3 grid-margin stretch-card">
-    <div class="card dashboard-kpi-card kpi-resuelta h-100">
-      <div class="card-body">
-        <div>
-          <p class="kpi-title">Resueltas</p>
-          <p class="kpi-value">{{ denuncias_resueltas }}</p>
+  <div class="col-md-6 col-xl-3 grid-margin">
+    <div class="d-flex flex-column h-100" style="gap: 1rem;">
+      <div class="card dashboard-mini-kpi-card kpi-pendiente">
+        <div class="card-body">
+          <p class="kpi-title mb-1">Resueltas</p>
+          <p class="kpi-value mb-1">{{ denuncias_pendientes }}</p>
+          <p class="kpi-subtitle">Cerradas</p>
         </div>
-        <p class="kpi-subtitle">Cerradas</p>
+      </div>
+
+      <div class="card dashboard-mini-kpi-card kpi-rechazada">
+        <div class="card-body">
+          <p class="kpi-title mb-1">Rechazadas</p>
+          <p class="kpi-value mb-1">{{ denuncias_rechazadas }}</p>
+          <p class="kpi-subtitle">Cerradas</p>
+        </div>
       </div>
     </div>
   </div>
