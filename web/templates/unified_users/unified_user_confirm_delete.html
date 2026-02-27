@@ -5,12 +5,21 @@
     <div class="col-lg-6">
 
       <div class="card shadow-sm">
-        <div class="card-header {% if can_hard_delete %}bg-danger{% else %}bg-secondary{% endif %} text-white">
+        <div class="card-header
+          {% if can_hard_delete %}
+            bg-danger
+          {% elif can_soft_disable %}
+            bg-secondary
+          {% else %}
+            bg-warning
+          {% endif %} text-white">
           <h5 class="card-title mb-0">
             {% if can_hard_delete %}
               <i class="bi bi-trash me-2"></i>Eliminar Usuario (Hard Delete)
-            {% else %}
+            {% elif can_soft_disable %}
               <i class="bi bi-person-x me-2"></i>Desactivar Usuario (Soft Delete)
+            {% else %}
+              <i class="bi bi-exclamation-triangle me-2"></i>No se puede desactivar
             {% endif %}
           </h5>
         </div>
@@ -24,14 +33,26 @@
               <i class="bi bi-exclamation-triangle me-1"></i>
               Esto borra el enlace y el dominio (si aplica). No podrás recuperarlo.
             </div>
-          {% else %}
+
+          {% elif can_soft_disable %}
             <p>
-              Este usuario <strong>{{ object.username }}</strong> tiene <b>denuncias tratadas</b>,
-              por eso <b>NO</b> se puede eliminar.
+              Este usuario <strong>{{ object.username }}</strong> no se puede eliminar definitivamente
+              porque tiene trazabilidad histórica, pero <b>sí puede desactivarse</b>
+              ya que sus denuncias tratadas están finalizadas.
             </p>
             <div class="alert alert-info small">
               <i class="bi bi-info-circle me-1"></i>
-              Se aplicará <b>desactivación</b> (auth_user + funcionarios + usuarios), manteniendo trazabilidad.
+              Se aplicará <b>desactivación</b> (auth_user + funcionarios + usuarios), y ya no podrá iniciar sesión.
+            </div>
+
+          {% else %}
+            <p>
+              Este usuario <strong>{{ object.username }}</strong> <b>no puede eliminarse ni desactivarse todavía</b>.
+            </p>
+            <div class="alert alert-warning small">
+              <i class="bi bi-exclamation-triangle me-1"></i>
+              Tiene <b>{{ denuncias_abiertas }}</b> denuncia(s) aún <b>no finalizada(s)</b>.
+              Primero deben estar en estado <b>resuelta</b> o <b>rechazada</b>.
             </div>
           {% endif %}
 
@@ -48,7 +69,8 @@
                   <i class="bi bi-trash me-2"></i>Eliminar definitivamente
                 </button>
               </div>
-            {% else %}
+
+            {% elif can_soft_disable %}
               <div class="d-flex justify-content-between">
                 <a href="{% url 'web:unified_user_list' %}" class="btn btn-secondary">
                   <i class="bi bi-arrow-left me-2"></i>Volver
@@ -56,6 +78,13 @@
                 <button type="submit" class="btn btn-outline-secondary">
                   <i class="bi bi-person-x me-2"></i>Desactivar usuario
                 </button>
+              </div>
+
+            {% else %}
+              <div class="d-flex justify-content-end">
+                <a href="{% url 'web:unified_user_list' %}" class="btn btn-secondary">
+                  <i class="bi bi-arrow-left me-2"></i>Volver
+                </a>
               </div>
             {% endif %}
           </form>

@@ -14,7 +14,29 @@ from web.services.unified_user_service import (
     hard_delete_unified_user,
 )
 from web.models import FuncionarioWebUser
+from db.models import Denuncias
+def can_soft_disable_user(web_user):
+    """
+    Se puede desactivar SOLO si el funcionario NO tiene denuncias activas/no finalizadas.
+    """
+    link = (
+        FuncionarioWebUser.objects
+        .select_related("funcionario")
+        .filter(web_user=web_user)
+        .first()
+    )
 
+    if not link or not link.funcionario:
+        return True, 0
+
+    abiertas = (
+        Denuncias.objects
+        .filter(asignado_funcionario=link.funcionario)
+        .exclude(estado__in=["resuelta", "rechazada"])
+        .count()
+    )
+
+    return abiertas == 0, abiertas
 
 class UnifiedUserListView(LoginRequiredMixin, ListView):
     template_name = "unified_users/unified_user_list.html"
@@ -170,22 +192,53 @@ class UnifiedUserDeleteView(LoginRequiredMixin, TemplateView):
 
     def get(self, request, pk, *args, **kwargs):
         u = get_object_or_404(User, pk=pk)
-        return render(request, self.template_name, {"object": u, "can_hard_delete": can_hard_delete_user(u)})
+
+        can_hard = can_hard_delete_user(u)
+        can_soft, denuncias_abiertas = can_soft_disable_user(u)
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "object": u,
+                "can_hard_delete": can_hard,
+                "can_soft_disable": can_soft,
+                "denuncias_abiertas": denuncias_abiertas,
+            },
+        )
 
     def post(self, request, pk, *args, **kwargs):
         u = get_object_or_404(User, pk=pk)
-        hard_requested = (request.POST.get("hard_delete") == "1")
-        allowed = can_hard_delete_user(u)
 
-        if hard_requested and allowed:
+        hard_requested = (request.POST.get("hard_delete") == "1")
+        allowed_hard = can_hard_delete_user(u)
+        allowed_soft, denuncias_abiertas = can_soft_disable_user(u)
+
+        # 1) Hard delete
+        if hard_requested and allowed_hard:
             hard_delete_unified_user(u)
-            messages.success(request, "  Usuario eliminado definitivamente.")
+            messages.success(request, "✅ Usuario eliminado definitivamente.")
             return redirect("web:unified_user_list")
 
+        # 2) Si NO puede hard delete, revisamos si al menos puede desactivarse
+        if not allowed_soft:
+            messages.error(
+                request,
+                f"❌ No se puede desactivar este usuario porque tiene {denuncias_abiertas} denuncia(s) aún no finalizada(s). "
+                "Primero deben estar resueltas o rechazadas."
+            )
+            return redirect("web:unified_user_list")
+
+        # 3) Soft disable permitido
         soft_disable_unified_user(u)
-        if not allowed:
-            messages.warning(request, "⚠️ Tiene denuncias tratadas: NO se puede eliminar. Se desactivó.")
+
+        if not allowed_hard:
+            messages.warning(
+                request,
+                "⚠️ El usuario no se puede eliminar definitivamente porque tiene trazabilidad histórica, "
+                "pero sí fue desactivado porque ya no tiene denuncias activas."
+            )
         else:
-            messages.info(request, "  Se desactivó (soft delete).")
+            messages.info(request, "ℹ️ Se desactivó el usuario (soft delete).")
 
         return redirect("web:unified_user_list")
