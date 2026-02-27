@@ -15,13 +15,15 @@
 <!-- KPIs (Skydash cards) -->
 <div class="row">
   <div class="col-md-6 col-xl-3 grid-margin stretch-card">
-    <div class="card card-tale">
-      <div class="card-body">
-        <p class="mb-2">Total de Denuncias</p>
-        <p class="fs-30 mb-1">{{ total_denuncias }}</p>
-        <p class="mb-0 text-white-50">Este mes: {{ denuncias_este_mes }}</p>
+    <a href="{% url 'web:denuncia_list' %}" class="card-link-wrapper">
+      <div class="card card-tale">
+        <div class="card-body">
+          <p class="mb-2">Total de Denuncias</p>
+          <p class="fs-30 mb-1">{{ total_denuncias }}</p>
+          <p class="mb-0 text-white-50">Este mes: {{ denuncias_este_mes }}</p>
+        </div>
       </div>
-    </div>
+    </a>
   </div>
 
   <div class="col-md-6 col-xl-3 grid-margin stretch-card">
