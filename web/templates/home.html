@@ -85,8 +85,11 @@
                             <i class="bi bi-speedometer2 mr-2"></i>Ir al Dashboard
                         </a>
                         {% else %}
-                        <a href="/" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-medium text-center">
-                            <i class="bi bi-box-arrow-in-right mr-2"></i>Obten la aplicación Móvil aquí
+                        <a href="{% static 'apk/mi_app.apk' %}" 
+                        download
+                        class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-medium text-center">
+                            <i class="bi bi-download mr-2"></i>
+                            Obtén la Aplicación Móvil aquí
                         </a>
                         {% endif %}
                         <a href="#proceso" class="border-2 border-gray-300 text-gray-900 px-8 py-3 rounded-lg hover:border-gray-400 transition font-medium text-center">
