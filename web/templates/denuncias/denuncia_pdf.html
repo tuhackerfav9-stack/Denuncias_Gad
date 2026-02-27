@@ -6,163 +6,176 @@
   <style>
     @page {
       size: A4;
-      margin: 1.4cm;
+      margin: 1.3cm;
     }
 
-    body{
+    body {
       font-family: Arial, sans-serif;
       font-size: 11px;
-      color:#1f2937;
+      color: #1f2937;
+      line-height: 1.45;
     }
 
-    .header{
-      width:100%;
+    .header {
+      width: 100%;
       border-bottom: 2px solid #0dcaf0;
-      padding-bottom: 6px;
-      margin-bottom: 10px;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
     }
-    .logo{
+
+    .logo {
       width: 120px;
     }
-    .title{
+
+    .title {
       font-size: 16px;
-      font-weight: 700;
+      font-weight: bold;
       margin: 0;
       padding: 0;
+      color: #111827;
     }
-    .subtitle{
-      margin: 2px 0 0 0;
-      color:#6b7280;
+
+    .subtitle {
+      margin: 3px 0 0 0;
+      color: #6b7280;
       font-size: 11px;
     }
 
-    .badge{
-      display:inline-block;
+    .badge {
+      display: inline-block;
       padding: 4px 8px;
-      border-radius: 10px;
-      background:#0dcaf0;
-      color:white;
-      font-weight:700;
-      font-size:10px;
+      background: #0dcaf0;
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 10px;
     }
 
-    .section{
+    .section {
       border: 1px solid #e5e7eb;
-      border-radius: 8px;
       padding: 10px;
       margin: 10px 0;
+      background: #ffffff;
     }
 
-    .section h2{
+    .section h2 {
       font-size: 12px;
       margin: 0 0 8px 0;
-      color:#111827;
+      color: #111827;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 5px;
     }
 
-    table{
-      width:100%;
+    table {
+      width: 100%;
       border-collapse: collapse;
     }
-    td{
+
+    td, th {
       padding: 6px 8px;
       vertical-align: top;
     }
-    .label{
-      width: 30%;
-      color:#6b7280;
-      font-weight:700;
-    }
-    .value{
-      width: 70%;
+
+    .label {
+      width: 28%;
+      color: #6b7280;
+      font-weight: bold;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
     }
 
-    .hr{
-      border-top: 1px solid #e5e7eb;
-      margin: 10px 0;
+    .value {
+      width: 72%;
+      border: 1px solid #e5e7eb;
     }
 
-    .bigbox{
+    .bigbox {
       border: 1px solid #d1d5db;
-      border-radius: 8px;
       padding: 10px;
-      background:#f9fafb;
+      background: #f9fafb;
       white-space: pre-wrap;
     }
 
-    .signature-wrap{
-      margin-top: 18px;
-    }
-    .sign{
-      width: 48%;
-      display:inline-block;
-      vertical-align: top;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 10px;
-      height: 90px;
-    }
-    .sign-title{
-      color:#6b7280;
+    .footer-note {
+      margin-top: 10px;
+      color: #6b7280;
       font-size: 10px;
-      font-weight: 700;
-      margin-bottom: 6px;
     }
 
-    .page-break{
+    .page-break {
       page-break-after: always;
     }
 
-    .footer-note{
-      margin-top: 10px;
-      color:#6b7280;
-      font-size: 10px;
+    .image-box {
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      padding: 8px;
+      text-align: center;
     }
-    .pdf-image{
-  width: 100%;
-  height: 220px;
-  object-fit: contain;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #ffffff;
-}
 
-.image-box{
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 8px;
-  background: #f9fafb;
-}
+    .image-title {
+      font-size: 10px;
+      font-weight: bold;
+      color: #6b7280;
+      margin-bottom: 6px;
+      text-align: left;
+    }
 
-.image-title{
-  font-size: 10px;
-  font-weight: 700;
-  color: #6b7280;
-  margin-bottom: 6px;
-}
+    .pdf-image {
+      width: 100%;
+      height: 220px;
+    }
 
-.two-col{
-  width: 48%;
-  display: inline-block;
-  vertical-align: top;
-}
+    .pdf-image-small {
+      width: 100%;
+      height: 170px;
+    }
 
-.two-col-right{
-  width: 48%;
-  display: inline-block;
-  vertical-align: top;
-  margin-left: 3%;
-}
+    .muted {
+      color: #6b7280;
+    }
 
-.evidence-item{
-  margin-bottom: 12px;
-}
+    .signature-wrap {
+      margin-top: 18px;
+    }
+
+    .sign {
+      width: 48%;
+      display: inline-block;
+      vertical-align: top;
+      border: 1px solid #e5e7eb;
+      padding: 10px;
+      height: 90px;
+    }
+
+    .sign-title {
+      color: #6b7280;
+      font-size: 10px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .evidence-item {
+      margin-bottom: 12px;
+    }
+
+    .status-box {
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .no-data {
+      border: 1px dashed #cbd5e1;
+      padding: 12px;
+      background: #f8fafc;
+      color: #6b7280;
+    }
   </style>
 </head>
 
 <body>
 
   <!-- =========================
-       HOJA 1: DATOS DE DENUNCIA + ASIGNACIÓN
+       HOJA 1: DATOS DE DENUNCIA
   ========================== -->
   <div class="header">
     <table>
@@ -188,7 +201,7 @@
       </tr>
       <tr>
         <td class="label">Estado</td>
-        <td class="value">{{ denuncia.estado|upper }}</td>
+        <td class="value status-box">{{ denuncia.estado|upper }}</td>
       </tr>
       <tr>
         <td class="label">Fecha de creación</td>
@@ -196,7 +209,7 @@
       </tr>
       <tr>
         <td class="label">Origen</td>
-        <td class="value">{{ denuncia.origen }}</td>
+        <td class="value">{{ denuncia.origen|default:"No registrado" }}</td>
       </tr>
       <tr>
         <td class="label">Departamento asignado</td>
@@ -213,7 +226,9 @@
         <td class="value">
           {% if denuncia.asignado_funcionario %}
             {{ denuncia.asignado_funcionario.nombres }} {{ denuncia.asignado_funcionario.apellidos }}
-            {% if denuncia.asignado_funcionario.cargo %} - {{ denuncia.asignado_funcionario.cargo }}{% endif %}
+            {% if denuncia.asignado_funcionario.cargo %}
+              - {{ denuncia.asignado_funcionario.cargo }}
+            {% endif %}
           {% else %}
             No asignado
           {% endif %}
@@ -235,107 +250,181 @@
       </tr>
       <tr>
         <td class="label">Coordenadas</td>
-        <td class="value">Lat: {{ denuncia.latitud }} | Lng: {{ denuncia.longitud }}</td>
+        <td class="value">
+          {% if denuncia.latitud and denuncia.longitud %}
+            Lat: {{ denuncia.latitud }} | Lng: {{ denuncia.longitud }}
+          {% else %}
+            (No registradas)
+          {% endif %}
+        </td>
       </tr>
     </table>
   </div>
 
   <div class="section">
     <h2>3. Descripción</h2>
-    <div class="bigbox">{{ denuncia.descripcion }}</div>
+    <div class="bigbox">{{ denuncia.descripcion|default:"No existe descripción registrada." }}</div>
   </div>
 
   <div class="footer-note">
-    Documento generado automáticamente. Verifique la información antes de archivar.
+    Documento generado automáticamente por el sistema institucional del GAD Municipal de Salcedo.
   </div>
 
   <div class="page-break"></div>
 
-<!-- =========================
-     HOJA 2: DATOS DEL CIUDADANO + CÉDULA + FIRMA
-========================== -->
-<div class="header">
-  <table>
-    <tr>
-      <td style="width:140px;">
-        <img class="logo" src="{% static 'assets/img/logo_gad_municipal_claro.png' %}" alt="GAD Salcedo">
-      </td>
-      <td>
-        <p class="title">Identificación del Ciudadano</p>
-        <p class="subtitle">Denuncia #{{ denuncia.id }}</p>
-        <span class="badge">CIUDADANO</span>
-      </td>
-    </tr>
-  </table>
-</div>
-
-<div class="section">
-  <h2>4. Datos del ciudadano</h2>
-  <table>
-    <tr>
-      <td class="label">Nombres</td>
-      <td class="value">{{ denuncia.ciudadano.nombres }}</td>
-    </tr>
-    <tr>
-      <td class="label">Apellidos</td>
-      <td class="value">{{ denuncia.ciudadano.apellidos }}</td>
-    </tr>
-    <tr>
-      <td class="label">Cédula</td>
-      <td class="value"><strong>{{ denuncia.ciudadano.cedula }}</strong></td>
-    </tr>
-    <tr>
-      <td class="label">Teléfono</td>
-      <td class="value">{{ denuncia.ciudadano.telefono|default:"(No registrado)" }}</td>
-    </tr>
-  </table>
-</div>
-
-<div class="section">
-  <h2>5. Documentos del ciudadano</h2>
-
-  <div class="two-col">
-    <div class="image-box">
-      <div class="image-title">Cédula frontal</div>
-      {% if cedula_frontal_pdf %}
-        <img src="{{ cedula_frontal_pdf }}" class="pdf-image" alt="Cédula frontal">
-      {% else %}
-        <div class="bigbox">(No registrada)</div>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="two-col-right">
-    <div class="image-box">
-      <div class="image-title">Cédula trasera</div>
-      {% if cedula_trasera_pdf %}
-        <img src="{{ cedula_trasera_pdf }}" class="pdf-image" alt="Cédula trasera">
-      {% else %}
-        <div class="bigbox">(No registrada)</div>
-      {% endif %}
-    </div>
-  </div>
-</div>
-
-<div class="section">
-  <h2>6. Firma del ciudadano</h2>
-  {% if firma_pdf_path %}
-    <div class="image-box">
-      <img src="{{ firma_pdf_path }}" class="pdf-image" alt="Firma del ciudadano">
-    </div>
-  {% else %}
-    <div class="bigbox">(No existe firma registrada)</div>
-  {% endif %}
-</div>
-
-<div class="footer-note">
-  Esta hoja se archiva como respaldo de identificación.
-</div>
-
-<div class="page-break"></div>
 
   <!-- =========================
-       HOJA 3: RESPUESTA FINAL + FUNCIONARIO QUE RESPONDIÓ
+       HOJA 2: CIUDADANO + CÉDULA + FIRMA
+  ========================== -->
+  <div class="header">
+    <table>
+      <tr>
+        <td style="width:140px;">
+          <img class="logo" src="{% static 'assets/img/logo_gad_municipal_claro.png' %}" alt="GAD Salcedo">
+        </td>
+        <td>
+          <p class="title">Identificación del Ciudadano</p>
+          <p class="subtitle">Denuncia #{{ denuncia.id }}</p>
+          <span class="badge">CIUDADANO</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>4. Datos del ciudadano</h2>
+    <table>
+      <tr>
+        <td class="label">Nombres</td>
+        <td class="value">{{ denuncia.ciudadano.nombres }}</td>
+      </tr>
+      <tr>
+        <td class="label">Apellidos</td>
+        <td class="value">{{ denuncia.ciudadano.apellidos }}</td>
+      </tr>
+      <tr>
+        <td class="label">Cédula</td>
+        <td class="value"><strong>{{ denuncia.ciudadano.cedula }}</strong></td>
+      </tr>
+      <tr>
+        <td class="label">Teléfono</td>
+        <td class="value">{{ denuncia.ciudadano.telefono|default:"(No registrado)" }}</td>
+      </tr>
+      <tr>
+        <td class="label">Correo</td>
+        <td class="value">
+          {% if denuncia.ciudadano.usuario %}
+            {{ denuncia.ciudadano.usuario.correo }}
+          {% else %}
+            (No registrado)
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>5. Documentos del ciudadano</h2>
+    <table>
+      <tr>
+        <td style="width:48%; vertical-align: top;">
+          <div class="image-box">
+            <div class="image-title">Cédula frontal</div>
+            {% if cedula_frontal_pdf %}
+              <img src="{{ cedula_frontal_pdf }}" class="pdf-image" alt="Cédula frontal">
+            {% else %}
+              <div class="no-data">(No registrada)</div>
+            {% endif %}
+          </div>
+        </td>
+        <td style="width:4%;"></td>
+        <td style="width:48%; vertical-align: top;">
+          <div class="image-box">
+            <div class="image-title">Cédula trasera</div>
+            {% if cedula_trasera_pdf %}
+              <img src="{{ cedula_trasera_pdf }}" class="pdf-image" alt="Cédula trasera">
+            {% else %}
+              <div class="no-data">(No registrada)</div>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>6. Firma del ciudadano</h2>
+    {% if firma_pdf_path %}
+      <div class="image-box">
+        <img src="{{ firma_pdf_path }}" class="pdf-image-small" alt="Firma del ciudadano">
+      </div>
+    {% else %}
+      <div class="no-data">(No existe firma registrada)</div>
+    {% endif %}
+  </div>
+
+  <div class="footer-note">
+    Esta hoja sirve como respaldo de la identidad del ciudadano y de su aceptación o validación del trámite.
+  </div>
+
+  <div class="page-break"></div>
+
+
+  <!-- =========================
+       HOJA 3: EVIDENCIAS
+  ========================== -->
+  <div class="header">
+    <table>
+      <tr>
+        <td style="width:140px;">
+          <img class="logo" src="{% static 'assets/img/logo_gad_municipal_claro.png' %}" alt="GAD Salcedo">
+        </td>
+        <td>
+          <p class="title">Evidencias Adjuntas</p>
+          <p class="subtitle">Denuncia #{{ denuncia.id }}</p>
+          <span class="badge">EVIDENCIAS</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>7. Evidencias registradas</h2>
+
+    {% if evidencias_pdf %}
+      {% for ev in evidencias_pdf %}
+        <div class="evidence-item">
+          <div class="image-title">
+            {{ forloop.counter }}. {{ ev.nombre_archivo|default:"Archivo adjunto" }}
+            {% if ev.tipo %} - {{ ev.tipo|upper }}{% endif %}
+          </div>
+
+          {% if ev.is_image and ev.pdf_path %}
+            <div class="image-box">
+              <img src="{{ ev.pdf_path }}" class="pdf-image" alt="{{ ev.nombre_archivo }}">
+            </div>
+          {% else %}
+            <div class="bigbox">
+              Archivo adjunto: {{ ev.nombre_archivo|default:"Archivo sin nombre" }}
+              {% if ev.tipo %} | Tipo: {{ ev.tipo }}{% endif %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="no-data">No existen evidencias adjuntas a esta denuncia.</div>
+    {% endif %}
+  </div>
+
+  <div class="footer-note">
+    Esta hoja contiene el respaldo visual y documental asociado a la denuncia ciudadana.
+  </div>
+
+  <div class="page-break"></div>
+
+
+  <!-- =========================
+       HOJA 4: RESPUESTA FINAL
   ========================== -->
   <div class="header">
     <table>
@@ -353,7 +442,7 @@
   </div>
 
   <div class="section">
-    <h2>5. Resultado</h2>
+    <h2>8. Resultado</h2>
     <table>
       <tr>
         <td class="label">Estado final</td>
@@ -373,18 +462,18 @@
   </div>
 
   <div class="section">
-    <h2>6. Mensaje / Informe del funcionario</h2>
+    <h2>9. Mensaje / Informe del funcionario</h2>
     <div class="bigbox">
-      {% if respuesta %}
-        {{ respuesta.mensaje }}
-      {% else %}
-        No existe una respuesta registrada en el sistema para esta denuncia.
-      {% endif %}
+{% if respuesta %}
+{{ respuesta.mensaje }}
+{% else %}
+No existe una respuesta registrada en el sistema para esta denuncia.
+{% endif %}
     </div>
   </div>
 
   <div class="section">
-    <h2>7. Funcionario que respondió</h2>
+    <h2>10. Funcionario que respondió</h2>
     <table>
       <tr>
         <td class="label">Funcionario</td>
@@ -442,18 +531,17 @@
   <div class="signature-wrap">
     <div class="sign">
       <div class="sign-title">Firma del funcionario responsable</div>
-      <div style="color:#9ca3af;">(Espacio para firma)</div>
+      <div class="muted">(Espacio para firma)</div>
     </div>
     <div class="sign" style="margin-left:4%;">
       <div class="sign-title">Sello institucional</div>
-      <div style="color:#9ca3af;">(Espacio para sello)</div>
+      <div class="muted">(Espacio para sello)</div>
     </div>
   </div>
 
   <div class="footer-note">
-    Esta hoja certifica la atención final (resuelta/rechazada) para archivo físico.
+    Esta hoja certifica la atención final de la denuncia para fines de archivo físico y digital.
   </div>
 
 </body>
 </html>
-
