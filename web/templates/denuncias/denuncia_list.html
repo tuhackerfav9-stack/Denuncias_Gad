@@ -1,33 +1,244 @@
 {# denuncia_list.html #}
 {% extends 'base.html' %}
-{% block content %}
 
+{% block extra_css %}
 <style>
-.denuncias-card{
-  min-height: 70vh;
-  display: flex;
-  flex-direction: column;
-}
-.denuncias-card .card-body{
-  flex: 1;
-}
+  .denuncias-card{
+    min-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    border: 0;
+    border-radius: 20px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+  }
 
-/* (opcional) que los select se vean iguales en filas chicas */
-.filters-row .form-label{ font-size: .875rem; }
+  .denuncias-card .card-body{
+    flex: 1;
+  }
+
+  .denuncias-filters-card{
+    border: 0;
+    border-radius: 18px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+  }
+
+  .denuncias-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+
+  .denuncias-title{
+    margin-bottom: 0;
+    font-weight: 700;
+    font-size: 1.55rem;
+  }
+
+  .denuncias-subtitle{
+    color: #6c757d;
+    margin-top: .2rem;
+    margin-bottom: 0;
+    font-size: .95rem;
+  }
+
+  .filters-row .form-label{
+    font-size: .84rem;
+    font-weight: 600;
+    margin-bottom: .35rem;
+    color: #495057;
+  }
+
+  .filters-row .form-select,
+  .filters-row .form-control{
+    min-height: 42px;
+    border-radius: 10px;
+  }
+
+  .denuncias-table-wrap{
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .denuncias-table{
+    width: 100%;
+    margin-bottom: 0;
+    table-layout: fixed;
+  }
+
+  .denuncias-table thead th{
+    background: #f8f9fc !important;
+    border-bottom: 1px solid #e9ecef !important;
+    color: #344767;
+    font-weight: 700;
+    font-size: 0.82rem;
+    vertical-align: middle;
+    white-space: normal;
+    text-transform: uppercase;
+    letter-spacing: .35px;
+  }
+
+  .denuncias-table th,
+  .denuncias-table td{
+    padding: 0.82rem 0.65rem;
+    vertical-align: middle;
+    border-color: #edf0f5;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    font-size: 0.86rem;
+  }
+
+  .denuncias-table tbody tr:hover{
+    background-color: #fafbff;
+  }
+
+  .denuncias-table .col-fecha{
+    width: 11%;
+  }
+
+  .denuncias-table .col-tipo{
+    width: 12%;
+  }
+
+  .denuncias-table .col-ciudadano{
+    width: 20%;
+  }
+
+  .denuncias-table .col-departamento{
+    width: 16%;
+  }
+
+  .denuncias-table .col-funcionario{
+    width: 16%;
+  }
+
+  .denuncias-table .col-estado{
+    width: 11%;
+    text-align: center;
+  }
+
+  .denuncias-table .col-acciones{
+    width: 120px;
+    text-align: center;
+  }
+
+  .denuncias-person-name{
+    font-weight: 700;
+    color: #2d3748;
+    line-height: 1.2;
+  }
+
+  .denuncias-person-meta{
+    color: #6c757d;
+    font-size: .78rem;
+  }
+
+  .denuncias-badge{
+    border-radius: 999px;
+    font-weight: 600;
+    padding: 0.42rem 0.72rem;
+    font-size: 0.74rem;
+    display: inline-block;
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .denuncias-actions{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    flex-wrap: nowrap;
+  }
+
+  .denuncias-actions .btn{
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+  }
+
+  .denuncias-empty{
+    padding: 2.5rem 1rem;
+  }
+
+  .denuncias-pagination-wrap{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .denuncias-pagination-info{
+    color: #6c757d;
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 991.98px){
+    .denuncias-table-wrap{
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .denuncias-table{
+      min-width: 1100px;
+    }
+
+    .denuncias-table th,
+    .denuncias-table td{
+      font-size: 0.8rem;
+      padding: 0.65rem 0.55rem;
+      white-space: nowrap;
+    }
+
+    .filters-row .col-md-1.d-flex{
+      justify-content: stretch;
+    }
+
+    .filters-row .col-md-1.d-flex .btn{
+      flex: 1;
+    }
+
+    .denuncias-pagination-wrap{
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .denuncias-pagination-wrap nav{
+      overflow-x: auto;
+    }
+
+    .pagination{
+      flex-wrap: nowrap;
+      width: max-content;
+    }
+  }
 </style>
+{% endblock %}
 
+{% block content %}
 <div class="container-fluid mt-4">
   <div class="row">
     <div class="col-12">
 
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">
-          <i class="bi bi-megaphone me-2"></i>Gestión de Denuncias
-        </h1>
+      <div class="denuncias-header">
+        <div>
+          <h1 class="denuncias-title">Gestión de Denuncias</h1>
+          <p class="denuncias-subtitle">Consulta, filtra y da seguimiento a las denuncias registradas.</p>
+        </div>
       </div>
 
       <!-- Filtros -->
-      <div class="card shadow-sm mb-3">
+      <div class="card denuncias-filters-card mb-3">
         <div class="card-body">
           <form method="get" class="row g-3 align-items-end filters-row">
 
@@ -35,12 +246,12 @@
               <label class="form-label">Estado</label>
               <select name="estado" class="form-select" onchange="this.form.submit()">
                 <option value="" {% if not estado_actual %}selected{% endif %}>Todos</option>
-                <option value="pendiente"    {% if estado_actual == 'pendiente' %}selected{% endif %}>Pendiente</option>
-                <option value="en_revision"  {% if estado_actual == 'en_revision' %}selected{% endif %}>En revisión</option>
-                <option value="asignada"     {% if estado_actual == 'asignada' %}selected{% endif %}>Asignada</option>
-                <option value="en_proceso"   {% if estado_actual == 'en_proceso' %}selected{% endif %}>En proceso</option>
-                <option value="resuelta"     {% if estado_actual == 'resuelta' %}selected{% endif %}>Resuelta</option>
-                <option value="rechazada"    {% if estado_actual == 'rechazada' %}selected{% endif %}>Rechazada</option>
+                <option value="pendiente" {% if estado_actual == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                <option value="en_revision" {% if estado_actual == 'en_revision' %}selected{% endif %}>En revisión</option>
+                <option value="asignada" {% if estado_actual == 'asignada' %}selected{% endif %}>Asignada</option>
+                <option value="en_proceso" {% if estado_actual == 'en_proceso' %}selected{% endif %}>En proceso</option>
+                <option value="resuelta" {% if estado_actual == 'resuelta' %}selected{% endif %}>Resuelta</option>
+                <option value="rechazada" {% if estado_actual == 'rechazada' %}selected{% endif %}>Rechazada</option>
               </select>
             </div>
 
@@ -82,11 +293,12 @@
 
             <div class="col-md-3">
               <label class="form-label">Buscar</label>
-              <input type="text"
-                     name="q"
-                     value="{{ q|default:'' }}"
-                     class="form-control"
-                     placeholder="Nombre, cédula, referencia o descripción">
+              <input
+                type="text"
+                name="q"
+                value="{{ q|default:'' }}"
+                class="form-control"
+                placeholder="Nombre, cédula, referencia o descripción">
             </div>
 
             <div class="col-md-1 d-flex gap-2">
@@ -96,10 +308,11 @@
                 </svg>
               </button>
 
-              <button type="button"
-                      class="btn btn-secondary"
-                      title="Limpiar filtros"
-                      onclick="window.location.href='{% url 'web:denuncia_list' %}'">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                title="Limpiar filtros"
+                onclick="window.location.href='{% url 'web:denuncia_list' %}'">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16">
                   <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41m-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9"/>
                   <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5 5 0 0 0 8 3M3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9z"/>
@@ -112,19 +325,19 @@
       </div>
 
       <!-- Tabla -->
-      <div class="card shadow-sm denuncias-card">
+      <div class="card denuncias-card">
         <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-hover table-striped mb-0">
-              <thead class="table-light">
+          <div class="denuncias-table-wrap">
+            <table class="table table-hover mb-0 denuncias-table">
+              <thead>
                 <tr>
-                  <th>Fecha</th>
-                  <th>Tipo</th>
-                  <th>Ciudadano</th>
-                  <th>Departamento</th>
-                  <th>Atendida por</th>
-                  <th>Estado</th>
-                  <th class="text-center">Acciones</th>
+                  <th class="col-fecha">Fecha</th>
+                  <th class="col-tipo">Tipo</th>
+                  <th class="col-ciudadano">Ciudadano</th>
+                  <th class="col-departamento">Departamento</th>
+                  <th class="col-funcionario">Atendida por</th>
+                  <th class="col-estado">Estado</th>
+                  <th class="col-acciones text-center">Acciones</th>
                 </tr>
               </thead>
 
@@ -132,7 +345,7 @@
                 {% for denuncia in denuncias %}
                   <tr>
                     <td>
-                      {{ denuncia.created_at|date:"d/m/Y" }}<br>
+                      <div>{{ denuncia.created_at|date:"d/m/Y" }}</div>
                       <small class="text-muted">{{ denuncia.created_at|date:"H:i" }}</small>
                     </td>
 
@@ -141,68 +354,67 @@
                     </td>
 
                     <td>
-                      <div class="fw-bold">
+                      <div class="denuncias-person-name">
                         {{ denuncia.ciudadano.nombres }} {{ denuncia.ciudadano.apellidos }}
                       </div>
-                      <small class="text-muted">{{ denuncia.ciudadano.cedula }}</small>
+                      <div class="denuncias-person-meta">{{ denuncia.ciudadano.cedula }}</div>
                     </td>
 
                     <td>
                       {% if denuncia.asignado_departamento %}
-                        <span class="badge bg-info text-white">
+                        <span class="badge bg-info text-white denuncias-badge">
                           {{ denuncia.asignado_departamento.nombre }}
                         </span>
                       {% else %}
-                        <span class="badge bg-secondary">Sin asignar</span>
+                        <span class="badge bg-secondary denuncias-badge">Sin asignar</span>
                       {% endif %}
                     </td>
 
                     <td>
                       {% if denuncia.asignado_funcionario %}
-                        <span class="badge bg-primary">
+                        <span class="badge bg-primary denuncias-badge">
                           {{ denuncia.asignado_funcionario.nombres }} {{ denuncia.asignado_funcionario.apellidos }}
                         </span>
                       {% else %}
-                        <span class="badge bg-secondary">Libre</span>
+                        <span class="badge bg-secondary denuncias-badge">Libre</span>
                       {% endif %}
                     </td>
 
-                    <td>
-                      {# COLORES IGUALITOS AL DETAIL #}
+                    <td class="text-center">
                       {% if denuncia.estado == 'resuelta' %}
-                        <span class="badge bg-success">Resuelta</span>
+                        <span class="badge bg-success denuncias-badge">Resuelta</span>
                       {% elif denuncia.estado == 'rechazada' %}
-                        <span class="badge bg-danger">Rechazada</span>
+                        <span class="badge bg-danger denuncias-badge">Rechazada</span>
                       {% elif denuncia.estado == 'en_proceso' %}
-                        <span class="badge bg-info text-white">En proceso</span>
+                        <span class="badge bg-info text-white denuncias-badge">En proceso</span>
                       {% elif denuncia.estado == 'asignada' %}
-                        <span class="badge bg-primary">Asignada</span>
+                        <span class="badge bg-primary denuncias-badge">Asignada</span>
                       {% elif denuncia.estado == 'en_revision' %}
-                        <span class="badge bg-secondary">En revisión</span>
+                        <span class="badge bg-secondary denuncias-badge">En revisión</span>
                       {% elif denuncia.estado == 'pendiente' %}
-                        <span class="badge bg-warning text-dark">Pendiente</span>
+                        <span class="badge bg-warning text-dark denuncias-badge">Pendiente</span>
                       {% else %}
-                        <span class="badge bg-secondary">{{ denuncia.estado }}</span>
+                        <span class="badge bg-secondary denuncias-badge">{{ denuncia.estado }}</span>
                       {% endif %}
                     </td>
 
-                    <td class="text-center align-middle">
-                      <div class="btn-group" role="group">
-                        {# Mantener filtros al volver #}
-                        <a href="{% url 'web:denuncia_detail' denuncia.pk %}{% if querystring %}?{{ querystring }}{% endif %}"
-                           class="btn btn-sm btn-outline-info"
-                           title="Ver detalles">
+                    <td class="text-center">
+                      <div class="denuncias-actions">
+                        <a
+                          href="{% url 'web:denuncia_detail' denuncia.pk %}{% if querystring %}?{{ querystring }}{% endif %}"
+                          class="btn btn-sm btn-outline-info"
+                          title="Ver detalles">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
                             <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
                             <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
                           </svg>
                         </a>
 
-                        {# PDF: resuelta O rechazada (igual que detail) #}
                         {% if denuncia.estado == 'resuelta' or denuncia.estado == 'rechazada' %}
-                          <a href="{% url 'web:denuncia_pdf' denuncia.pk %}"
-                             class="btn btn-sm btn-outline-danger"
-                             title="Descargar PDF">
+                          <a
+                            href="{% url 'web:denuncia_pdf' denuncia.pk %}"
+                            class="btn btn-sm btn-outline-danger"
+                            title="Descargar PDF">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-pdf" viewBox="0 0 16 16">
                               <path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1"/>
                               <path d="M4.603 12.087a.8.8 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.7 7.7 0 0 1 1.482-.645 20 20 0 0 0 1.062-2.227 7.3 7.3 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.187-.012.395-.047.614-.084.51-.27 1.134-.52 1.794a11 11 0 0 0 .98 1.686 5.8 5.8 0 0 1 1.334.05c.364.065.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.86.86 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.7 5.7 0 0 1-.911-.95 11.6 11.6 0 0 0-1.997.406 11.3 11.3 0 0 1-1.021 1.51c-.29.35-.608.655-.926.787a.8.8 0 0 1-.58.029m1.379-1.901q-.25.115-.459.238c-.328.194-.541.383-.647.547-.094.145-.096.25-.04.361q.016.032.026.044l.035-.012c.137-.056.355-.235.635-.572a8 8 0 0 0 .45-.606m1.64-1.33a13 13 0 0 1 1.01-.193 12 12 0 0 1-.51-.858 21 21 0 0 1-.5 1.05zm2.446.45q.226.244.435.41c.24.19.407.253.498.256a.1.1 0 0 0 .07-.015.3.3 0 0 0 .094-.125.44.44 0 0 0 .059-.2.1.1 0 0 0-.026-.063c-.052-.062-.2-.152-.518-.209a4 4 0 0 0-.612-.053zM8.078 5.8a7 7 0 0 0 .2-.828q.046-.282.038-.465a.6.6 0 0 0-.032-.198.5.5 0 0 0-.145.04c-.087.035-.158.106-.196.283-.04.192-.03.469.046.822q.036.167.09.346z"/>
@@ -212,36 +424,28 @@
                       </div>
                     </td>
                   </tr>
-
                 {% empty %}
                   <tr>
-                    <td colspan="7" class="text-center py-4">
-                      <div class="text-muted">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-inbox" viewBox="0 0 16 16">
-                          <path d="M4.98 4a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 10 8h4.46l-3.05-3.812A.5.5 0 0 0 11.02 4zm9.954 5H10.45a2.5 2.5 0 0 1-4.9 0H1.066l.32 2.562a.5.5 0 0 0 .497.438h12.234a.5.5 0 0 0 .496-.438zM3.809 3.563A1.5 1.5 0 0 1 4.981 3h6.038a1.5 1.5 0 0 1 1.172.563l3.7 4.625a.5.5 0 0 1 .105.374l-.39 3.124A1.5 1.5 0 0 1 14.117 13H1.883a1.5 1.5 0 0 1-1.489-1.314l-.39-3.124a.5.5 0 0 1 .106-.374z"/>
-                        </svg>
-                        <p class="mb-0">No hay denuncias registradas con esos filtros.</p>
-                      </div>
+                    <td colspan="7" class="text-center denuncias-empty">
+                      <div class="text-muted mb-3" style="font-size: 2rem;">📭</div>
+                      <p class="text-muted mb-0">No hay denuncias registradas con esos filtros.</p>
                     </td>
                   </tr>
                 {% endfor %}
               </tbody>
-
             </table>
           </div>
         </div>
 
-        <!-- Paginación -->
         {% if is_paginated %}
           <div class="card-footer bg-white border-top-0">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-              <div class="text-muted small">
+            <div class="denuncias-pagination-wrap">
+              <div class="denuncias-pagination-info">
                 Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ paginator.count }} registros
               </div>
 
               <nav aria-label="Navegación de páginas">
                 <ul class="pagination pagination-sm mb-0">
-
                   {% if page_obj.has_previous %}
                     <li class="page-item">
                       <a class="page-link" href="?page=1{% if querystring %}&{{ querystring }}{% endif %}">&laquo; Primera</a>
@@ -275,17 +479,14 @@
                     <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
                     <li class="page-item disabled"><span class="page-link">Última &raquo;</span></li>
                   {% endif %}
-
                 </ul>
               </nav>
             </div>
           </div>
         {% endif %}
-
       </div>
 
     </div>
   </div>
 </div>
-
 {% endblock %}
