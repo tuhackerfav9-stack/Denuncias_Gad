@@ -296,7 +296,12 @@
   <div class="col-lg-6 grid-margin stretch-card">
     <div class="card dashboard-section-card w-100">
       <div class="card-body">
-        <p class="soft-title">Denuncias por Departamento</p>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <p class="soft-title mb-0">Denuncias por Departamento</p>
+          <button type="button" class="btn btn-sm btn-primary" id="btnDescargarDeptChart">
+            <i class="ti-download"></i> Descargar
+          </button>
+        </div>
 
         {% if dept_chart_values %}
           <div class="chart-canvas-box chart-canvas-box-lg">
@@ -444,6 +449,7 @@
 <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
 
 <script>
+  let departamentosChartInstance = null;
   document.addEventListener("DOMContentLoaded", function () {
     const deptCanvas = document.getElementById("departamentosChart");
 
@@ -456,7 +462,7 @@
       const dynamicHeight = Math.max(360, labels.length * 62);
       deptCanvas.parentElement.style.height = dynamicHeight + "px";
 
-      new Chart(deptCanvas, {
+      departamentosChartInstance = new Chart(deptCanvas, {
         type: "bar",
         data: {
           labels: labels,
@@ -525,6 +531,18 @@
             }
           }
         }
+      });
+    }
+    const btnDescargarDeptChart = document.getElementById("btnDescargarDeptChart");
+
+    if (btnDescargarDeptChart) {
+      btnDescargarDeptChart.addEventListener("click", function () {
+        if (!departamentosChartInstance) return;
+
+        const link = document.createElement("a");
+        link.href = departamentosChartInstance.toBase64Image("image/png", 1);
+        link.download = "denuncias_por_departamento.png";
+        link.click();
       });
     }
   });

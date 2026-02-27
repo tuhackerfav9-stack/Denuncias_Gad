@@ -449,6 +449,7 @@ def dashboard_view(request):
         },
         title="Estado de Denuncias",
         donut=True,
+        download={"filename": "denuncias_por_estado"},
     )
 
     denuncias_por_tipo = (
@@ -503,6 +504,7 @@ def dashboard_view(request):
         title="Ciudadanos con más Denuncias (Top 10)",
         xtitle="Cantidad",
         ytitle="Ciudadano",
+        download={"filename": "ciudadanos_top_10"},
     )
 
     # =========================
@@ -543,6 +545,7 @@ def dashboard_view(request):
         title="Denuncias por Mes",
         xtitle="Mes",
         ytitle="Cantidad",
+        download={"filename": "chart_denuncias_mes"},
     )
 
     # =========================
