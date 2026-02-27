@@ -98,6 +98,78 @@
   letter-spacing: .5px;
 }
 
+/* ================================
+   TABLAS RESPONSIVE GLOBAL TESIS
+================================ */
+
+/* La tabla nunca se desborda */
+.table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* Permite que el texto largo baje */
+.table th,
+.table td {
+  white-space: normal !important;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+/* Limita ancho para que no crezca infinito */
+.table td {
+  max-width: 180px;
+}
+
+/* Acciones siempre compactas */
+.table td:last-child {
+  width: 110px;
+  white-space: nowrap !important;
+}
+
+/* Evita scroll horizontal en PC */
+@media (min-width: 992px) {
+  .table-responsive {
+    overflow-x: visible !important;
+  }
+}
+
+/* ================================
+   MOBILE MODE (TELÉFONO)
+================================ */
+@media (max-width: 768px) {
+
+  .table {
+    font-size: 0.75rem;
+  }
+
+  .table td {
+    max-width: 120px;
+    padding: 0.4rem;
+  }
+
+  .table th {
+    font-size: 0.7rem;
+    padding: 0.4rem;
+  }
+
+  /* Botones en columna en móvil */
+  .btn-group {
+    flex-direction: column;
+  }
+
+  .btn-group .btn {
+    margin-bottom: 2px;
+  }
+  /* ===== AJUSTES ESPECÍFICOS DENUNCIAS ===== */
+.table td:nth-child(1) { width: 90px; }   /* fecha */
+.table td:nth-child(2) { max-width: 140px; } /* tipo */
+.table td:nth-child(3) { max-width: 180px; } /* ciudadano */
+.table td:nth-child(4) { max-width: 140px; } /* departamento */
+.table td:nth-child(5) { max-width: 180px; } /* funcionario */
+}
 
   </style>
 
