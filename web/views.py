@@ -2381,64 +2381,89 @@ def _resolve_public_or_media_path_for_pdf(raw_url: str | None) -> str:
     - https://.../media/archivo.jpg
     - /media/archivo.jpg
     a path físico en MEDIA_ROOT.
-    Si no puede, devuelve la URL original.
+    Si no puede resolverlo, devuelve "" para que el PDF NO se rompa.
     """
     raw_url = (raw_url or "").strip()
     if not raw_url:
         return ""
 
-    parsed = urlparse(raw_url)
-    path = parsed.path if parsed.scheme else raw_url
+    try:
+        parsed = urlparse(raw_url)
+        path = parsed.path if parsed.scheme else raw_url
 
-    if hasattr(settings, "MEDIA_URL") and path.startswith(settings.MEDIA_URL):
-        rel_path = path.replace(settings.MEDIA_URL, "", 1)
-        abs_path = os.path.join(settings.MEDIA_ROOT, rel_path)
-        if os.path.isfile(abs_path):
-            if abs_path.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".gif")):
-                return _optimize_existing_image_for_pdf(abs_path)
-            return abs_path
-        return raw_url
+        if hasattr(settings, "MEDIA_URL") and path.startswith(settings.MEDIA_URL):
+            rel_path = path.replace(settings.MEDIA_URL, "", 1)
+            abs_path = os.path.join(settings.MEDIA_ROOT, rel_path)
 
+            if os.path.isfile(abs_path):
+                if abs_path.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".gif")):
+                    return _optimize_existing_image_for_pdf(abs_path)
+                return abs_path
+
+        return ""
+    except Exception:
+        return ""
 
 def _resolve_evidencia_to_pdf_path(evidencia):
     """
     Resuelve una evidencia a un archivo usable por xhtml2pdf.
-    Soporta:
-    - url_archivo apuntando a /api/denuncias/archivos/denuncia/<uuid>/
-    - url_archivo tipo /media/... o https://.../media/...
+    Si falla, devuelve "" y NO rompe el PDF.
     """
-    raw_url = (getattr(evidencia, "url_archivo", None) or "").strip()
+    try:
+        raw_url = (getattr(evidencia, "url_archivo", None) or "").strip()
 
-    if raw_url:
-        m = re.search(r"/api/denuncias/archivos/denuncia/([0-9a-fA-F-]+)/?$", raw_url)
-        if m:
-            archivo_id = m.group(1)
-            archivo = DenunciaArchivo.objects.filter(id=archivo_id).first()
-            if archivo and getattr(archivo, "data", None):
-                return _write_binary_temp_file(
-                    archivo.data,
-                    content_type=getattr(archivo, "content_type", None),
-                    filename=getattr(archivo, "filename", None),
-                )
+        if raw_url:
+            m = re.search(r"/api/denuncias/archivos/denuncia/([0-9a-fA-F-]+)/?$", raw_url)
+            if m:
+                archivo_id = m.group(1)
+                archivo = DenunciaArchivo.objects.filter(id=archivo_id).first()
+                if archivo and getattr(archivo, "data", None):
+                    return _write_binary_temp_file(
+                        archivo.data,
+                        content_type=getattr(archivo, "content_type", None),
+                        filename=getattr(archivo, "filename", None),
+                    )
 
-        return _resolve_public_or_media_path_for_pdf(raw_url)
+            return _resolve_public_or_media_path_for_pdf(raw_url)
 
-    return ""
+        return ""
+    except Exception:
+        return ""
 
 
 def _resolve_firma_to_pdf_path(firma):
     """
     Resuelve firma a path físico usable por xhtml2pdf.
+    Si falla, devuelve "" y NO rompe el PDF.
     """
-    if not firma:
-        return ""
+    try:
+        if not firma:
+            return ""
 
-    firma_url = (getattr(firma, "firma_url", None) or "").strip()
-    if firma_url:
-        m = re.search(r"/api/denuncias/archivos/denuncia/([0-9a-fA-F-]+)/?$", firma_url)
-        if m:
-            archivo_id = m.group(1)
-            archivo = DenunciaArchivo.objects.filter(id=archivo_id).first()
+        firma_url = (getattr(firma, "firma_url", None) or "").strip()
+        if firma_url:
+            m = re.search(r"/api/denuncias/archivos/denuncia/([0-9a-fA-F-]+)/?$", firma_url)
+            if m:
+                archivo_id = m.group(1)
+                archivo = DenunciaArchivo.objects.filter(id=archivo_id).first()
+                if archivo and getattr(archivo, "data", None):
+                    return _write_binary_temp_file(
+                        archivo.data,
+                        content_type=getattr(archivo, "content_type", None),
+                        filename=getattr(archivo, "filename", None),
+                    )
+
+            return _resolve_public_or_media_path_for_pdf(firma_url)
+
+        if hasattr(firma, "data") and getattr(firma, "data", None):
+            return _write_binary_temp_file(
+                firma.data,
+                content_type=getattr(firma, "content_type", None),
+                filename=getattr(firma, "filename", None),
+            )
+
+        if hasattr(firma, "archivo_id") and getattr(firma, "archivo_id", None):
+            archivo = DenunciaArchivo.objects.filter(id=firma.archivo_id).first()
             if archivo and getattr(archivo, "data", None):
                 return _write_binary_temp_file(
                     archivo.data,
@@ -2446,26 +2471,9 @@ def _resolve_firma_to_pdf_path(firma):
                     filename=getattr(archivo, "filename", None),
                 )
 
-        return _resolve_public_or_media_path_for_pdf(firma_url)
-
-    if hasattr(firma, "data") and getattr(firma, "data", None):
-        return _write_binary_temp_file(
-            firma.data,
-            content_type=getattr(firma, "content_type", None),
-            filename=getattr(firma, "filename", None),
-        )
-
-    if hasattr(firma, "archivo_id") and getattr(firma, "archivo_id", None):
-        archivo = DenunciaArchivo.objects.filter(id=firma.archivo_id).first()
-        if archivo and getattr(archivo, "data", None):
-            return _write_binary_temp_file(
-                archivo.data,
-                content_type=getattr(archivo, "content_type", None),
-                filename=getattr(archivo, "filename", None),
-            )
-
-    return ""
-
+        return ""
+    except Exception:
+        return ""
 
 def _evidencia_is_image(evidencia, pdf_path=""):
     nombre = (getattr(evidencia, "nombre_archivo", None) or "").lower()
@@ -2533,8 +2541,8 @@ def denuncia_pdf(request, pk):
         evidencias_pdf.append({
             "nombre_archivo": getattr(e, "nombre_archivo", None) or "Archivo adjunto",
             "tipo": getattr(e, "tipo", None) or "archivo",
-            "pdf_path": pdf_path,
-            "is_image": _evidencia_is_image(e, pdf_path),
+            "pdf_path": pdf_path or "",
+            "is_image": bool(pdf_path) and _evidencia_is_image(e, pdf_path),
         })
 
     # =========================
