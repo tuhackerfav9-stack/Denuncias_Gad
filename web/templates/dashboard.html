@@ -1,159 +1,365 @@
 {% extends 'base.html' %}
-{% block content %}
+{% load static %}
+
+{% block extra_css %}
 <style>
   .card-link-wrapper {
     text-decoration: none;
     color: inherit;
     display: block;
-}
+  }
 
-.card-link-wrapper:hover {
+  .card-link-wrapper:hover {
     text-decoration: none;
     color: inherit;
-}
-.card-link-wrapper .card {
-    transition: 0.2s;
-    cursor: pointer;
-}
+  }
 
-.card-link-wrapper .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-}
+  .dashboard-kpi-card,
+  .dashboard-mini-kpi-card {
+    border: 0;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  }
+
+  .dashboard-kpi-card .card-body {
+    min-height: 138px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.35rem 1.35rem;
+  }
+
+  .dashboard-mini-kpi-card .card-body {
+    min-height: 63px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: .9rem 1.1rem;
+  }
+
+  .dashboard-kpi-card .kpi-title,
+  .dashboard-mini-kpi-card .kpi-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: .35rem;
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  .dashboard-kpi-card .kpi-value {
+    font-size: 2.15rem;
+    line-height: 1;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: .35rem;
+  }
+
+  .dashboard-mini-kpi-card .kpi-value {
+    font-size: 1.35rem;
+    line-height: 1;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: .2rem;
+  }
+
+  .dashboard-kpi-card .kpi-subtitle,
+  .dashboard-mini-kpi-card .kpi-subtitle {
+    font-size: .9rem;
+    color: rgba(255, 255, 255, 0.82);
+    margin: 0;
+  }
+
+  .kpi-total {
+    background: linear-gradient(135deg, #6d8ff0 0%, #7f9cf5 100%);
+  }
+
+  .kpi-pendiente {
+    background: linear-gradient(135deg, #4b49ac 0%, #5f5dc8 100%);
+  }
+
+  .kpi-asignada {
+    background: linear-gradient(135deg, #28a745 0%, #41c56b 100%);
+  }
+
+  .kpi-proceso {
+    background: linear-gradient(135deg, #6d6be9 0%, #7a77ee 100%);
+  }
+
+  .kpi-resuelta {
+    background: linear-gradient(135deg, #f06f75 0%, #ef7d84 100%);
+  }
+
+  .dashboard-section-card {
+    border: 0;
+    border-radius: 22px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+  }
+
+  .dashboard-section-card .card-body {
+    padding: 1.35rem 1.35rem 1.2rem 1.35rem;
+  }
+
+  .dashboard-section-title {
+    font-size: 1.7rem;
+    font-weight: 700;
+    margin-bottom: .2rem;
+  }
+
+  .dashboard-section-subtitle {
+    color: #6c757d;
+    margin-bottom: 0;
+  }
+
+  .soft-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  .chart-canvas-box {
+    position: relative;
+    width: 100%;
+    min-height: 380px;
+  }
+
+  .chart-canvas-box.chart-canvas-box-lg {
+    min-height: 460px;
+  }
+
+  .map-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .map-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .85rem;
+    color: #4b5563;
+    background: #f8f9fa;
+    border-radius: 999px;
+    padding: .35rem .7rem;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .legend-pendiente { background: #fbbc04; }
+  .legend-proceso   { background: #4285f4; }
+  .legend-resuelta  { background: #34a853; }
+  .legend-rechazada { background: #ea4335; }
+
+  #map {
+    width: 100%;
+    height: 560px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #eef0f4;
+  }
+
+  .list-row-title {
+    font-weight: 600;
+    color: #2b2b2b;
+    margin-right: 10px;
+  }
+
+  .progress {
+    border-radius: 999px;
+    height: 10px;
+    background: #edf1f7;
+  }
+
+  .progress .progress-bar {
+    border-radius: 999px;
+  }
+
+  .dashboard-empty {
+    padding: 1rem;
+    border-radius: 14px;
+    background: #f8f9fc;
+    border: 1px dashed #d8dbe7;
+    color: #6c757d;
+  }
+
+  @media (max-width: 767.98px) {
+    .dashboard-kpi-card .card-body {
+      min-height: 120px;
+    }
+
+    .dashboard-kpi-card .kpi-value {
+      font-size: 1.8rem;
+    }
+
+    #map {
+      height: 430px;
+    }
+  }
 </style>
+{% endblock %}
+
+{% block content %}
 <div class="row">
   <div class="col-12 grid-margin">
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <h3 class="font-weight-bold mb-1">Dashboard</h3>
-        <p class="text-muted mb-0">Resumen del sistema de denuncias</p>
-      </div>
+    <div>
+      <h3 class="dashboard-section-title">Dashboard</h3>
+      <p class="dashboard-section-subtitle">Resumen del sistema de denuncias</p>
     </div>
   </div>
 </div>
 
-<!-- KPIs (Skydash cards) -->
+<!-- KPIs -->
 <div class="row">
   <div class="col-md-6 col-xl-3 grid-margin stretch-card">
-    <a href="{% url 'web:denuncia_list' %}" class="card-link-wrapper">
-      <div class="card card-tale">
+    <a href="{% url 'web:denuncia_list' %}" class="card-link-wrapper w-100">
+      <div class="card dashboard-kpi-card kpi-total h-100">
         <div class="card-body">
-          <p class="mb-2">Total de Denuncias</p>
-          <p class="fs-30 mb-1">{{ total_denuncias }}</p>
-          <p class="mb-0 text-white-50">Este mes: {{ denuncias_este_mes }}</p>
+          <div>
+            <p class="kpi-title">Total de Denuncias</p>
+            <p class="kpi-value">{{ total_denuncias }}</p>
+          </div>
+          <p class="kpi-subtitle">Este mes: {{ denuncias_este_mes }}</p>
         </div>
       </div>
     </a>
   </div>
 
-  <div class="col-md-6 col-xl-3 grid-margin stretch-card">
-    <div class="card card-dark-blue">
-      <div class="card-body">
-        <p class="mb-2">Pendientes</p>
-        <p class="fs-30 mb-1">{{ denuncias_pendientes }}</p>
-        <p class="mb-0 text-white-50">Por revisar</p>
+  <div class="col-md-6 col-xl-3 grid-margin">
+    <div class="d-flex flex-column h-100" style="gap: 1rem;">
+      <div class="card dashboard-mini-kpi-card kpi-pendiente">
+        <div class="card-body">
+          <p class="kpi-title mb-1">Pendientes</p>
+          <p class="kpi-value mb-1">{{ denuncias_pendientes }}</p>
+          <p class="kpi-subtitle">Por revisar</p>
+        </div>
+      </div>
+
+      <div class="card dashboard-mini-kpi-card kpi-asignada">
+        <div class="card-body">
+          <p class="kpi-title mb-1">Asignadas</p>
+          <p class="kpi-value mb-1">{{ denuncias_asignadas }}</p>
+          <p class="kpi-subtitle">Con departamento</p>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="col-md-6 col-xl-3 grid-margin stretch-card">
-    <div class="card card-light-blue">
+    <div class="card dashboard-kpi-card kpi-proceso h-100">
       <div class="card-body">
-        <p class="mb-2">En Proceso</p>
-        <p class="fs-30 mb-1">{{ denuncias_en_proceso }}</p>
-        <p class="mb-0 text-white-50">Atendiéndose</p>
+        <div>
+          <p class="kpi-title">En Proceso</p>
+          <p class="kpi-value">{{ denuncias_en_proceso }}</p>
+        </div>
+        <p class="kpi-subtitle">Atendiéndose</p>
       </div>
     </div>
   </div>
 
   <div class="col-md-6 col-xl-3 grid-margin stretch-card">
-    <div class="card card-light-danger">
+    <div class="card dashboard-kpi-card kpi-resuelta h-100">
       <div class="card-body">
-        <p class="mb-2">Resueltas</p>
-        <p class="fs-30 mb-1">{{ denuncias_resueltas }}</p>
-        <p class="mb-0 text-white-50">Cerradas</p>
+        <div>
+          <p class="kpi-title">Resueltas</p>
+          <p class="kpi-value">{{ denuncias_resueltas }}</p>
+        </div>
+        <p class="kpi-subtitle">Cerradas</p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Charts -->
+<!-- Charts fila 1 -->
 <div class="row">
   <div class="col-lg-6 grid-margin stretch-card">
-    <div class="card">
+    <div class="card dashboard-section-card w-100">
       <div class="card-body">
-        <p class="card-title mb-3">Denuncias por Estado</p>
+        <p class="soft-title">Denuncias por Estado</p>
         {{ chart_estado_denuncias }}
       </div>
     </div>
   </div>
 
   <div class="col-lg-6 grid-margin stretch-card">
-    <div class="card">
+    <div class="card dashboard-section-card w-100">
       <div class="card-body">
-        <p class="card-title mb-3">Denuncias por Departamento</p>
-        {{ chart_denuncias_departamento }}
+        <p class="soft-title">Denuncias por Departamento</p>
+
+        {% if dept_chart_values %}
+          <div class="chart-canvas-box chart-canvas-box-lg">
+            <canvas id="departamentosChart"></canvas>
+          </div>
+        {% else %}
+          <div class="dashboard-empty">No hay datos de departamentos para mostrar.</div>
+        {% endif %}
       </div>
     </div>
   </div>
 </div>
 
+<!-- Charts fila 2 -->
 <div class="row">
   <div class="col-lg-6 grid-margin stretch-card">
-    <div class="card">
+    <div class="card dashboard-section-card w-100">
       <div class="card-body">
-        <p class="card-title mb-3">Denuncias por Semana</p>
+        <p class="soft-title">Denuncias por Semana</p>
         {{ chart_denuncias_semana }}
       </div>
     </div>
   </div>
 
   <div class="col-lg-6 grid-margin stretch-card">
-    <div class="card">
+    <div class="card dashboard-section-card w-100">
       <div class="card-body">
-        <p class="card-title mb-3">Denuncias por Mes</p>
+        <p class="soft-title">Denuncias por Mes</p>
         {{ chart_denuncias_mes }}
       </div>
     </div>
   </div>
 </div>
 
+<!-- Top ciudadanos -->
 <div class="row">
   <div class="col-12 grid-margin stretch-card">
-    <div class="card">
+    <div class="card dashboard-section-card">
       <div class="card-body">
-        <p class="card-title mb-3">Ciudadanos con más denuncias (Top 10)</p>
+        <p class="soft-title">Ciudadanos con más denuncias (Top 10)</p>
         {{ chart_ciudadanos_top }}
       </div>
     </div>
   </div>
 </div>
 
-<div class="row">
-  <div class="col-12 grid-margin stretch-card">
-    <div class="card">
-      <div class="card-body">
-        {{ chart_kpi9 }}
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Listas (tipo y departamentos) -->
+<!-- Listas -->
 <div class="row">
   <div class="col-lg-6 grid-margin stretch-card">
-    <div class="card">
+    <div class="card dashboard-section-card">
       <div class="card-body">
-        <p class="card-title mb-3">Denuncias por Tipo</p>
+        <p class="soft-title">Denuncias por Tipo</p>
 
         {% if denuncias_por_tipo %}
           {% for item in denuncias_por_tipo %}
-            <div class="d-flex justify-content-between">
-              <span class="font-weight-bold">{{ item.tipo_denuncia__nombre }}</span>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="list-row-title">{{ item.tipo_denuncia__nombre }}</span>
               <span class="badge badge-primary">{{ item.count }}</span>
             </div>
-            <div class="progress progress-md mt-2 mb-3">
-              <div class="progress-bar bg-primary" role="progressbar"
+            <div class="progress mt-2 mb-3">
+              <div class="progress-bar bg-primary"
+                   role="progressbar"
                    style="width: {% widthratio item.count total_denuncias 100 %}%">
               </div>
             </div>
@@ -166,18 +372,19 @@
   </div>
 
   <div class="col-lg-6 grid-margin stretch-card">
-    <div class="card">
+    <div class="card dashboard-section-card">
       <div class="card-body">
-        <p class="card-title mb-3">Departamentos con más Denuncias</p>
+        <p class="soft-title">Departamentos con más Denuncias</p>
 
         {% if departamentos_con_denuncias %}
           {% for item in departamentos_con_denuncias %}
-            <div class="d-flex justify-content-between">
-              <span class="font-weight-bold">{{ item.asignado_departamento__nombre }}</span>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="list-row-title">{{ item.asignado_departamento__nombre }}</span>
               <span class="badge badge-success">{{ item.count }}</span>
             </div>
-            <div class="progress progress-md mt-2 mb-3">
-              <div class="progress-bar bg-success" role="progressbar"
+            <div class="progress mt-2 mb-3">
+              <div class="progress-bar bg-success"
+                   role="progressbar"
                    style="width: {% widthratio item.count total_denuncias 100 %}%">
               </div>
             </div>
@@ -193,138 +400,272 @@
 <!-- MAPA -->
 <div class="row">
   <div class="col-12 grid-margin stretch-card">
-    <div class="card">
+    <div class="card dashboard-section-card">
       <div class="card-body">
-        <p class="card-title mb-2">Mapa de Denuncias</p>
-        <p class="text-muted mb-3">Mostrando las últimas {{ denuncias_mapa|length }} denuncias con ubicación</p>
-        <div id="map" style="height: 500px; width: 100%; border-radius: 12px;"></div>
+        <div class="map-toolbar">
+          <div>
+            <p class="soft-title mb-1">Mapa de Denuncias</p>
+            <p class="text-muted mb-0">
+              {{ map_scope_text }} ({{ map_points|length }} registradas)
+            </p>
+          </div>
+
+          <div class="map-legend">
+            <span class="map-legend-item"><span class="legend-dot legend-pendiente"></span> Pendiente</span>
+            <span class="map-legend-item"><span class="legend-dot legend-proceso"></span> En proceso</span>
+            <span class="map-legend-item"><span class="legend-dot legend-resuelta"></span> Resuelta</span>
+            <span class="map-legend-item"><span class="legend-dot legend-rechazada"></span> Rechazada</span>
+          </div>
+        </div>
+
+        <div id="map"></div>
       </div>
     </div>
   </div>
 </div>
+
+{{ dept_chart_labels|json_script:"dept-chart-labels" }}
+{{ dept_chart_full_labels|json_script:"dept-chart-full-labels" }}
+{{ dept_chart_values|json_script:"dept-chart-values" }}
+{{ dept_chart_colors|json_script:"dept-chart-colors" }}
+{{ map_points|json_script:"map-points-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+
 <script>
-window.initMap = function () {
+  document.addEventListener("DOMContentLoaded", function () {
+    const deptCanvas = document.getElementById("departamentosChart");
 
-  // Centro por defecto: Salcedo (ajústalo si quieres)
-  const SALCEDO_CENTER = { lat: -1.0664793, lng: -78.5999933 };
-  const DEFAULT_ZOOM = 13;
+    if (deptCanvas) {
+      const labels = JSON.parse(document.getElementById("dept-chart-labels").textContent);
+      const fullLabels = JSON.parse(document.getElementById("dept-chart-full-labels").textContent);
+      const values = JSON.parse(document.getElementById("dept-chart-values").textContent);
+      const colors = JSON.parse(document.getElementById("dept-chart-colors").textContent);
 
-  const mapEl = document.getElementById("map");
-  if (!mapEl) return;
+      const dynamicHeight = Math.max(360, labels.length * 62);
+      deptCanvas.parentElement.style.height = dynamicHeight + "px";
 
-  const map = new google.maps.Map(mapEl, {
-    zoom: DEFAULT_ZOOM,
-    center: SALCEDO_CENTER,
-    mapTypeId: "roadmap",
-    styles: [{ featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }]
+      new Chart(deptCanvas, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Cantidad",
+            data: values,
+            backgroundColor: colors,
+            borderColor: colors,
+            borderWidth: 1.5,
+            borderRadius: 8,
+            barThickness: 18
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: "y",
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                title: function (tooltipItems) {
+                  const index = tooltipItems[0].dataIndex;
+                  return fullLabels[index];
+                }
+              }
+            }
+          },
+          layout: {
+            padding: {
+              top: 10,
+              right: 10,
+              bottom: 5,
+              left: 10
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "Cantidad"
+              },
+              grid: {
+                color: "rgba(0,0,0,0.05)"
+              },
+              ticks: {
+                precision: 0
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: "Departamento"
+              },
+              grid: {
+                display: false
+              },
+              ticks: {
+                font: {
+                  size: 11
+                }
+              }
+            }
+          }
+        }
+      });
+    }
   });
 
-  const bounds = new google.maps.LatLngBounds();
+  window.initMap = function () {
+    const mapEl = document.getElementById("map");
+    if (!mapEl) return;
 
-  const estadoIconos = {
-    pendiente: "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
-    en_proceso: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-    resuelto: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
-    rechazado: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
-  };
+    const points = JSON.parse(document.getElementById("map-points-data").textContent || "[]");
 
-  // OJO: aquí NO ponemos defaults. Si no hay lat/lng, va vacío y se filtra.
-  const denuncias = [
-    {% for denuncia in denuncias_mapa %}
-    {
-      id: "{{ denuncia.id }}",
-      // si viene null/blank, queda "" y parseFloat da NaN (y lo filtramos)
-      lat: parseFloat("{{ denuncia.latitud|default_if_none:'' }}"),
-      lng: parseFloat("{{ denuncia.longitud|default_if_none:'' }}"),
-      descripcion: "{{ denuncia.descripcion|truncatechars:80|escapejs }}",
-      tipo: "{{ denuncia.tipo_denuncia.nombre|escapejs }}",
-      estado: "{{ denuncia.estado }}",
-      ciudadano: "{{ denuncia.ciudadano.nombres|escapejs }} {{ denuncia.ciudadano.apellidos|escapejs }}",
-      departamento: "{% if denuncia.asignado_departamento %}{{ denuncia.asignado_departamento.nombre|escapejs }}{% else %}Sin asignar{% endif %}",
-      fecha: "{{ denuncia.created_at|date:'d/m/Y H:i' }}"
-    }{% if not forloop.last %},{% endif %}
-    {% endfor %}
-  ];
+    const SALCEDO_CENTER = { lat: -1.045, lng: -78.590 };
+    const DEFAULT_ZOOM = 13;
 
-  function isValidCoord(lat, lng) {
-    // NaN o undefined
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+    const map = new google.maps.Map(mapEl, {
+      center: SALCEDO_CENTER,
+      zoom: DEFAULT_ZOOM,
+      mapTypeId: "roadmap",
+      fullscreenControl: true,
+      streetViewControl: false,
+      mapTypeControl: true,
+      gestureHandling: "greedy",
+      styles: [
+        {
+          featureType: "poi",
+          elementType: "labels",
+          stylers: [{ visibility: "off" }]
+        }
+      ]
+    });
 
-    // 0,0 (típico de "no tengo ubicación")
-    if (lat === 0 && lng === 0) return false;
+    const infoWindow = new google.maps.InfoWindow();
+    const bounds = new google.maps.LatLngBounds();
+    const markers = [];
 
-    // rangos válidos
-    if (lat < -90 || lat > 90) return false;
-    if (lng < -180 || lng > 180) return false;
+    const stateColors = {
+      pendiente: "#fbbc04",
+      en_proceso: "#4285f4",
+      resuelta: "#34a853",
+      rechazado: "#ea4335"
+    };
 
-    return true;
-  }
+    function isValidCoord(lat, lng) {
+      return Number.isFinite(lat) &&
+             Number.isFinite(lng) &&
+             lat >= -90 && lat <= 90 &&
+             lng >= -180 && lng <= 180 &&
+             !(lat === 0 && lng === 0);
+    }
 
-  const badge = (st) => {
-    if (st === "resuelto") return "success";
-    if (st === "en_proceso") return "info";
-    if (st === "rechazado") return "danger";
-    return "warning";
-  };
+    function badgeClass(estado) {
+      if (estado === "resuelta") return "success";
+      if (estado === "en_proceso") return "primary";
+      if (estado === "rechazado") return "danger";
+      return "warning";
+    }
 
-  // Filtramos solo denuncias georreferenciadas reales
-  const denunciasValidas = denuncias.filter(d => isValidCoord(d.lat, d.lng));
+    // Para separar puntos idénticos o casi idénticos
+    const repeatedCoordsCounter = {};
 
-  // Si NO hay denuncias válidas → queda centrado en Salcedo, y aviso
-  if (denunciasValidas.length === 0) {
-    // opcional: aviso bonito
-    if (window.iziToast) {
-      iziToast.info({
-        title: "Mapa",
-        message: "No hay denuncias con ubicación (lat/lng) válida para mostrar.",
-        position: "topRight",
-        timeout: 3500
+    const validPoints = points.filter(p => isValidCoord(Number(p.lat), Number(p.lng)));
+
+    if (!validPoints.length) {
+      if (window.iziToast) {
+        iziToast.info({
+          title: "Mapa",
+          message: "No hay denuncias con ubicación válida para mostrar.",
+          position: "topRight",
+          timeout: 3500
+        });
+      }
+      return;
+    }
+
+    validPoints.forEach((p) => {
+      let lat = Number(p.lat);
+      let lng = Number(p.lng);
+
+      const key = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+      repeatedCoordsCounter[key] = (repeatedCoordsCounter[key] || 0) + 1;
+      const repeatIndex = repeatedCoordsCounter[key] - 1;
+
+      // pequeño desplazamiento para puntos iguales
+      if (repeatIndex > 0) {
+        const offset = repeatIndex * 0.00005;
+        lat = lat + offset;
+        lng = lng + offset;
+      }
+
+      const position = { lat, lng };
+
+      const marker = new google.maps.Marker({
+        position,
+        title: p.tipo,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 9,
+          fillColor: stateColors[p.estado] || "#7e57c2",
+          fillOpacity: 1,
+          strokeColor: "#ffffff",
+          strokeWeight: 2
+        }
+      });
+
+      marker.addListener("click", () => {
+        infoWindow.setContent(`
+          <div style="max-width: 320px;">
+            <h6 style="margin: 0 0 8px 0; font-weight: 700;">${p.tipo || "Denuncia"}</h6>
+            <p style="margin: 0 0 6px 0;"><b>Descripción:</b> ${p.descripcion || "Sin descripción"}</p>
+            <p style="margin: 0 0 6px 0;">
+              <b>Estado:</b>
+              <span class="badge bg-${badgeClass(p.estado)}">${(p.estado || "").replace("_", " ")}</span>
+            </p>
+            <p style="margin: 0 0 6px 0;"><b>Ciudadano:</b> ${p.ciudadano || "Sin ciudadano"}</p>
+            <p style="margin: 0 0 6px 0;"><b>Departamento:</b> ${p.departamento || "Sin asignar"}</p>
+            <p style="margin: 0 0 10px 0;"><b>Fecha:</b> ${p.fecha || "-"}</p>
+            <a href="${p.detalle_url}" class="btn btn-sm btn-primary" target="_blank">Ver detalles</a>
+          </div>
+        `);
+        infoWindow.open(map, marker);
+      });
+
+      markers.push(marker);
+      bounds.extend(position);
+    });
+
+    // Cluster para que se vean todas mejor
+    if (markers.length > 1 && window.markerClusterer) {
+      new markerClusterer.MarkerClusterer({
+        map,
+        markers
       });
     } else {
-      console.warn("No hay denuncias con coordenadas válidas.");
+      markers.forEach(marker => marker.setMap(map));
     }
-    return;
-  }
 
-  // Pintamos markers
-  denunciasValidas.forEach(d => {
-    const position = { lat: d.lat, lng: d.lng };
+    if (markers.length === 1) {
+      map.setCenter(markers[0].getPosition());
+      map.setZoom(16);
+      markers[0].setMap(map);
+    } else {
+      map.fitBounds(bounds);
 
-    const marker = new google.maps.Marker({
-      position,
-      map,
-      title: d.tipo,
-      icon: estadoIconos[d.estado] || "http://maps.google.com/mapfiles/ms/icons/purple-dot.png"
-    });
-
-    const infoWindow = new google.maps.InfoWindow({
-      content: `
-        <div style="max-width: 320px;">
-          <h6 style="margin:0 0 8px 0;"><b>${d.tipo}</b></h6>
-          <p style="margin:0 0 6px 0;"><b>Descripción:</b> ${d.descripcion}</p>
-          <p style="margin:0 0 6px 0;"><b>Estado:</b> <span class="badge bg-${badge(d.estado)}">${(d.estado || "").replace("_"," ")}</span></p>
-          <p style="margin:0 0 6px 0;"><b>Ciudadano:</b> ${d.ciudadano}</p>
-          <p style="margin:0 0 6px 0;"><b>Departamento:</b> ${d.departamento}</p>
-          <p style="margin:0 0 10px 0;"><b>Fecha:</b> ${d.fecha}</p>
-          <a href="/web/denuncias/${d.id}/" class="btn btn-sm btn-primary" target="_blank">Ver detalles</a>
-        </div>`
-    });
-
-    marker.addListener("click", () => infoWindow.open(map, marker));
-    bounds.extend(position);
-  });
-
-  // Ajustar vista a bounds
-  map.fitBounds(bounds);
-
-  // limitar zoom máximo
-  const listener = google.maps.event.addListener(map, "idle", () => {
-    if (map.getZoom() > 16) map.setZoom(16);
-    google.maps.event.removeListener(listener);
-  });
-};
+      google.maps.event.addListenerOnce(map, "idle", () => {
+        if (map.getZoom() > 16) {
+          map.setZoom(16);
+        }
+      });
+    }
+  };
 </script>
 
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDFFwwfbAcTQH432AY6w8CwRgwf2VBvWUI&callback=initMap" async defer></script>
-
 {% endblock %}
