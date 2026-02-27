@@ -31,7 +31,7 @@
   }
 
   .dashboard-mini-kpi-card .card-body {
-    min-height: 63px;
+    min-height: 61px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -283,7 +283,7 @@
   </div>
 </div>
 
-<!-- Charts fila 1 -->
+<!-- Fila 1 -->
 <div class="row">
   <div class="col-lg-6 grid-margin stretch-card">
     <div class="card dashboard-section-card w-100">
@@ -311,7 +311,7 @@
   </div>
 </div>
 
-<!-- Charts fila 2 -->
+<!-- Fila 2 -->
 <div class="row">
   <div class="col-lg-6 grid-margin stretch-card">
     <div class="card dashboard-section-card w-100">
@@ -332,13 +332,22 @@
   </div>
 </div>
 
-<!-- Top ciudadanos -->
+<!-- Fila 3 -->
 <div class="row">
-  <div class="col-12 grid-margin stretch-card">
-    <div class="card dashboard-section-card">
+  <div class="col-lg-6 grid-margin stretch-card">
+    <div class="card dashboard-section-card w-100">
       <div class="card-body">
         <p class="soft-title">Ciudadanos con más denuncias (Top 10)</p>
         {{ chart_ciudadanos_top }}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6 grid-margin stretch-card">
+    <div class="card dashboard-section-card w-100">
+      <div class="card-body">
+        <p class="soft-title">Denuncias por Tipo</p>
+        {{ chart_kpi7 }}
       </div>
     </div>
   </div>
@@ -349,7 +358,7 @@
   <div class="col-lg-6 grid-margin stretch-card">
     <div class="card dashboard-section-card">
       <div class="card-body">
-        <p class="soft-title">Denuncias por Tipo</p>
+        <p class="soft-title">Denuncias por Tipo (Listado)</p>
 
         {% if denuncias_por_tipo %}
           {% for item in denuncias_por_tipo %}
@@ -432,6 +441,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'skydash/assets/vendors/chart.js/chart.umd.js' %}"></script>
 <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
 
 <script>
@@ -572,9 +582,7 @@
       return "warning";
     }
 
-    // Para separar puntos idénticos o casi idénticos
     const repeatedCoordsCounter = {};
-
     const validPoints = points.filter(p => isValidCoord(Number(p.lat), Number(p.lng)));
 
     if (!validPoints.length) {
@@ -597,7 +605,6 @@
       repeatedCoordsCounter[key] = (repeatedCoordsCounter[key] || 0) + 1;
       const repeatIndex = repeatedCoordsCounter[key] - 1;
 
-      // pequeño desplazamiento para puntos iguales
       if (repeatIndex > 0) {
         const offset = repeatIndex * 0.00005;
         lat = lat + offset;
@@ -641,7 +648,6 @@
       bounds.extend(position);
     });
 
-    // Cluster para que se vean todas mejor
     if (markers.length > 1 && window.markerClusterer) {
       new markerClusterer.MarkerClusterer({
         map,

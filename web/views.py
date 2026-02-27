@@ -328,15 +328,28 @@ def api_respuestas_denuncia(request, denuncia_id):
 
     return JsonResponse({"success": True, "respuestas": data})
 
+
+from datetime import timedelta
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count
+from django.shortcuts import render
+from django.utils import timezone
+from django.db.models.functions import TruncWeek, TruncMonth
+
+# Asegúrate de tener tus imports reales:
+# from .models import Denuncias, Funcionarios, Departamentos, Ciudadanos
+# from .utils import get_funcionario_from_web_user
+# from chartkick.django import PieChart, BarChart, LineChart, ColumnChart
+
+
 @login_required
 def dashboard_view(request):
     user = request.user
 
     def split_label_every_n_words(text, n=4):
         """
-        Convierte un texto largo en varias líneas para Chart.js.
-        Ej: 'Dirección de Gestión Ambiental y Desechos Sólidos'
-        -> ['Dirección de Gestión Ambiental y', 'Desechos Sólidos']
+        Parte nombres largos en bloques de 4 palabras
+        para que el gráfico horizontal no se rompa.
         """
         if not text:
             return ["Sin nombre"]
@@ -355,9 +368,10 @@ def dashboard_view(request):
     departamentos_qs = Departamentos.objects.all()
 
     # =========================
-    # 2) Control de acceso / filtro por rol
+    # 2) Control de acceso por rol
     # =========================
     if user.is_superuser:
+        # Admin ve TODO
         current_user_department = None
         map_scope_text = "Mostrando todas las denuncias con ubicación válida"
     else:
@@ -368,6 +382,7 @@ def dashboard_view(request):
         current_user_department = getattr(funcionario, "departamento", None)
 
         if current_user_department:
+            # Funcionario normal ve solo su departamento
             denuncias_qs = denuncias_qs.filter(asignado_departamento=current_user_department)
             funcionarios_qs = funcionarios_qs.filter(departamento=current_user_department)
             departamentos_qs = departamentos_qs.filter(pk=current_user_department.pk)
@@ -393,11 +408,11 @@ def dashboard_view(request):
     denuncias_en_proceso = denuncias_qs.filter(estado="en_proceso").count()
     denuncias_resueltas = denuncias_qs.filter(estado="resuelta").count()
 
-    # NUEVA tarjeta
+    # Nueva tarjeta
     denuncias_asignadas = denuncias_qs.filter(asignado_departamento__isnull=False).count()
 
     # =========================
-    # 5) Otros KPIs
+    # 5) Otros KPI
     # =========================
     total_ciudadanos = Ciudadanos.objects.count()
     ciudadanos_este_mes = Ciudadanos.objects.filter(created_at__gte=fecha_hace_30_dias).count()
@@ -414,6 +429,16 @@ def dashboard_view(request):
     # =========================
     # 6) Charts Chartkick
     # =========================
+    chart_kpi2 = ColumnChart(
+        {
+            "Pendientes": denuncias_pendientes,
+            "En Proceso": denuncias_en_proceso,
+            "Resueltas": denuncias_resueltas,
+        },
+        title="Denuncias por estado",
+        download={"filename": "chart_kpi2"},
+    )
+
     chart_estado_denuncias = PieChart(
         {
             "Resueltas": denuncias_resueltas,
@@ -427,10 +452,41 @@ def dashboard_view(request):
     denuncias_por_tipo = (
         denuncias_qs.values("tipo_denuncia__nombre")
         .annotate(count=Count("pk"))
-        .order_by("-count")[:5]
+        .order_by("-count")[:10]
     )
 
-    # Top ciudadanos
+    chart_kpi7 = PieChart(
+        {i["tipo_denuncia__nombre"]: i["count"] for i in denuncias_por_tipo if i["tipo_denuncia__nombre"]},
+        title="Denuncias por tipo",
+        donut=True,
+        download={"filename": "chart_kpi7"},
+    )
+
+    # =========================
+    # 7) Denuncias por departamento
+    # =========================
+    denuncias_por_departamento_data = (
+        denuncias_qs.filter(asignado_departamento__isnull=False)
+        .values("asignado_departamento__nombre", "asignado_departamento__color_hex")
+        .annotate(count=Count("pk"))
+        .order_by("-count")
+    )
+
+    dept_chart_labels = []
+    dept_chart_full_labels = []
+    dept_chart_values = []
+    dept_chart_colors = []
+
+    for item in denuncias_por_departamento_data:
+        nombre = item["asignado_departamento__nombre"] or "Sin departamento"
+        dept_chart_labels.append(split_label_every_n_words(nombre, 4))
+        dept_chart_full_labels.append(nombre)
+        dept_chart_values.append(item["count"])
+        dept_chart_colors.append(item["asignado_departamento__color_hex"] or "#4B49AC")
+
+    # =========================
+    # 8) Top ciudadanos
+    # =========================
     ciudadanos_top_data = (
         denuncias_qs.values("ciudadano__nombres", "ciudadano__apellidos")
         .annotate(count=Count("pk"))
@@ -447,7 +503,9 @@ def dashboard_view(request):
         ytitle="Ciudadano",
     )
 
-    # Semana / Mes
+    # =========================
+    # 9) Denuncias por semana / mes
+    # =========================
     denuncias_semana_data = (
         denuncias_qs.filter(created_at__gte=fecha_hace_30_dias)
         .annotate(semana=TruncWeek("created_at"))
@@ -486,29 +544,7 @@ def dashboard_view(request):
     )
 
     # =========================
-    # 7) Datos para gráfico custom de departamentos
-    # =========================
-    denuncias_por_departamento_data = (
-        denuncias_qs.filter(asignado_departamento__isnull=False)
-        .values("asignado_departamento__nombre", "asignado_departamento__color_hex")
-        .annotate(count=Count("pk"))
-        .order_by("-count")
-    )
-
-    dept_chart_labels = []
-    dept_chart_full_labels = []
-    dept_chart_values = []
-    dept_chart_colors = []
-
-    for item in denuncias_por_departamento_data:
-        nombre = item["asignado_departamento__nombre"] or "Sin departamento"
-        dept_chart_labels.append(split_label_every_n_words(nombre, 4))
-        dept_chart_full_labels.append(nombre)
-        dept_chart_values.append(item["count"])
-        dept_chart_colors.append(item["asignado_departamento__color_hex"] or "#4B49AC")
-
-    # =========================
-    # 8) Mapa - TODAS las denuncias válidas del queryset filtrado por rol
+    # 10) MAPA - todas las denuncias válidas según el rol
     # =========================
     denuncias_mapa_qs = (
         denuncias_qs.select_related("ciudadano", "tipo_denuncia", "asignado_departamento")
@@ -526,7 +562,6 @@ def dashboard_view(request):
         except (TypeError, ValueError):
             continue
 
-        # Validación básica
         if not (-90 <= lat <= 90 and -180 <= lng <= 180):
             continue
 
@@ -546,7 +581,7 @@ def dashboard_view(request):
             departamento_nombre = getattr(denuncia.asignado_departamento, "nombre", "Sin asignar")
 
         map_points.append({
-            "uuid": str(denuncia.pk),
+            "uuid": str(denuncia.pk),  # por si tu PK es UUID
             "lat": lat,
             "lng": lng,
             "descripcion": (denuncia.descripcion or "")[:120],
@@ -579,22 +614,22 @@ def dashboard_view(request):
         "departamentos_con_denuncias": list(denuncias_por_departamento_data[:10]),
 
         "chart_estado_denuncias": chart_estado_denuncias,
+        "chart_kpi2": chart_kpi2,
+        "chart_kpi7": chart_kpi7,
         "chart_ciudadanos_top": chart_ciudadanos_top,
         "chart_denuncias_semana": chart_denuncias_semana,
         "chart_denuncias_mes": chart_denuncias_mes,
 
-        # gráfico custom
         "dept_chart_labels": dept_chart_labels,
         "dept_chart_full_labels": dept_chart_full_labels,
         "dept_chart_values": dept_chart_values,
         "dept_chart_colors": dept_chart_colors,
 
-        # mapa
         "map_points": map_points,
         "map_scope_text": map_scope_text,
     }
 
-    return render(request, "dashboard.html", context)    
+    return render(request, "dashboard.html", context)
 
 # =========================================
 # Grupos
