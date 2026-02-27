@@ -21,11 +21,13 @@
   .tesis-table-title {
     margin-bottom: 0;
     font-weight: 700;
+    font-size: 1.5rem;
   }
 
   .tesis-table-subtitle {
     color: #6c757d;
     margin-bottom: 0;
+    font-size: 0.95rem;
   }
 
   .tesis-table-wrap {
@@ -44,20 +46,22 @@
     border-bottom: 1px solid #e9ecef !important;
     color: #344767;
     font-weight: 700;
-    font-size: 0.88rem;
+    font-size: 0.82rem;
     vertical-align: middle;
     white-space: normal;
+    text-transform: uppercase;
+    letter-spacing: .35px;
   }
 
   .tesis-table th,
   .tesis-table td {
-    padding: 0.85rem 0.75rem;
+    padding: 0.82rem 0.65rem;
     vertical-align: middle;
     border-color: #edf0f5;
     word-break: break-word;
     overflow-wrap: break-word;
     white-space: normal;
-    font-size: 0.88rem;
+    font-size: 0.86rem;
   }
 
   .tesis-table tbody tr:hover {
@@ -70,24 +74,24 @@
   }
 
   .tesis-table .col-tipo {
-    width: 18%;
+    width: 22%;
   }
 
   .tesis-table .col-departamento {
-    width: 20%;
+    width: 24%;
   }
 
   .tesis-table .col-estado {
-    width: 12%;
+    width: 13%;
     text-align: center;
   }
 
   .tesis-table .col-fecha {
-    width: 14%;
+    width: 16%;
   }
 
   .tesis-table .col-acciones {
-    width: 130px;
+    width: 120px;
     text-align: center;
   }
 
@@ -95,7 +99,11 @@
     border-radius: 999px;
     font-weight: 600;
     padding: 0.42rem 0.72rem;
-    font-size: 0.75rem;
+    font-size: 0.74rem;
+    display: inline-block;
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
   }
 
   .tesis-actions {
@@ -118,10 +126,6 @@
 
   .tesis-empty {
     padding: 2.5rem 1rem;
-  }
-
-  .tesis-empty p {
-    margin-bottom: 1rem;
   }
 
   .tesis-pagination-wrap {
@@ -150,7 +154,7 @@
     .tesis-table th,
     .tesis-table td {
       font-size: 0.8rem;
-      padding: 0.65rem 0.6rem;
+      padding: 0.65rem 0.55rem;
       white-space: nowrap;
     }
 
@@ -304,13 +308,9 @@
 
                 {% for num in page_obj.paginator.page_range %}
                   {% if page_obj.number == num %}
-                    <li class="page-item active">
-                      <span class="page-link">{{ num }}</span>
-                    </li>
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
                   {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item">
-                      <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                    </li>
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
                   {% endif %}
                 {% endfor %}
 
