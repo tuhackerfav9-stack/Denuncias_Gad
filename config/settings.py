@@ -111,18 +111,29 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ------------------------------------------------------------
 # Database
 # ------------------------------------------------------------
+# local y rende rvalen
+#DATABASES = {
+#    "default": dj_database_url.config(
+#        default=config(
+#            "DATABASE_URL",
+#            default="sqlite:///" + str(BASE_DIR / "db.sqlite3"),
+#        ),
+#        conn_max_age=600,
+#        # Render Postgres uses SSL; keep SSL on in prod
+#        ssl_require=not DEBUG,
+#    )
+#}
+# docker
 DATABASES = {
-    "default": dj_database_url.config(
-        default=config(
-            "DATABASE_URL",
-            default="sqlite:///" + str(BASE_DIR / "db.sqlite3"),
-        ),
-        conn_max_age=600,
-        # Render Postgres uses SSL; keep SSL on in prod
-        ssl_require=not DEBUG,
-    )
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DB_NAME", "bdd_denuncias_publicas"),
+        "USER": os.getenv("DB_USER", "postgres"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "2002"),
+        "HOST": os.getenv("DB_HOST", "db"),
+        "PORT": os.getenv("DB_PORT", "5432"),
+    }
 }
-
 # ------------------------------------------------------------
 # CORS
 # ------------------------------------------------------------
