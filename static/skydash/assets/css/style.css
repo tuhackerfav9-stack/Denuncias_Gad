@@ -23781,21 +23781,27 @@ table.dataTable tbody td.select-checkbox:after {
 }
 .select2-container--default .select2-selection--multiple .select2-selection__choice .select2-selection__choice__remove {
   color: color(white);
+  font-size: medium ;
 }
 .select2-container--default .select2-selection--multiple .select2-selection__choice:nth-child(5n+1) {
   background: #4B49AC;
+  font-size: medium ;
 }
 .select2-container--default .select2-selection--multiple .select2-selection__choice:nth-child(5n+2) {
   background: #57B657;
+  font-size: medium ;
 }
 .select2-container--default .select2-selection--multiple .select2-selection__choice:nth-child(5n+3) {
   background: #248AFD;
+  font-size: medium ;
 }
 .select2-container--default .select2-selection--multiple .select2-selection__choice:nth-child(5n+4) {
   background: #FF4747;
+  font-size: medium ;
 }
 .select2-container--default .select2-selection--multiple .select2-selection__choice:nth-child(5n+5) {
   background: #FFC100;
+  font-size: medium ;
 }
 .select2-container--default .select2-selection__arrow {
   padding-top: 50px;

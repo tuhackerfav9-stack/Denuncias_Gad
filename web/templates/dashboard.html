@@ -11,6 +11,15 @@
     text-decoration: none;
     color: inherit;
 }
+.card-link-wrapper .card {
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+.card-link-wrapper .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
 </style>
 <div class="row">
   <div class="col-12 grid-margin">
@@ -41,7 +50,7 @@
     <div class="card card-dark-blue">
       <div class="card-body">
         <p class="mb-2">Pendientes</p>
-        <p class="fs-30 mb-1">{{ denuncias_asignadas }}</p>
+        <p class="fs-30 mb-1">{{ denuncias_pendientes }}</p>
         <p class="mb-0 text-white-50">Por revisar</p>
       </div>
     </div>
