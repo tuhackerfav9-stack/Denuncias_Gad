@@ -404,9 +404,9 @@ def dashboard_view(request):
     total_denuncias = denuncias_qs.count()
     denuncias_este_mes = denuncias_qs.filter(created_at__gte=fecha_hace_30_dias).count()
 
-    denuncias_pendientes = denuncias_qs.filter(estado="pendiente").count()
+    denuncias_pendientes = denuncias_qs.filter(estado="asignada").count()
     denuncias_en_proceso = denuncias_qs.filter(estado="en_proceso").count()
-    denuncias_resueltas = denuncias_qs.filter(estado="resuelta").count()
+    denuncias_resueltas = denuncias_qs.filter(estado="rechazada").count()
 
     # Nueva tarjeta
     denuncias_asignadas = denuncias_qs.filter(asignado_departamento__isnull=False).count()
