@@ -589,9 +589,10 @@
           {% csrf_token %}
 
           <div class="mb-2">
-            <label class="form-label">Motivo del rechazo</label>
+            
+            <label class="form-label">Motivo / mensaje de rechazo</label>
             <textarea id="rechazoMotivo" name="motivo" class="form-control" rows="16"
-                      placeholder="Escriba el motivo del rechazo..." required></textarea>
+                      placeholder="Escriba el motivo o genere un mensaje formal con IA..." required></textarea>
           </div>
           <!--
           <small class="text-muted">

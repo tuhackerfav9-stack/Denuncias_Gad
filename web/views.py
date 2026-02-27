@@ -67,6 +67,7 @@ from django.contrib import messages
 from django.utils.http import url_has_allowed_host_and_scheme
 from web.services.webuser_domain import soft_disable_web_user
 from web.services.delete_rules import can_hard_delete_user
+import unicodedata
 
 def mi_vista(request):
     context = {
@@ -1135,6 +1136,7 @@ class DenunciaDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, DeleteView)
     login_url = "web:login"
 
 
+
 #  Cambio: quitamos @permission_required("db....") y validamos funcionario
 @login_required
 def crear_respuesta_denuncia(request, pk):
@@ -1150,17 +1152,26 @@ def crear_respuesta_denuncia(request, pk):
         messages.error(request, "❌ Mensaje inválido.")
         return redirect("web:denuncia_detail", pk=pk)
 
-    with transaction.atomic():
-        # 🔒 bloquea la fila para que 2 funcionarios no la “tomen” al mismo tiempo
-        denuncia = Denuncias.objects.select_for_update().get(pk=pk)
-        estado_anterior = denuncia.estado  # <-- agrega esto aquí
+    mensaje = (form.cleaned_data["mensaje"] or "").strip()
+    mensaje = re.sub(r"[ \t]+\n", "\n", mensaje)
+    mensaje = re.sub(r"\n{3,}", "\n\n", mensaje)
 
-        # (Opcional) seguridad por depto si no es admin
+    has_bad_language, bad_words_found = _contains_inappropriate_language(mensaje)
+    if has_bad_language:
+        messages.error(
+            request,
+            "❌ La respuesta contiene lenguaje inapropiado. Redáctala nuevamente con tono formal, respetuoso y ciudadano."
+        )
+        return redirect("web:denuncia_detail", pk=pk)
+
+    with transaction.atomic():
+        denuncia = Denuncias.objects.select_for_update().get(pk=pk)
+        estado_anterior = denuncia.estado
+
         if not (request.user.is_superuser or request.user.groups.filter(name="TICS_ADMIN").exists()):
             if not funcionario.departamento_id or denuncia.asignado_departamento_id != funcionario.departamento_id:
                 return render(request, "errors/403.html", status=403)
 
-        #   Si nadie la está tratando, el primero que responde la “toma”
         if denuncia.asignado_funcionario_id is None:
             denuncia.asignado_funcionario = funcionario
             DenunciaAsignaciones.objects.create(
@@ -1171,8 +1182,6 @@ def crear_respuesta_denuncia(request, pk):
                 activo=True,
             )
 
-
-        # ❌ Si ya la está tratando otro, bloquear respuesta
         elif denuncia.asignado_funcionario_id != funcionario.pk:
             messages.warning(
                 request,
@@ -1180,14 +1189,12 @@ def crear_respuesta_denuncia(request, pk):
             )
             return redirect("web:denuncia_detail", pk=pk)
 
-        #   Si responde, pasar a EN_PROCESO si estaba pendiente/en_revision/asignada
         if denuncia.estado in ["pendiente", "en_revision", "asignada"]:
             denuncia.estado = "en_proceso"
 
         denuncia.updated_at = timezone.now()
         denuncia.save(update_fields=["asignado_funcionario", "estado", "updated_at"])
 
-        # historial
         DenunciaHistorial.objects.create(
             id=get_uuid(),
             estado_anterior=estado_anterior,
@@ -1198,15 +1205,15 @@ def crear_respuesta_denuncia(request, pk):
             denuncia_id=denuncia.id,
         )
 
-        # respuesta
         DenunciaRespuestas.objects.create(
             id=get_uuid(),
             denuncia=denuncia,
             funcionario=funcionario,
-            mensaje=form.cleaned_data["mensaje"],
+            mensaje=mensaje,
             created_at=timezone.now(),
             updated_at=timezone.now(),
         )
+
     import logging
     logger = logging.getLogger(__name__)
 
@@ -1215,11 +1222,8 @@ def crear_respuesta_denuncia(request, pk):
     except Exception as e:
         logger.exception("Fallo push Firebase: %s", e)
 
-    messages.success(request, "  Respuesta enviada correctamente.")
+    messages.success(request, "✅ Respuesta enviada correctamente.")
     return redirect("web:denuncia_detail", pk=pk)
-
-
-
 
 class MisDenunciasListView(LoginRequiredMixin, ListView):
     """
@@ -1417,6 +1421,190 @@ class TiposDenunciaDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, Delete
         return ctx
 
 # =========================================
+# Helpers de contexto / tono / validación
+# =========================================
+
+BAD_WORDS = {
+    "hp", "hpta", "puta", "puta madre", "mierda", "verga",
+    "malparido", "malparida", "cojudo", "cojuda",
+    "idiota", "imbecil", "imbécil", "estupido", "estúpido",
+    "pendejo", "pendeja"
+}
+
+GENERIC_SHORT_DESCRIPTIONS = {
+    "ayuda", "urgente", "problema", "denuncia", "hola", "buenas",
+    "revisen", "auxilio", "necesito ayuda"
+}
+
+def _normalize_text(value: str) -> str:
+    value = (value or "").strip().lower()
+    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    value = re.sub(r"[^a-z0-9\s]", " ", value)
+    value = re.sub(r"\s+", " ", value).strip()
+    return value
+
+def _contains_inappropriate_language(text: str):
+    normalized = _normalize_text(text)
+    found = []
+
+    for bad in BAD_WORDS:
+        bad_norm = _normalize_text(bad)
+        if re.search(rf"(^|\s){re.escape(bad_norm)}($|\s)", normalized):
+            found.append(bad)
+
+    return (len(found) > 0, found[:5])
+
+def _description_is_insufficient(denuncia) -> bool:
+    descripcion = (getattr(denuncia, "descripcion", "") or "").strip()
+    referencia = (getattr(denuncia, "referencia", "") or "").strip()
+    joined = f"{descripcion} {referencia}".strip()
+    norm = _normalize_text(joined)
+
+    if len(norm) < 30:
+        return True
+
+    words = norm.split()
+    if len(words) < 6:
+        return True
+
+    if norm in GENERIC_SHORT_DESCRIPTIONS:
+        return True
+
+    return False
+
+def _get_evidencias_for_context(denuncia):
+    return list(
+        DenunciaEvidencias.objects
+        .filter(denuncia=denuncia)
+        .order_by("-created_at")[:10]
+    )
+
+def _get_respuestas_for_context(denuncia):
+    return list(
+        DenunciaRespuestas.objects
+        .filter(denuncia=denuncia)
+        .select_related("funcionario")
+        .order_by("created_at")[:15]
+    )
+
+def _format_evidencias_context(denuncia) -> str:
+    evidencias = _get_evidencias_for_context(denuncia)
+    if not evidencias:
+        return "No existen evidencias adjuntas."
+
+    lines = []
+    for idx, e in enumerate(evidencias, start=1):
+        tipo = getattr(e, "tipo", None) or "archivo"
+        nombre = getattr(e, "nombre_archivo", None) or f"archivo_{idx}"
+        lines.append(f"- Evidencia {idx}: tipo={tipo}, nombre={nombre}")
+
+    return "\n".join(lines)
+
+def _format_respuestas_context(denuncia) -> str:
+    respuestas = _get_respuestas_for_context(denuncia)
+    if not respuestas:
+        return "No existen respuestas previas en la conversación."
+
+    lines = []
+    for r in respuestas:
+        funcionario_nombre = "Sistema"
+        if getattr(r, "funcionario", None):
+            funcionario_nombre = f"{getattr(r.funcionario, 'nombres', '')} {getattr(r.funcionario, 'apellidos', '')}".strip() or "Funcionario"
+
+        mensaje = (getattr(r, "mensaje", "") or "").strip()
+        mensaje = re.sub(r"\s+", " ", mensaje)
+        if len(mensaje) > 350:
+            mensaje = mensaje[:350] + "..."
+
+        fecha = r.created_at.strftime("%d/%m/%Y %H:%M") if getattr(r, "created_at", None) else "-"
+        lines.append(f"- [{fecha}] {funcionario_nombre}: {mensaje}")
+
+    return "\n".join(lines)
+
+def _detect_rejection_reasons(denuncia):
+    reasons = []
+
+    descripcion = (getattr(denuncia, "descripcion", "") or "").strip()
+    referencia = (getattr(denuncia, "referencia", "") or "").strip()
+    joined = f"{descripcion} {referencia}".strip()
+
+    has_bad_language, found_words = _contains_inappropriate_language(joined)
+    if has_bad_language:
+        reasons.append(
+            "Lenguaje inapropiado en la descripción o referencia reportada."
+        )
+
+    if not DenunciaEvidencias.objects.filter(denuncia=denuncia).exists():
+        reasons.append(
+            "Falta de evidencia de respaldo para sustentar la denuncia."
+        )
+
+    if _description_is_insufficient(denuncia):
+        reasons.append(
+            "Falta de descripción suficiente o detalle claro de los hechos denunciados."
+        )
+
+    return reasons
+
+def _build_llm_denuncia_context(denuncia) -> str:
+    ciudadano_nombre = "Desconocido"
+    if getattr(denuncia, "ciudadano", None):
+        ciudadano_nombre = (
+            f"{getattr(denuncia.ciudadano, 'nombres', '')} "
+            f"{getattr(denuncia.ciudadano, 'apellidos', '')}"
+        ).strip() or "Desconocido"
+
+    tipo_nombre = getattr(getattr(denuncia, "tipo_denuncia", None), "nombre", None) or "No especificado"
+    depto_nombre = getattr(getattr(denuncia, "asignado_departamento", None), "nombre", None) or "No asignado"
+    func_nombre = get_web_user_name_from_funcionario(getattr(denuncia, "asignado_funcionario", None))
+
+    return f"""
+DATOS GENERALES DE LA DENUNCIA
+- Ciudadano: {ciudadano_nombre}
+- Tipo de denuncia: {tipo_nombre}
+- Estado actual: {denuncia.estado}
+- Departamento asignado: {depto_nombre}
+- Funcionario asignado: {func_nombre}
+- Referencia: {denuncia.referencia or "Sin referencia"}
+- Descripción completa: {denuncia.descripcion or "Sin descripción"}
+
+EVIDENCIAS ADJUNTAS
+{_format_evidencias_context(denuncia)}
+
+HISTORIAL DE MENSAJES / RESPUESTAS
+{_format_respuestas_context(denuncia)}
+""".strip()
+
+def _build_friendly_rejection_message(denuncia, submitted_text: str) -> str:
+    """
+    Si el funcionario escribió solo una razón corta, la convertimos en un mensaje formal.
+    Si ya escribió un mensaje largo (por ejemplo generado por IA), lo respetamos.
+    """
+    text = (submitted_text or "").strip()
+
+    # Si parece ya un mensaje completo, se guarda tal cual
+    if "\n" in text or len(text.split()) >= 18:
+        return text
+
+    ciudadano_nombre = "Estimado/a ciudadano/a"
+    if getattr(denuncia, "ciudadano", None):
+        nombres = getattr(denuncia.ciudadano, "nombres", "") or ""
+        apellidos = getattr(denuncia.ciudadano, "apellidos", "") or ""
+        full = f"{nombres} {apellidos}".strip()
+        if full:
+            ciudadano_nombre = f"Estimado/a {full}"
+
+    return (
+        f"{ciudadano_nombre}:\n\n"
+        "Luego de revisar la información registrada en su denuncia, por el momento no es posible continuar con el trámite.\n\n"
+        f"Motivo del rechazo: {text}\n\n"
+        "Le invitamos a complementar o corregir la información y volver a ingresarla. "
+        "Si es posible, procure incluir una descripción más detallada y evidencia de respaldo.\n\n"
+        "Gracias por su comprensión.\n"
+        "GAD Municipal de Salcedo"
+    )
+
+# =========================================
 # IA (LLM)
 # =========================================
 def _extract_json_object(text: str):
@@ -1431,7 +1619,6 @@ def llm_response(request, denuncia_id):
     if not client:
         return JsonResponse({"success": False, "error": "Servicio de IA no configurado (falta OPENAI_API_KEY)"}, status=503)
 
-    #  proteger: solo funcionarios/superuser
     funcionario = get_funcionario_from_web_user(request.user)
     if not (request.user.is_superuser or funcionario):
         return JsonResponse({"success": False, "error": "No autorizado"}, status=403)
@@ -1441,7 +1628,6 @@ def llm_response(request, denuncia_id):
             "ciudadano", "tipo_denuncia", "asignado_departamento", "asignado_funcionario"
         ).get(id=denuncia_id)
 
-        #   tomar denuncia (si está libre) o bloquear si ya la tomó otro
         if not request.user.is_superuser:
             ok, msg = tomar_denuncia_si_libre(
                 denuncia,
@@ -1451,56 +1637,51 @@ def llm_response(request, denuncia_id):
             if not ok:
                 return JsonResponse({"success": False, "error": msg}, status=409)
 
-        func_name = get_web_user_name_from_funcionario(denuncia.asignado_funcionario)
+        contexto = _build_llm_denuncia_context(denuncia)
 
         prompt = f"""
-Eres un asistente especializado en gestión de denuncias ciudadanas para la Municipalidad de Salcedo, Cotopaxi, Ecuador.
+Actúa como un funcionario del GAD Municipal de Salcedo que redacta una respuesta oficial, humana y empática para un ciudadano.
 
-Responde EXCLUSIVAMENTE en JSON válido, sin texto adicional.
+Tu tarea es redactar UN SOLO MENSAJE final que se enviará al ciudadano sobre el estado de su denuncia.
 
-Formato requerido:
-{{
-  "resumen": "string",
-  "sugerencias_accion": "string"
-}}
+INSTRUCCIONES IMPORTANTES:
+- Redacta en español.
+- Usa un tono cordial, cercano, respetuoso y profesional.
+- Debe sonar como un funcionario real del GAD, no como un robot.
+- No uses títulos como "Resumen", "Respuesta", "Sugerencias" ni encabezados.
+- No uses JSON, markdown, listas, viñetas ni etiquetas.
+- No prometas tiempos exactos si no existen.
+- Indica que la denuncia está siendo revisada o atendida por el área competente.
+- Si ya existe conversación previa, mantén continuidad y coherencia.
+- No repitas innecesariamente toda la denuncia.
+- El mensaje debe dejar al ciudadano tranquilo, informado y bien atendido.
 
-Datos de la denuncia:
-- Ciudadano: {f"{denuncia.ciudadano.nombres} {denuncia.ciudadano.apellidos}" if denuncia.ciudadano else "Desconocido"}
-- Descripción: {denuncia.descripcion}
-- Referencia: {denuncia.referencia}
-- Tipo: {denuncia.tipo_denuncia.nombre if denuncia.tipo_denuncia else "No especificado"}
-- Estado: {denuncia.estado}
-- Departamento: {denuncia.asignado_departamento.nombre if denuncia.asignado_departamento else "No asignado"}
-- Funcionario: {func_name}
+CONTEXTO COMPLETO:
+{contexto}
 
-Responde en español con tono empático.
+Devuelve únicamente el mensaje final.
 """.strip()
 
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "Responde siempre en JSON válido."},
+                {
+                    "role": "system",
+                    "content": "Eres un redactor institucional del GAD Municipal de Salcedo. Responde únicamente con el mensaje final, en texto plano."
+                },
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=500,
+            max_tokens=400,
         )
 
         raw_text = (resp.choices[0].message.content or "").strip()
-        json_text = _extract_json_object(raw_text)
-
-        if not json_text:
-            return JsonResponse({"success": True, "response": raw_text})
-
-        data = json.loads(json_text)
-        formatted = f"RESUMEN:\n{data.get('resumen','')}\n\nSUGERENCIAS DE ACCIÓN:\n{data.get('sugerencias_accion','')}"
-        return JsonResponse({"success": True, "response": formatted})
+        return JsonResponse({"success": True, "response": raw_text})
 
     except Denuncias.DoesNotExist:
         return JsonResponse({"success": False, "error": "Denuncia no encontrada"}, status=404)
-    except json.JSONDecodeError:
-        return JsonResponse({"success": False, "error": "Error al decodificar JSON del modelo"}, status=500)
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=500)
+    
 
 
 @login_required
@@ -1612,14 +1793,20 @@ def rechazar_denuncia(request, denuncia_id):
         messages.error(request, "❌ Debes escribir el motivo del rechazo.")
         return redirect("web:denuncia_detail", pk=denuncia_id)
 
+    has_bad_language, bad_words_found = _contains_inappropriate_language(motivo)
+    if has_bad_language:
+        messages.error(
+            request,
+            "❌ El mensaje de rechazo contiene lenguaje inapropiado. Redáctalo nuevamente con tono formal e institucional."
+        )
+        return redirect("web:denuncia_detail", pk=denuncia_id)
+
     with transaction.atomic():
         denuncia = get_object_or_404(
-            Denuncias.objects.select_for_update(),  # ✅ SIN joins
+            Denuncias.objects.select_for_update(),
             id=denuncia_id,
         )
 
-
-        #   tomar denuncia (si está libre) o bloquear si ya la tomó otro
         if not request.user.is_superuser:
             ok, msg = tomar_denuncia_si_libre(
                 denuncia,
@@ -1631,35 +1818,27 @@ def rechazar_denuncia(request, denuncia_id):
                 return redirect("web:denuncia_detail", pk=denuncia_id)
 
         estado_anterior = denuncia.estado
-        denuncia.estado = "rechazada"  # <- asegúrate que exista en tu sistema
+        denuncia.estado = "rechazada"
         denuncia.updated_at = timezone.now()
         denuncia.save(update_fields=["estado", "updated_at", "asignado_funcionario"])
 
-        # historial
+        mensaje_ciudadano = _build_friendly_rejection_message(denuncia, motivo)
+
         DenunciaHistorial.objects.create(
             id=get_uuid(),
             estado_anterior=estado_anterior,
             estado_nuevo="rechazada",
-            comentario=f"Denuncia rechazada. Motivo: {motivo}",
+            comentario=f"Denuncia rechazada. Observación registrada: {motivo[:500]}",
             cambiado_por_funcionario=funcionario,
             created_at=timezone.now(),
             denuncia_id=denuncia.id,
-        )
-
-        # respuesta (mensaje al ciudadano)
-        mensaje = (
-            "Estimado/a ciudadano/a,\n\n"
-            "Su denuncia no pudo ser aceptada o procesada por el siguiente motivo:\n"
-            f"- {motivo}\n\n"
-            "Si desea, puede actualizar la información y volver a reportarla. "
-            "Estamos gustosos de ayudarle.\n"
         )
 
         DenunciaRespuestas.objects.create(
             id=get_uuid(),
             denuncia=denuncia,
             funcionario=funcionario,
-            mensaje=mensaje,
+            mensaje=mensaje_ciudadano,
             created_at=timezone.now(),
             updated_at=timezone.now(),
         )
@@ -1672,9 +1851,8 @@ def rechazar_denuncia(request, denuncia_id):
     except Exception as e:
         logger.exception("Fallo push Firebase: %s", e)
 
-    messages.success(request, "  Denuncia rechazada correctamente.")
+    messages.success(request, "✅ Denuncia rechazada correctamente.")
     return redirect("web:denuncia_detail", pk=denuncia_id)
-
 
 #------------------------------------
 # rechazar denuncia con ia
@@ -1694,7 +1872,6 @@ def llm_rechazo_response(request, denuncia_id):
             "ciudadano", "tipo_denuncia", "asignado_departamento", "asignado_funcionario"
         ).get(id=denuncia_id)
 
-        #   tomar denuncia (si está libre) o bloquear si ya la tomó otro
         if not request.user.is_superuser:
             ok, msg = tomar_denuncia_si_libre(
                 denuncia,
@@ -1704,45 +1881,57 @@ def llm_rechazo_response(request, denuncia_id):
             if not ok:
                 return JsonResponse({"success": False, "error": msg}, status=409)
 
-        motivo = ""
+        motivo_digitado = ""
         try:
             body = json.loads(request.body.decode("utf-8") or "{}")
-            motivo = (body.get("motivo") or "").strip()
+            motivo_digitado = (body.get("motivo") or "").strip()
         except Exception:
-            motivo = ""
+            motivo_digitado = ""
 
-        func_name = get_web_user_name_from_funcionario(denuncia.asignado_funcionario)
+        contexto = _build_llm_denuncia_context(denuncia)
+        motivos_detectados = _detect_rejection_reasons(denuncia)
+        motivos_detectados_texto = "\n".join(f"- {m}" for m in motivos_detectados) if motivos_detectados else "- No hay motivos detectados automáticamente."
 
         prompt = f"""
-Eres un asistente especializado en gestión de denuncias ciudadanas para la Municipalidad de Salcedo, Cotopaxi, Ecuador.
+Actúa como un funcionario del GAD Municipal de Salcedo que debe redactar un mensaje formal, claro, humano y respetuoso para informar al ciudadano que su denuncia no podrá continuar con el trámite por el momento.
 
-Redacta un mensaje CALIDO y RESPETUOSO para informar al ciudadano que su denuncia será RECHAZADA/NO PROCESADA.
-Incluye:
-- saludo
-- explicación breve
-- el motivo (si se proporciona)
-- invitación a corregir y volver a reportar
-- cierre amable
+REGLAS DEL MENSAJE:
+- Redacta en español.
+- Usa tono cordial, respetuoso, institucional y empático.
+- No suenes robótico.
+- No uses títulos, encabezados, JSON, markdown ni viñetas enumeradas.
+- Debe explicar la situación con sensibilidad.
+- Debe invitar al ciudadano a corregir la información y volver a presentar la denuncia.
+- Debe usar solamente motivos válidos relacionados con:
+  1) lenguaje inapropiado,
+  2) falta de evidencia,
+  3) falta de descripción suficiente.
+- Si el funcionario escribió una observación adicional, incorpórala solo si es coherente con esas razones.
+- No inventes hechos.
+- Si ya hay conversación previa, mantén coherencia con ella.
 
-Datos:
-- Ciudadano: {f"{denuncia.ciudadano.nombres} {denuncia.ciudadano.apellidos}" if denuncia.ciudadano else "Desconocido"}
-- Tipo: {denuncia.tipo_denuncia.nombre if denuncia.tipo_denuncia else "No especificado"}
-- Descripción: {denuncia.descripcion}
-- Referencia: {denuncia.referencia}
-- Departamento: {denuncia.asignado_departamento.nombre if denuncia.asignado_departamento else "No asignado"}
-- Funcionario: {func_name}
-- Motivo del rechazo (si existe): {motivo if motivo else "No proporcionado"}
+CONTEXTO COMPLETO:
+{contexto}
 
-Responde en español, solo texto plano.
+MOTIVOS DETECTADOS POR EL SISTEMA:
+{motivos_detectados_texto}
+
+OBSERVACIÓN ESCRITA POR EL FUNCIONARIO (si existe):
+{motivo_digitado if motivo_digitado else "No se escribió observación adicional."}
+
+Devuelve únicamente el mensaje final para el ciudadano.
 """.strip()
 
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "Responde siempre en texto plano."},
+                {
+                    "role": "system",
+                    "content": "Eres un redactor institucional del GAD Municipal de Salcedo. Responde únicamente con el mensaje final en texto plano."
+                },
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=400,
+            max_tokens=450,
         )
 
         raw_text = (resp.choices[0].message.content or "").strip()
@@ -1752,6 +1941,7 @@ Responde en español, solo texto plano.
         return JsonResponse({"success": False, "error": "Denuncia no encontrada"}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=500)
+    
 
 # =========================================
 # FUNCIONARIOS (CRUD)
