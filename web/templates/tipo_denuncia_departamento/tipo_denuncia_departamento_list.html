@@ -1,342 +1,147 @@
 {% extends 'base.html' %}
-
-{% block extra_css %}
-<style>
-  .tesis-table-card {
-    border: 0;
-    border-radius: 20px;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-  }
-
-  .tesis-table-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-    margin-bottom: 1.5rem;
-  }
-
-  .tesis-table-title {
-    margin-bottom: 0;
-    font-weight: 700;
-    font-size: 1.5rem;
-  }
-
-  .tesis-table-subtitle {
-    color: #6c757d;
-    margin-bottom: 0;
-    font-size: 0.95rem;
-  }
-
-  .tesis-table-wrap {
-    width: 100%;
-    overflow-x: hidden;
-  }
-
-  .tesis-table {
-    width: 100%;
-    margin-bottom: 0;
-    table-layout: fixed;
-  }
-
-  .tesis-table thead th {
-    background: #f8f9fc !important;
-    border-bottom: 1px solid #e9ecef !important;
-    color: #344767;
-    font-weight: 700;
-    font-size: 0.82rem;
-    vertical-align: middle;
-    white-space: normal;
-    text-transform: uppercase;
-    letter-spacing: .35px;
-  }
-
-  .tesis-table th,
-  .tesis-table td {
-    padding: 0.82rem 0.65rem;
-    vertical-align: middle;
-    border-color: #edf0f5;
-    word-break: break-word;
-    overflow-wrap: break-word;
-    white-space: normal;
-    font-size: 0.86rem;
-  }
-
-  .tesis-table tbody tr:hover {
-    background-color: #fafbff;
-  }
-
-  .tesis-table .col-numero {
-    width: 60px;
-    text-align: center;
-  }
-
-  .tesis-table .col-tipo {
-    width: 22%;
-  }
-
-  .tesis-table .col-departamento {
-    width: 24%;
-  }
-
-  .tesis-table .col-estado {
-    width: 13%;
-    text-align: center;
-  }
-
-  .tesis-table .col-fecha {
-    width: 16%;
-  }
-
-  .tesis-table .col-acciones {
-    width: 120px;
-    text-align: center;
-  }
-
-  .tesis-badge {
-    border-radius: 999px;
-    font-weight: 600;
-    padding: 0.42rem 0.72rem;
-    font-size: 0.74rem;
-    display: inline-block;
-    max-width: 100%;
-    white-space: normal;
-    word-break: break-word;
-  }
-
-  .tesis-actions {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    flex-wrap: nowrap;
-  }
-
-  .tesis-actions .btn {
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-  }
-
-  .tesis-empty {
-    padding: 2.5rem 1rem;
-  }
-
-  .tesis-pagination-wrap {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .tesis-pagination-info {
-    color: #6c757d;
-    font-size: 0.85rem;
-  }
-
-  @media (max-width: 991.98px) {
-    .tesis-table-wrap {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .tesis-table {
-      min-width: 980px;
-    }
-
-    .tesis-table th,
-    .tesis-table td {
-      font-size: 0.8rem;
-      padding: 0.65rem 0.55rem;
-      white-space: nowrap;
-    }
-
-    .tesis-table-header {
-      align-items: stretch;
-    }
-
-    .tesis-table-header .btn {
-      width: 100%;
-    }
-
-    .tesis-pagination-wrap {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .tesis-pagination-wrap nav {
-      overflow-x: auto;
-    }
-
-    .pagination {
-      flex-wrap: nowrap;
-      width: max-content;
-    }
-  }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="container-fluid mt-4">
-  <div class="row">
-    <div class="col-12">
-
-      <div class="tesis-table-header">
-        <div>
-          <h3 class="tesis-table-title">Asignación Tipo Denuncia - Departamento</h3>
-          <div class="tesis-table-subtitle">
-            Gestiona los tipos de denuncias con el departamento que lo resuelve.
-          </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+        <h3 class="mb-0">Asignación Tipo Denuncia - Departamento</h3>
+        <div class="text-muted">Gestiona los tipos de denuncias con el departamento que lo resuelve.</div>
         </div>
-
-        <a href="{% url 'web:tipo_denuncia_departamento_create' %}" class="btn btn-info text-white">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg me-1" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
-          </svg>
-          Nueva Asignación
-        </a>
-      </div>
-
-      <div class="card tesis-table-card">
-        <div class="card-body p-0">
-          <div class="tesis-table-wrap">
-            <table class="table table-hover mb-0 tesis-table">
-              <thead>
-                <tr>
-                  <th class="col-numero">#</th>
-                  <th class="col-tipo">Tipo de Denuncia</th>
-                  <th class="col-departamento">Departamento Asignado</th>
-                  <th class="col-estado">Estado Tipo Denuncia</th>
-                  <th class="col-estado">Estado Departamento</th>
-                  <th class="col-fecha">Fecha Creación</th>
-                  <th class="col-acciones text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for asignacion in asignaciones %}
-                <tr>
-                  <td class="text-center">{{ forloop.counter }}</td>
-                  <td>{{ asignacion.tipo_denuncia.nombre }}</td>
-                  <td>{{ asignacion.departamento.nombre }}</td>
-                  <td class="text-center">
-                    {% if asignacion.tipo_denuncia.activo %}
-                      <span class="badge bg-success tesis-badge">Activo</span>
-                    {% else %}
-                      <span class="badge bg-secondary tesis-badge">Inactivo</span>
-                    {% endif %}
-                  </td>
-                  <td class="text-center">
-                    {% if asignacion.departamento.activo %}
-                      <span class="badge bg-success tesis-badge">Activo</span>
-                    {% else %}
-                      <span class="badge bg-secondary tesis-badge">Inactivo</span>
-                    {% endif %}
-                  </td>
-                  <td>{{ asignacion.created_at|date:"d/m/Y H:i" }}</td>
-                  <td class="text-center">
-                    <div class="tesis-actions">
-                      <a href="{% url 'web:tipo_denuncia_departamento_detail' asignacion.pk %}"
-                         class="btn btn-sm btn-outline-info"
-                         title="Ver detalles">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
-                          <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
-                          <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
-                        </svg>
-                      </a>
-
-                      <a href="{% url 'web:tipo_denuncia_departamento_delete' asignacion.pk %}"
-                         class="btn btn-sm btn-outline-danger"
-                         title="Eliminar"
-                         onclick="return confirm('¿Está seguro de eliminar esta asignación?')">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash2-fill" viewBox="0 0 16 16">
-                          <path d="M2.037 3.225A.7.7 0 0 1 2 3c0-1.105 2.686-2 6-2s6 .895 6 2a.7.7 0 0 1-.037.225l-1.684 10.104A2 2 0 0 1 10.305 15H5.694a2 2 0 0 1-1.973-1.671zm9.89-.69C10.966 2.214 9.578 2 8 2c-1.58 0-2.968.215-3.926.534-.477.16-.795.327-.975.466.18.14.498.307.975.466C5.032 3.786 6.42 4 8 4s2.967-.215 3.926-.534c.477-.16.795-.327.975-.466-.18-.14-.498-.307-.975-.466z"/>
-                        </svg>
-                      </a>
-                    </div>
-                  </td>
-                </tr>
-                {% empty %}
-                <tr>
-                  <td colspan="7" class="text-center tesis-empty">
-                    <div class="text-muted mb-3" style="font-size: 2rem;">📂</div>
-                    <p class="text-muted">No hay asignaciones de tipos de denuncia a departamentos registradas.</p>
-                    <a href="{% url 'web:tipo_denuncia_departamento_create' %}" class="btn btn-info text-white">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg me-1" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
-                      </svg>
-                      Crear primera asignación
-                    </a>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {% if is_paginated %}
-        <div class="card-footer bg-white border-top-0">
-          <div class="tesis-pagination-wrap">
-            <div class="tesis-pagination-info">
-              Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ paginator.count }} registros
+                <a href="{% url 'web:tipo_denuncia_departamento_create' %}" class="btn btn-info text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
+</svg> Nueva Asignación
+                </a>
             </div>
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Tipo de Denuncia</th>
+                                    <th>Departamento Asignado</th>
+                                    <th>Estado Tipo Denuncia</th>
+                                    <th>Estado Departamento</th>
+                                    <th>Fecha Creación</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                               {% for asignacion in asignaciones %}
 
-            <nav aria-label="Navegación de páginas">
-              <ul class="pagination pagination-sm mb-0">
-                {% if page_obj.has_previous %}
-                  <li class="page-item">
-                    <a class="page-link" href="?page=1">&laquo; Primera</a>
-                  </li>
-                  <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
-                  </li>
-                {% else %}
-                  <li class="page-item disabled">
-                    <span class="page-link">&laquo; Primera</span>
-                  </li>
-                  <li class="page-item disabled">
-                    <span class="page-link">Anterior</span>
-                  </li>
+
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ asignacion.tipo_denuncia.nombre }}</td>
+                                    <td>{{ asignacion.departamento.nombre }}</td>
+                                    <td>
+                                        {% if asignacion.tipo_denuncia.activo %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if asignacion.departamento.activo %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ asignacion.created_at|date:"d/m/Y H:i" }}</td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'web:tipo_denuncia_departamento_detail' asignacion.pk %}" class="btn btn-sm btn-outline-info" title="Ver detalles">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+  <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+  <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+</svg>
+                                            </a>
+                                            
+                                            <a href="{% url 'web:tipo_denuncia_departamento_delete' asignacion.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="return confirm('¿Está seguro de eliminar esta asignación?')">
+                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash2-fill" viewBox="0 0 16 16">
+  <path d="M2.037 3.225A.7.7 0 0 1 2 3c0-1.105 2.686-2 6-2s6 .895 6 2a.7.7 0 0 1-.037.225l-1.684 10.104A2 2 0 0 1 10.305 15H5.694a2 2 0 0 1-1.973-1.671zm9.89-.69C10.966 2.214 9.578 2 8 2c-1.58 0-2.968.215-3.926.534-.477.16-.795.327-.975.466.18.14.498.307.975.466C5.032 3.786 6.42 4 8 4s2.967-.215 3.926-.534c.477-.16.795-.327.975-.466-.18-.14-.498-.307-.975-.466z"/>
+</svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5">
+                                        <i class="bi bi-inbox fs-1 text-muted"></i>
+                                        <p class="text-muted mt-3">No hay asignaciones de tipos de denuncia a departamentos registradas</p>
+                                        <a href="{% url 'web:tipo_denuncia_departamento_create' %}" class="btn btn-info text-white">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
+</svg> Crear primera asignación
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Paginación -->
+                {% if is_paginated %}
+                <div class="card-footer bg-white border-top-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted small">
+                            Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ paginator.count }} registros
+                        </div>
+                        <nav aria-label="Navegación de páginas">
+                            <ul class="pagination pagination-sm mb-0">
+                                {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1">&laquo; Primera</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">&laquo; Primera</span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link">Anterior</span>
+                                </li>
+                                {% endif %}
+                                
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ paginator.num_pages }}">Última &raquo;</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Siguiente</span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link">Última &raquo;</span>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
                 {% endif %}
-
-                {% for num in page_obj.paginator.page_range %}
-                  {% if page_obj.number == num %}
-                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                  {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
-                  {% endif %}
-                {% endfor %}
-
-                {% if page_obj.has_next %}
-                  <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
-                  </li>
-                  <li class="page-item">
-                    <a class="page-link" href="?page={{ paginator.num_pages }}">Última &raquo;</a>
-                  </li>
-                {% else %}
-                  <li class="page-item disabled">
-                    <span class="page-link">Siguiente</span>
-                  </li>
-                  <li class="page-item disabled">
-                    <span class="page-link">Última &raquo;</span>
-                  </li>
-                {% endif %}
-              </ul>
-            </nav>
-          </div>
+            </div>
         </div>
-        {% endif %}
-      </div>
-
     </div>
-  </div>
 </div>
 {% endblock %}
