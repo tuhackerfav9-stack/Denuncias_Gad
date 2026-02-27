@@ -21,6 +21,7 @@ services:
       - db
     volumes:
       - .:/app
+      - media_data:/app/media
     environment:
       DEBUG: "True"
       DB_NAME: bdd_denuncias_publicas
@@ -31,3 +32,4 @@ services:
 
 volumes:
   postgres_data:
+  media_data:
