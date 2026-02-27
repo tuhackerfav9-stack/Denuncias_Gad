@@ -32,6 +32,7 @@ from openai import OpenAI
 
 from db.models import (
     Ciudadanos,
+     CiudadanoDocumentos,
     Denuncia,
     DenunciaAsignaciones,
     DenunciaEvidencias,
@@ -956,6 +957,16 @@ class DenunciaDetailView(FuncionarioRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         denuncia = self.object
         user = self.request.user
+        # =========================
+        # Documentos del ciudadano (cédula frontal / trasera)
+        # =========================
+        doc_ciudadano = (
+            CiudadanoDocumentos.objects
+            .filter(ciudadano=denuncia.ciudadano)
+            .order_by("-created_at")
+            .first()
+        )
+        context["doc_ciudadano"] = doc_ciudadano
 
         # =========================
         # Asignaciones

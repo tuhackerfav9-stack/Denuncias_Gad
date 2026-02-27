@@ -387,13 +387,50 @@
         </div>
 
         <div class="card-body text-center">
-          {% if denuncia.ciudadano.foto_perfil_url %}
-            <img src="{{ denuncia.ciudadano.foto_perfil_url }}" class="rounded-circle mb-3" width="80" height="80" alt="Foto">
-          {% else %}
-            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-              <i class="bi bi-person display-4 text-secondary"></i>
+          {% if doc_ciudadano and doc_ciudadano.url_frontal and doc_ciudadano.url_trasera %}
+          <div id="cedulaCarousel" class="carousel slide mb-3" data-bs-ride="false">
+            <div class="carousel-inner rounded shadow-sm" style="overflow: hidden; background: #f8f9fa;">
+              <div class="carousel-item active">
+                <img src="{{ doc_ciudadano.url_frontal }}"
+                    class="d-block w-100"
+                    alt="Cédula frontal"
+                    style="height: 210px; object-fit: contain; background: #f8f9fa;">
+              </div>
+              <div class="carousel-item">
+                <img src="{{ doc_ciudadano.url_trasera }}"
+                    class="d-block w-100"
+                    alt="Cédula trasera"
+                    style="height: 210px; object-fit: contain; background: #f8f9fa;">
+              </div>
             </div>
-          {% endif %}
+
+            <button class="carousel-control-prev" type="button" data-bs-target="#cedulaCarousel" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon bg-dark rounded-circle p-2" aria-hidden="true"></span>
+              <span class="visually-hidden">Anterior</span>
+            </button>
+
+            <button class="carousel-control-next" type="button" data-bs-target="#cedulaCarousel" data-bs-slide="next">
+              <span class="carousel-control-next-icon bg-dark rounded-circle p-2" aria-hidden="true"></span>
+              <span class="visually-hidden">Siguiente</span>
+            </button>
+          </div>
+
+          <small class="text-muted d-block mb-3">Cédula del ciudadano (frontal / trasera)</small>
+
+        {% elif doc_ciudadano and doc_ciudadano.url_frontal %}
+          <div class="mb-3">
+            <img src="{{ doc_ciudadano.url_frontal }}"
+                class="img-fluid rounded shadow-sm"
+                alt="Cédula frontal"
+                style="max-height: 210px; object-fit: contain; background: #f8f9fa;">
+          </div>
+          <small class="text-muted d-block mb-3">Cédula frontal del ciudadano</small>
+
+        {% else %}
+          <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+            <i class="bi bi-person display-4 text-secondary"></i>
+          </div>
+        {% endif %}
 
           <h5 class="mb-1">{{ denuncia.ciudadano.nombres }} {{ denuncia.ciudadano.apellidos }}</h5>
           <p class="text-muted mb-0">{{ denuncia.ciudadano.cedula }}</p>

@@ -215,7 +215,7 @@ class RegisterFechaView(APIView):
             return Response({"detail": "Formato inválido, usa YYYY-MM-DD"}, status=400)
 
         borrador.save()
-        return Response({"detail": "Fecha guardada"}, status=200)
+        #return Response({"detail": "Fecha guardada"}, status=200)
 
 
 class RegisterDocumentosView(APIView):
