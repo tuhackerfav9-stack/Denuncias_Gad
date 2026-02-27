@@ -69,6 +69,13 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from web.services.webuser_domain import soft_disable_web_user
 from web.services.delete_rules import can_hard_delete_user
 import unicodedata
+from io import BytesIO
+
+try:
+    from PIL import Image, ImageOps
+except Exception:
+    Image = None
+    ImageOps = None
 
 def mi_vista(request):
     context = {
@@ -2274,6 +2281,46 @@ def link_callback(uri, rel):
             return path
 
     return uri  # fallback
+
+def _is_image_file(content_type=None, filename=None):
+    content_type = (content_type or "").lower()
+    filename = (filename or "").lower()
+
+    return (
+        content_type.startswith("image/")
+        or filename.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif"))
+    )
+
+
+def _optimize_existing_image_for_pdf(abs_path):
+    """
+    Toma una imagen ya guardada en disco (MEDIA) y crea una copia
+    más liviana para usarla en el PDF.
+    """
+    if not abs_path or not os.path.isfile(abs_path):
+        return ""
+
+    if Image is None:
+        return abs_path
+
+    try:
+        out_dir = os.path.join(settings.MEDIA_ROOT, "pdf_tmp")
+        os.makedirs(out_dir, exist_ok=True)
+
+        img = Image.open(abs_path)
+        img = ImageOps.exif_transpose(img)
+        img.thumbnail((1200, 1200))
+
+        if img.mode not in ("RGB", "L"):
+            img = img.convert("RGB")
+
+        out_path = os.path.join(out_dir, f"{uuid.uuid4().hex}.jpg")
+        img.save(out_path, format="JPEG", quality=70, optimize=True)
+        return out_path
+    except Exception:
+        return abs_path
+    
+
 def _guess_ext(content_type=None, filename=None):
     content_type = (content_type or "").lower()
     filename = (filename or "").lower()
@@ -2295,6 +2342,7 @@ def _guess_ext(content_type=None, filename=None):
 def _write_binary_temp_file(binary_data, content_type=None, filename=None):
     """
     Escribe un binario a MEDIA_ROOT/pdf_tmp/ para que xhtml2pdf pueda leerlo.
+    Si es imagen, la reduce antes para que el PDF no pese tanto.
     """
     if not binary_data:
         return ""
@@ -2306,11 +2354,26 @@ def _write_binary_temp_file(binary_data, content_type=None, filename=None):
     tmp_name = f"{uuid.uuid4().hex}{ext}"
     tmp_path = os.path.join(out_dir, tmp_name)
 
+    # Si es imagen, optimizar antes de guardar
+    if _is_image_file(content_type=content_type, filename=filename) and Image is not None:
+        try:
+            img = Image.open(BytesIO(bytes(binary_data)))
+            img = ImageOps.exif_transpose(img)
+            img.thumbnail((1200, 1200))
+
+            if img.mode not in ("RGB", "L"):
+                img = img.convert("RGB")
+
+            jpg_path = os.path.join(out_dir, f"{uuid.uuid4().hex}.jpg")
+            img.save(jpg_path, format="JPEG", quality=70, optimize=True)
+            return jpg_path
+        except Exception:
+            pass
+
     with open(tmp_path, "wb") as f:
         f.write(bytes(binary_data))
 
     return tmp_path
-
 
 def _resolve_public_or_media_path_for_pdf(raw_url: str | None) -> str:
     """
@@ -2331,9 +2394,10 @@ def _resolve_public_or_media_path_for_pdf(raw_url: str | None) -> str:
         rel_path = path.replace(settings.MEDIA_URL, "", 1)
         abs_path = os.path.join(settings.MEDIA_ROOT, rel_path)
         if os.path.isfile(abs_path):
+            if abs_path.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".gif")):
+                return _optimize_existing_image_for_pdf(abs_path)
             return abs_path
-
-    return raw_url
+        return raw_url
 
 
 def _resolve_evidencia_to_pdf_path(evidencia):
@@ -2505,6 +2569,8 @@ def denuncia_pdf(request, pk):
         return HttpResponse("Error al generar PDF", status=500)
 
     return response
+
+
 # web/views.py
 from django.http import HttpResponse, Http404
 from django.contrib.auth.decorators import login_required
