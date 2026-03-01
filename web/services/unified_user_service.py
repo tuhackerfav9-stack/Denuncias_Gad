@@ -18,6 +18,9 @@ from db.models import (
 )
 from web.models import FuncionarioWebUser
 
+from django.db import IntegrityError
+
+
 
 def _get_departamento(dep_id: Optional[int]) -> Optional[Departamentos]:
     if dep_id:
@@ -151,9 +154,34 @@ def upsert_unified_user(
     - Asegura FuncionarioWebUser (puente)
     - Sincroniza nombre/apellido/correo/activo en todas
     """
+
     now = timezone.now()
     creating = web_user is None
 
+    # =========================================================
+    # VALIDACIONES (antes de tocar DB)
+    # =========================================================
+
+    # Username único en auth_user (excepto el mismo en update)
+    if User.objects.filter(username=username).exclude(pk=getattr(web_user, "pk", None)).exists():
+        raise ValueError("❌ Ese usuario (username) ya existe. Prueba con otro.")
+
+    # Email único en auth_user (excepto el mismo en update)
+    if User.objects.filter(email=email).exclude(pk=getattr(web_user, "pk", None)).exists():
+        raise ValueError("❌ Ese correo ya está usado en otro usuario web. Usa otro correo.")
+
+    # Si ya existe un funcionario ligado (update), lo identificamos para excluirlo en la validación
+    link_tmp = _get_link_for_user(web_user) if (web_user and web_user.pk) else None
+    funcionario_tmp = link_tmp.funcionario if (link_tmp and link_tmp.funcionario) else None
+    funcionario_pk = getattr(funcionario_tmp, "pk", None)
+
+    # Cédula única SOLO en Funcionarios (excepto el mismo en update)
+    if Funcionarios.objects.filter(cedula=cedula).exclude(pk=funcionario_pk).exists():
+        raise ValueError(
+            f"❌ Ya existe un funcionario con la cédula {cedula}. "
+            "No se puede crear otro funcionario con la misma cédula."
+        )
+    
     # =========================================================
     # auth_user
     # =========================================================
@@ -195,6 +223,7 @@ def upsert_unified_user(
     if link and getattr(link, "funcionario", None):
         funcionario = link.funcionario
         usuario_uuid = getattr(funcionario, "usuario", None)
+
 
     # =========================================================
     # Usuarios (UUID)

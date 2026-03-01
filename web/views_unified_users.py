@@ -15,7 +15,7 @@ from web.services.unified_user_service import (
     hard_delete_unified_user,
 )
 from web.models import FuncionarioWebUser
-
+from django.db import IntegrityError
 
 class UnifiedUserListView(LoginRequiredMixin, ListView):
     template_name = "unified_users/unified_user_list.html"
@@ -95,7 +95,13 @@ class UnifiedUserCreateView(LoginRequiredMixin, TemplateView):
         except ValueError as e:
             messages.error(request, f"❌ {str(e)}")
             return render(request, self.template_name, {"form": form, "object": None})
-
+        except IntegrityError:
+            messages.error(
+                request,
+                "❌ No se pudo guardar porque hay datos duplicados (cédula o correo). "
+                "Verifica y vuelve a intentar."
+            )
+            return render(request, self.template_name, {"form": form, "object": None})
         messages.success(request, "✅ Usuario creado (auth_user + usuarios + funcionarios + puente).")
         return redirect("web:unified_user_list")
 
@@ -217,6 +223,21 @@ class UnifiedUserUpdateView(LoginRequiredMixin, TemplateView):
                 },
             )
 
+        except IntegrityError:
+            messages.error(
+                request,
+                "❌ No se pudo guardar porque hay datos duplicados (cédula o correo). "
+                "Verifica y vuelve a intentar."
+            )
+            return render(
+                request,
+                self.template_name,
+                {
+                    "form": form,
+                    "object": u,
+                    "link": link,
+                },
+            )
         messages.success(request, "✅ Usuario actualizado y sincronizado en las 4 tablas.")
         return redirect("web:unified_user_list")
 
