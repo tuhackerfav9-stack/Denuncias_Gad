@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin as DjangoPermissionRequiredMixin
 from django.contrib.auth.models import Group, Permission, User
 from django.shortcuts import render
+from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 
@@ -18,7 +19,10 @@ from db.models import (
     Funcionarios,
     TipoDenunciaDepartamento,
     TiposDenuncia,
+    Usuarios,
 )
+from web.models import FuncionarioWebUser
+from web.services.webuser_domain import ensure_domain_for_web_user
 from .models import Menus
 
 # =========================
@@ -73,36 +77,10 @@ class CrudMessageMixin:
         messages.success(request, self.get_delete_message(obj))
         return super().delete(request, *args, **kwargs)
 
+
 # =========================
 # Menús
 # =========================
-#class MenuForm(forms.ModelForm):
-#    class Meta:
-#        model = Menus
-#        fields = ["nombre", "url", "icono", "padre", "orden", "permisos"]
-#        widgets = {
-#            "nombre": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nombre del menú"}),
-#            "url": forms.TextInput(
-#                attrs={"class": "form-control", "placeholder": "URL o nombre de la ruta (e.g. web:home)"}
-#            ),
-#            "icono": forms.TextInput(attrs={"class": "form-control", "placeholder": "Clase de icono (bi bi-house)"}),
-#            "padre": ModelSelect2Widget(
-#                model=Menus,
-#                search_fields=["nombre__icontains"],
-#                attrs={"class": "form-control"},
-#            ),
-#            "orden": forms.NumberInput(attrs={"class": "form-control"}),
-#            "permisos": ModelSelect2MultipleWidget(
-#                model=Permission,
-#                search_fields=["name__icontains"],
-#                attrs={"class": "form-control"},
-#            ),
-#        }
-from django import forms
-from django.contrib.auth.models import Group
-from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
-from .models import Menus
-
 ICON_CHOICES = [
     ("", "--- Sin icono ---"),
 
@@ -228,15 +206,28 @@ ICON_CHOICES = [
 ]
 
 
-# =========================
-# Grupos
-# =========================
-
 class MenuForm(forms.ModelForm):
+    """
+    ✅ NO usamos resolver/choices dinámicos aquí, para que migrate/runserver no reviente.
+    ✅ Deja URL libre, pero validamos con reverse() y damos error bonito.
+    """
+
     icono = forms.ChoiceField(
         choices=ICON_CHOICES,
         required=False,
-        widget=forms.Select(attrs={"class": "form-select"})
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    url = forms.CharField(
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Ej: web:denuncia_list (vacío = menú sin link)",
+                "autocomplete": "off",
+            }
+        ),
+        help_text="Escribe una ruta con namespace. Ej: web:denuncia_list",
     )
 
     class Meta:
@@ -244,7 +235,6 @@ class MenuForm(forms.ModelForm):
         fields = ["nombre", "url", "icono", "padre", "orden", "permisos"]
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Denuncias"}),
-            "url": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: web:denuncia_list"}),
             "padre": ModelSelect2Widget(
                 model=Menus,
                 search_fields=["nombre__icontains"],
@@ -258,7 +248,32 @@ class MenuForm(forms.ModelForm):
             ),
         }
 
+    def clean_url(self):
+        val = (self.cleaned_data.get("url") or "").strip()
 
+        # Permite menú principal sin ruta
+        if not val:
+            return ""
+
+        # Si ponen "denuncia_list" sin namespace, lo arreglamos
+        if ":" not in val:
+            val = f"web:{val}"
+
+        # Validar que exista y sea reversible sin args
+        try:
+            reverse(val)
+        except NoReverseMatch:
+            raise forms.ValidationError(
+                "Ruta inválida o requiere parámetros. "
+                "Ejemplo válido: web:denuncia_list (si es menú principal, déjalo vacío)."
+            )
+
+        return val
+
+
+# =========================
+# Grupos
+# =========================
 class GrupoFuncionariosWidget(ModelSelect2MultipleWidget):
     model = User
     search_fields = [
@@ -267,6 +282,7 @@ class GrupoFuncionariosWidget(ModelSelect2MultipleWidget):
         "first_name__icontains",
         "last_name__icontains",
     ]
+
 
 class GrupoForm(forms.ModelForm):
     funcionarios = forms.ModelMultipleChoiceField(
@@ -279,39 +295,38 @@ class GrupoForm(forms.ModelForm):
                 "data-placeholder": "Buscar funcionarios...",
                 "style": "width: 100%;",
             }
-        )
+        ),
     )
 
     name = forms.CharField(
         required=True,
         label="Nombre",
-        widget=forms.TextInput(attrs={"placeholder": "Ej: Seguridad Ciudadana"})
+        widget=forms.TextInput(attrs={"placeholder": "Ej: Seguridad Ciudadana"}),
     )
 
     class Meta:
         model = Group
-        fields =  ["name", "funcionarios"] # seguimos sin permissions
-
+        fields = ["name", "funcionarios"]  # seguimos sin permissions
         widgets = {
-            "name": forms.TextInput(attrs={
-                "class": "form-control",
-                "placeholder": "Ej: Seguridad Ciudadana",
-                "autocomplete": "off",
-            })
+            "name": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Ej: Seguridad Ciudadana",
+                    "autocomplete": "off",
+                }
+            )
         }
 
     def __init__(self, *args, **kwargs):
         available_users_qs = kwargs.pop("available_users_qs", None)
         super().__init__(*args, **kwargs)
 
-        #   name requerido + mensaje bonito
         self.fields["name"].required = True
         self.fields["name"].error_messages["required"] = "Debes ingresar el nombre del grupo."
 
         if available_users_qs is not None:
             self.fields["funcionarios"].queryset = available_users_qs
 
-        #   En editar: precargar usuarios del grupo
         if self.instance.pk and not self.is_bound:
             self.fields["funcionarios"].initial = self.instance.user_set.all()
 
@@ -334,7 +349,7 @@ class GrupoForm(forms.ModelForm):
                     group.user_set.remove(*User.objects.filter(id__in=remove_ids))
 
                 for u in selected_users:
-                    u.groups.clear()   # deja 1 solo grupo por funcionario (tu regla)
+                    u.groups.clear()  # deja 1 solo grupo por funcionario (tu regla)
                     u.groups.add(group)
 
         return group
@@ -343,17 +358,8 @@ class GrupoForm(forms.ModelForm):
 # =========================
 # Funcionarios
 # =========================
-from django import forms
-from django.contrib.auth.models import User
-from django.utils import timezone
-from django_select2.forms import ModelSelect2Widget
-
-from db.models import Funcionarios, Departamentos, Usuarios
-from web.models import FuncionarioWebUser  # <-- tu tabla puente
-
-
 class FuncionarioForm(forms.ModelForm):
-    #  Usuario REAL (tabla usuarios UUID)
+    # Usuario REAL (tabla usuarios UUID)
     usuario = forms.ModelChoiceField(
         queryset=Usuarios.objects.all(),
         label="Usuario (App móvil - UUID)",
@@ -364,7 +370,7 @@ class FuncionarioForm(forms.ModelForm):
         ),
     )
 
-    #   WebUser (auth_user int) - se guarda en tabla puente
+    # WebUser (auth_user int) - se guarda en tabla puente
     web_user = forms.ModelChoiceField(
         queryset=User.objects.all(),
         label="Usuario Web (Login - auth_user)",
@@ -402,16 +408,18 @@ class FuncionarioForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        #   WebUsers disponibles: solo los que NO están vinculados en la tabla puente
         users_sin_funcionario = User.objects.exclude(funcionario_link__isnull=False).order_by("username")
 
-        #   En edición: permitir el actual y bloquear cambio de usuario UUID
         if self.instance and getattr(self.instance, "pk", None):
-            # Mantener el web_user ya vinculado (si existe)
-            link = FuncionarioWebUser.objects.filter(funcionario=self.instance).select_related("web_user").first()
+            link = (
+                FuncionarioWebUser.objects.filter(funcionario=self.instance)
+                .select_related("web_user")
+                .first()
+            )
+
             self.fields["web_user"].disabled = True
             self.fields["web_user"].help_text = "No se puede cambiar el usuario web una vez vinculado."
-            
+
             if link and link.web_user:
                 self.fields["web_user"].initial = link.web_user
                 users_sin_funcionario = users_sin_funcionario | User.objects.filter(pk=link.web_user.pk)
@@ -433,19 +441,17 @@ class FuncionarioForm(forms.ModelForm):
         if commit:
             instance.save()
 
-            #   Guardar/actualizar tabla puente con auth_user (si se seleccionó)
             web_user = self.cleaned_data.get("web_user")
-
             if web_user:
                 FuncionarioWebUser.objects.update_or_create(
                     funcionario=instance,
-                    defaults={"web_user": web_user}
+                    defaults={"web_user": web_user},
                 )
             else:
-                # si lo dejas vacío, opcional: borrar vínculo
                 FuncionarioWebUser.objects.filter(funcionario=instance).delete()
 
         return instance
+
 
 # =========================
 # Departamentos
@@ -470,32 +476,36 @@ class DepartamentoForm(forms.ModelForm):
             instance.save()
         return instance
 
-#------------------------
-# crear usuario y editar
-#--------------------------
-from web.services.webuser_domain import ensure_domain_for_web_user
 
-
+# =========================
+# Crear usuario / Editar usuario (Web)
+# =========================
 class WebUserForm(forms.ModelForm):
     password = forms.CharField(
         required=False,
-        widget=forms.PasswordInput(attrs={"class": "form-control"})
+        widget=forms.PasswordInput(attrs={"class": "form-control"}),
     )
 
     departamento = forms.ModelChoiceField(
         queryset=Departamentos.objects.filter(activo=True).order_by("nombre"),
         required=False,
-        widget=forms.Select(attrs={"class": "form-select"})
+        widget=forms.Select(attrs={"class": "form-select"}),
     )
 
     class Meta:
         model = User
         fields = [
-            "username", "email", "first_name", "last_name",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
             "password",
-            "is_staff", "is_superuser", "is_active",
+            "is_staff",
+            "is_superuser",
+            "is_active",
             "groups",
-            "date_joined", "last_login"
+            "date_joined",
+            "last_login",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -503,32 +513,24 @@ class WebUserForm(forms.ModelForm):
 
         is_create = not (self.instance and self.instance.pk)
 
-        # widgets básicos
         for f in ["username", "email", "first_name", "last_name"]:
             self.fields[f].widget.attrs.update({"class": "form-control"})
 
         self.fields["groups"].widget.attrs.update({"class": "form-select", "multiple": True})
-
         self.fields["is_staff"].widget.attrs.update({"class": "form-check-input"})
         self.fields["is_superuser"].widget.attrs.update({"class": "form-check-input"})
         self.fields["is_active"].widget.attrs.update({"class": "form-check-input"})
 
-        # fechas solo lectura
         self.fields["date_joined"].disabled = True
         self.fields["last_login"].disabled = True
         self.fields["date_joined"].widget.attrs.update({"class": "form-control"})
         self.fields["last_login"].widget.attrs.update({"class": "form-control"})
 
         if is_create:
-            # is_active interno al crear
             self.fields["is_active"].initial = True
             self.fields["is_active"].widget = forms.HiddenInput()
-
-            # fechas ocultas en create
             self.fields["date_joined"].widget = forms.HiddenInput()
             self.fields["last_login"].widget = forms.HiddenInput()
-
-            # password obligatorio al crear
             self.fields["password"].required = True
         else:
             self.fields["password"].required = False
@@ -537,10 +539,8 @@ class WebUserForm(forms.ModelForm):
         cleaned = super().clean()
         is_staff = cleaned.get("is_staff")
         dep = cleaned.get("departamento")
-
         if is_staff and not dep:
             self.add_error("departamento", "Seleccione el departamento del funcionario.")
-
         return cleaned
 
     def save(self, commit=True):
@@ -554,11 +554,11 @@ class WebUserForm(forms.ModelForm):
             user.save()
             self.save_m2m()
 
-            #   crear/sincronizar dominio con departamento
             dep = self.cleaned_data.get("departamento")
             ensure_domain_for_web_user(user, departamento_id=dep.id if dep else None)
 
         return user
+
 
 # =========================
 # FAQ
@@ -572,6 +572,7 @@ class FaqForm(forms.ModelForm):
             "respuesta": forms.Textarea(attrs={"class": "form-control", "rows": 5}),
             "visible": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
+
 
 # =========================
 # Denuncias
@@ -593,9 +594,21 @@ class DenunciaForm(forms.ModelForm):
             "referencia": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             "direccion_texto": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             "estado": forms.Select(attrs={"class": "form-select"}),
-            "asignado_departamento": ModelSelect2Widget(model=Departamentos, search_fields=["nombre__icontains"], attrs={"class": "form-control"}),
-            "asignado_funcionario": ModelSelect2Widget(model=Funcionarios, search_fields=["nombres__icontains", "apellidos__icontains", "cedula__icontains"], attrs={"class": "form-control"}),
-            "tipo_denuncia": ModelSelect2Widget(model=TiposDenuncia, search_fields=["nombre__icontains"], attrs={"class": "form-control"}),
+            "asignado_departamento": ModelSelect2Widget(
+                model=Departamentos,
+                search_fields=["nombre__icontains"],
+                attrs={"class": "form-control"},
+            ),
+            "asignado_funcionario": ModelSelect2Widget(
+                model=Funcionarios,
+                search_fields=["nombres__icontains", "apellidos__icontains", "cedula__icontains"],
+                attrs={"class": "form-control"},
+            ),
+            "tipo_denuncia": ModelSelect2Widget(
+                model=TiposDenuncia,
+                search_fields=["nombre__icontains"],
+                attrs={"class": "form-control"},
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -605,16 +618,24 @@ class DenunciaForm(forms.ModelForm):
             self.fields["estado"].choices = ESTADO_CHOICES
 
         if "asignado_departamento" in self.fields:
-            self.fields["asignado_departamento"].queryset = Departamentos.objects.filter(activo=True).order_by("nombre")
+            self.fields["asignado_departamento"].queryset = (
+                Departamentos.objects.filter(activo=True).order_by("nombre")
+            )
 
         if "tipo_denuncia" in self.fields:
-            self.fields["tipo_denuncia"].queryset = TiposDenuncia.objects.filter(activo=True).order_by("nombre")
+            self.fields["tipo_denuncia"].queryset = (
+                TiposDenuncia.objects.filter(activo=True).order_by("nombre")
+            )
 
         if "asignado_funcionario" in self.fields:
             try:
-                self.fields["asignado_funcionario"].queryset = Funcionarios.objects.filter(activo=True).order_by("apellidos", "nombres")
+                self.fields["asignado_funcionario"].queryset = (
+                    Funcionarios.objects.filter(activo=True).order_by("apellidos", "nombres")
+                )
             except Exception:
-                self.fields["asignado_funcionario"].queryset = Funcionarios.objects.all().order_by("apellidos", "nombres")
+                self.fields["asignado_funcionario"].queryset = (
+                    Funcionarios.objects.all().order_by("apellidos", "nombres")
+                )
 
 
 class DenunciaRespuestaForm(forms.ModelForm):
@@ -639,9 +660,14 @@ class DenunciaAsignacionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
-            self.fields["funcionario"].queryset = Funcionarios.objects.filter(activo=True).order_by("apellidos", "nombres")
+            self.fields["funcionario"].queryset = (
+                Funcionarios.objects.filter(activo=True).order_by("apellidos", "nombres")
+            )
         except Exception:
-            self.fields["funcionario"].queryset = Funcionarios.objects.all().order_by("apellidos", "nombres")
+            self.fields["funcionario"].queryset = (
+                Funcionarios.objects.all().order_by("apellidos", "nombres")
+            )
+
 
 # =========================
 # TipoDenuncia ↔ Departamento
@@ -658,22 +684,16 @@ class TipoDenunciaDepartamentoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # 1) Solo activos
         qs_tipos = TiposDenuncia.objects.filter(activo=True).order_by("nombre")
-        qs_deps  = Departamentos.objects.filter(activo=True).order_by("nombre")
+        qs_deps = Departamentos.objects.filter(activo=True).order_by("nombre")
 
-        # 2) Tipos ya asignados (por ser OneToOne, no deben repetirse)
-        asignados_ids = list(
-            TipoDenunciaDepartamento.objects.values_list("tipo_denuncia_id", flat=True)
-        )
+        asignados_ids = list(TipoDenunciaDepartamento.objects.values_list("tipo_denuncia_id", flat=True))
 
-        # 3) Si estoy editando, dejo el actual disponible (para que no desaparezca)
         if self.instance and self.instance.pk:
             actual_id = self.instance.tipo_denuncia_id
             if actual_id in asignados_ids:
                 asignados_ids.remove(actual_id)
 
-        # 4) En Create: excluye asignados. En Update: excluye asignados excepto el actual.
         qs_tipos = qs_tipos.exclude(id__in=asignados_ids)
 
         self.fields["tipo_denuncia"].queryset = qs_tipos
@@ -696,7 +716,6 @@ class TiposDenunciaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Si es CREATE: activo por defecto True y oculto el campo
         if not self.instance or not self.instance.pk:
             self.fields["activo"].initial = True
             self.fields["activo"].required = False
