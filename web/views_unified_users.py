@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.db.models import Q
 from django.views.generic import ListView, TemplateView
 from django.shortcuts import redirect, get_object_or_404, render
@@ -73,8 +73,13 @@ class UnifiedUserCreateView(LoginRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         form = UnifiedWebUserForm(request.POST)
+
         if not form.is_valid():
+            form._apply_bootstrap_error_classes()
+            messages.error(request, "❌ Revisa el formulario. Hay campos obligatorios o valores inválidos.")
             return render(request, self.template_name, {"form": form, "object": None})
+
+        departamento = form.cleaned_data.get("departamento")
 
         try:
             upsert_unified_user(
@@ -85,12 +90,12 @@ class UnifiedUserCreateView(LoginRequiredMixin, TemplateView):
                 last_name=form.cleaned_data["last_name"],
                 password=form.cleaned_data["password"],
                 is_superuser=form.cleaned_data["is_superuser"],
-                group=form.cleaned_data["group"],
-                departamento_id=form.cleaned_data["departamento"].id,
+                group=form.cleaned_data.get("group"),
+                departamento_id=departamento.id if departamento else None,
                 cedula=form.cleaned_data["cedula"],
                 telefono=form.cleaned_data["telefono"],
                 cargo=form.cleaned_data["cargo"],
-                activo=form.cleaned_data["activo"],
+                activo=form.cleaned_data.get("activo", True),
             )
         except ValueError as e:
             messages.error(request, f"❌ {str(e)}")
@@ -102,6 +107,7 @@ class UnifiedUserCreateView(LoginRequiredMixin, TemplateView):
                 "Verifica y vuelve a intentar."
             )
             return render(request, self.template_name, {"form": form, "object": None})
+
         messages.success(request, "✅ Usuario creado (auth_user + usuarios + funcionarios + puente).")
         return redirect("web:unified_user_list")
 
@@ -151,14 +157,20 @@ class UnifiedUserUpdateView(LoginRequiredMixin, TemplateView):
         u = link.web_user
         f = link.funcionario
 
+        group_initial = u.groups.first()
+        if u.is_superuser and not group_initial:
+            group_initial = Group.objects.filter(name__iexact="TICS_ADMIN").first()
+        elif not u.is_superuser and not group_initial:
+            group_initial = Group.objects.filter(name__iexact="FUNCIONARIO").first()
+
         initial = {
             "username": u.username,
             "email": u.email,
             "first_name": u.first_name,
             "last_name": u.last_name,
             "is_superuser": u.is_superuser,
-            "group": u.groups.first(),
-            "departamento": f.departamento,
+            "group": group_initial,
+            "departamento": None if u.is_superuser else f.departamento,
             "cedula": f.cedula,
             "telefono": f.telefono,
             "cargo": f.cargo,
@@ -184,7 +196,10 @@ class UnifiedUserUpdateView(LoginRequiredMixin, TemplateView):
         u = link.web_user
 
         form = UnifiedWebUserForm(request.POST, web_user=u)
+
         if not form.is_valid():
+            form._apply_bootstrap_error_classes()
+            messages.error(request, "❌ Revisa el formulario. Hay campos obligatorios o valores inválidos.")
             return render(
                 request,
                 self.template_name,
@@ -195,6 +210,8 @@ class UnifiedUserUpdateView(LoginRequiredMixin, TemplateView):
                 },
             )
 
+        departamento = form.cleaned_data.get("departamento")
+
         try:
             upsert_unified_user(
                 web_user=u,
@@ -204,8 +221,8 @@ class UnifiedUserUpdateView(LoginRequiredMixin, TemplateView):
                 last_name=form.cleaned_data["last_name"],
                 password=form.cleaned_data["password"] or None,
                 is_superuser=form.cleaned_data["is_superuser"],
-                group=form.cleaned_data["group"],
-                departamento_id=form.cleaned_data["departamento"].id,
+                group=form.cleaned_data.get("group"),
+                departamento_id=departamento.id if departamento else None,
                 cedula=form.cleaned_data["cedula"],
                 telefono=form.cleaned_data["telefono"],
                 cargo=form.cleaned_data["cargo"],
@@ -238,9 +255,9 @@ class UnifiedUserUpdateView(LoginRequiredMixin, TemplateView):
                     "link": link,
                 },
             )
+
         messages.success(request, "✅ Usuario actualizado y sincronizado en las 4 tablas.")
         return redirect("web:unified_user_list")
-
 
 class UnifiedUserDeleteView(LoginRequiredMixin, TemplateView):
     template_name = "unified_users/unified_user_confirm_delete.html"

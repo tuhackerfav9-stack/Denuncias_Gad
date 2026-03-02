@@ -6,7 +6,7 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
       <h3 class="mb-1">
-        {% if object %}Editar Funcionario Web {% else %}Crear Funcionario Web {% endif %}
+        {% if object %}Editar Funcionario Web{% else %}Crear Funcionario Web{% endif %}
       </h3>
       <p class="text-muted mb-0">
         Crea/edita el usuario del sistema y sincroniza sus datos con Funcionario, Usuarios y la tabla puente.
@@ -29,7 +29,6 @@
     {% csrf_token %}
 
     <style>
-      /*   Consistencia visual (igual estilo que tus otros forms) */
       .card, .card-body { overflow: visible !important; }
 
       .section-title{
@@ -49,12 +48,26 @@
         margin-left:.15rem;
       }
 
-      /*   checkbox alineado bonito */
       .form-check{
         padding-left: 1.8rem;
       }
       .form-check-input{
         margin-left: -1.8rem;
+      }
+
+      .admin-hint-box{
+        background: #eef5ff;
+        border: 1px solid #cfe2ff;
+        color: #0b3a6e;
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: .92rem;
+      }
+
+      .field-disabled-note{
+        color: #f28c28;
+        font-size: .85rem;
+        margin-top: .25rem;
       }
     </style>
 
@@ -165,13 +178,18 @@
             <div class="help-text">Ej: ADMIN_TIC, OPERADOR, FUNCIONARIO.</div>
           </div>
 
-          <div class="col-12 col-md-6">
+          <div class="col-12 col-md-6" id="departamentoWrapper">
             <label class="form-label">
-              <i class="bi bi-diagram-3 me-1"></i>Departamento<span class="req-dot">*</span>
+              <i class="bi bi-diagram-3 me-1"></i>Departamento<span class="req-dot" id="departamentoReq">*</span>
             </label>
             {{ form.departamento }}
             {% if form.departamento.errors %}<div class="text-danger small mt-1">{{ form.departamento.errors.0 }}</div>{% endif %}
-            <div class="help-text">Este valor se sincroniza con el dominio del funcionario.</div>
+            <div class="help-text" id="departamentoHelp">
+              Este valor se sincroniza con el dominio del funcionario.
+            </div>
+            <div class="field-disabled-note d-none" id="departamentoAdminNote">
+              Al marcar Superadmin, el departamento deja de ser obligatorio.
+            </div>
           </div>
         </div>
 
@@ -185,20 +203,34 @@
         </h5>
 
         <div class="row g-3">
+          <div class="col-12">
+            <div class="admin-hint-box d-none" id="superAdminBox">
+              <i class="bi bi-shield-fill-check me-1"></i>
+              Este usuario será tratado como <strong>Superadmin</strong>:
+              se asignará automáticamente al grupo <strong>TICS_ADMIN</strong>
+              y no requerirá departamento.
+            </div>
+          </div>
+
           <div class="col-12 col-md-6">
             <label class="form-label">
               <i class="bi bi-people me-1"></i>Grupo
             </label>
             {{ form.group }}
             {% if form.group.errors %}<div class="text-danger small mt-1">{{ form.group.errors.0 }}</div>{% endif %}
-            <div class="help-text">Regla: el funcionario queda en 1 solo grupo (se reemplaza).</div>
+            <div class="help-text" id="groupHelp">
+              Regla: el funcionario queda en 1 solo grupo (se reemplaza).
+            </div>
+            <div class="field-disabled-note d-none" id="groupAdminNote">
+              Se asignará automáticamente a TICS_ADMIN.
+            </div>
           </div>
 
           <div class="col-12 col-md-6">
             <label class="form-label d-block">&nbsp;</label>
             <div class="form-check mt-1">
               {{ form.is_superuser }}
-              <label class="form-check-label">
+              <label class="form-check-label" for="id_is_superuser">
                 <i class="bi bi-shield-lock me-1"></i>Superadmin
               </label>
             </div>
@@ -206,16 +238,18 @@
             <div class="help-text">Otorga acceso total al panel web.</div>
           </div>
 
+          {% if object %}
           <div class="col-12 col-md-6">
             <div class="form-check">
               {{ form.activo }}
-              <label class="form-check-label">
+              <label class="form-check-label" for="id_activo">
                 <i class="bi bi-check-circle me-1"></i>Activo
               </label>
             </div>
             {% if form.activo.errors %}<div class="text-danger small mt-1">{{ form.activo.errors.0 }}</div>{% endif %}
             <div class="help-text">Al desactivar se sincroniza en auth_user + funcionarios + usuarios.</div>
           </div>
+          {% endif %}
         </div>
 
         <div class="d-flex flex-wrap gap-2 mt-4">
@@ -232,24 +266,98 @@
     </div>
   </form>
 </div>
+
 <script>
   (function () {
-    const input = document.getElementById("id_password");
-    const btn = document.getElementById("togglePasswordBtn");
-    const icon = document.getElementById("togglePasswordIcon");
+    const passwordInput = document.getElementById("id_password");
+    const togglePasswordBtn = document.getElementById("togglePasswordBtn");
+    const togglePasswordIcon = document.getElementById("togglePasswordIcon");
 
-    // Si por alguna razón el form no tiene password, no hacemos nada
-    if (!input || !btn || !icon) return;
+    if (passwordInput && togglePasswordBtn && togglePasswordIcon) {
+      togglePasswordBtn.addEventListener("click", function () {
+        const isHidden = passwordInput.type === "password";
+        passwordInput.type = isHidden ? "text" : "password";
 
-    btn.addEventListener("click", function () {
-      const isHidden = input.type === "password";
-      input.type = isHidden ? "text" : "password";
+        if (isHidden) {
+          togglePasswordIcon.className = "mdi mdi-eye-off";
+        } else {
+          togglePasswordIcon.className = "mdi mdi-eye";
+        }
+      });
+    }
 
-      // Cambiar icono
-      icon.classList.toggle("mdi mdi-eye", !isHidden);
-      icon.classList.toggle("mdi-eye-slash", isHidden);
-    });
+    const superuserCheckbox = document.getElementById("id_is_superuser");
+    const groupSelect = document.getElementById("id_group");
+    const deptSelect = document.getElementById("id_departamento");
+
+    const superAdminBox = document.getElementById("superAdminBox");
+    const groupAdminNote = document.getElementById("groupAdminNote");
+    const departamentoAdminNote = document.getElementById("departamentoAdminNote");
+    const departamentoReq = document.getElementById("departamentoReq");
+
+    if (!superuserCheckbox || !groupSelect || !deptSelect) return;
+
+    const ADMIN_GROUP = (groupSelect.dataset.adminGroup || "TICS_ADMIN").toUpperCase();
+    const DEFAULT_GROUP = (groupSelect.dataset.defaultGroup || "FUNCIONARIO").toUpperCase();
+
+    function findOptionByText(select, textWanted) {
+      const wanted = (textWanted || "").trim().toUpperCase();
+      return Array.from(select.options).find(opt => (opt.text || "").trim().toUpperCase() === wanted);
+    }
+
+    function selectedText(select) {
+      const opt = select.options[select.selectedIndex];
+      return opt ? (opt.text || "").trim().toUpperCase() : "";
+    }
+
+    function setSelectByText(select, textWanted) {
+      const opt = findOptionByText(select, textWanted);
+      if (opt) {
+        select.value = opt.value;
+        return true;
+      }
+      return false;
+    }
+
+    function toggleAdminRules() {
+      const isAdmin = superuserCheckbox.checked;
+
+      if (isAdmin) {
+        if (deptSelect.value) {
+          deptSelect.dataset.previousValue = deptSelect.value;
+        }
+
+        setSelectByText(groupSelect, ADMIN_GROUP);
+        groupSelect.disabled = true;
+
+        deptSelect.value = "";
+        deptSelect.disabled = true;
+
+        superAdminBox.classList.remove("d-none");
+        groupAdminNote.classList.remove("d-none");
+        departamentoAdminNote.classList.remove("d-none");
+        if (departamentoReq) departamentoReq.classList.add("d-none");
+      } else {
+        groupSelect.disabled = false;
+        deptSelect.disabled = false;
+
+        if (!groupSelect.value || selectedText(groupSelect) === ADMIN_GROUP) {
+          setSelectByText(groupSelect, DEFAULT_GROUP);
+        }
+
+        if (!deptSelect.value && deptSelect.dataset.previousValue) {
+          deptSelect.value = deptSelect.dataset.previousValue;
+        }
+
+        superAdminBox.classList.add("d-none");
+        groupAdminNote.classList.add("d-none");
+        departamentoAdminNote.classList.add("d-none");
+        if (departamentoReq) departamentoReq.classList.remove("d-none");
+      }
+    }
+
+    superuserCheckbox.addEventListener("change", toggleAdminRules);
+    toggleAdminRules();
   })();
 </script>
-
 {% endblock %}

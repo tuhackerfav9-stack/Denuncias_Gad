@@ -1,7 +1,12 @@
 from django import forms
 from django.contrib.auth.models import User, Group
 
-from db.models import Departamentos, Funcionarios  # 👈 agrega Funcionarios
+from db.models import Departamentos, Funcionarios
+from web.models import FuncionarioWebUser
+
+
+AUTO_GROUP_ADMIN = "TICS_ADMIN"
+AUTO_GROUP_DEFAULT = "FUNCIONARIO"
 
 
 class UnifiedWebUserForm(forms.Form):
@@ -17,7 +22,10 @@ class UnifiedWebUserForm(forms.Form):
         help_text="En edición: dejar en blanco para no cambiar."
     )
 
-    is_superuser = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
+    is_superuser = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"})
+    )
 
     group = forms.ModelChoiceField(
         queryset=Group.objects.all().order_by("name"),
@@ -28,7 +36,7 @@ class UnifiedWebUserForm(forms.Form):
 
     departamento = forms.ModelChoiceField(
         queryset=Departamentos.objects.filter(activo=True).order_by("nombre"),
-        required=True,
+        required=False,  # <- OJO: ahora se valida en clean() según superadmin
         widget=forms.Select(attrs={"class": "form-select"})
     )
 
@@ -36,7 +44,11 @@ class UnifiedWebUserForm(forms.Form):
     telefono = forms.CharField(required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
     cargo = forms.CharField(required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
 
-    activo = forms.BooleanField(required=False, initial=True, widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
+    activo = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"})
+    )
 
     def __init__(self, *args, web_user: User | None = None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -45,8 +57,32 @@ class UnifiedWebUserForm(forms.Form):
         creating = web_user is None
         self.fields["password"].required = creating
 
-        # 👇 opcional: que al haber error se ponga rojo automáticamente
-        self._apply_bootstrap_error_classes()
+        # IDs y data attrs para JS
+        self.fields["group"].widget.attrs.update({
+            "id": "id_group",
+            "data-admin-group": AUTO_GROUP_ADMIN,
+            "data-default-group": AUTO_GROUP_DEFAULT,
+        })
+        self.fields["departamento"].widget.attrs.update({"id": "id_departamento"})
+        self.fields["is_superuser"].widget.attrs.update({"id": "id_is_superuser"})
+        self.fields["activo"].widget.attrs.update({"id": "id_activo"})
+
+        # Inicial del grupo solo si no vino ya desde initial
+        if not self.initial.get("group"):
+            if self.initial.get("is_superuser"):
+                self.fields["group"].initial = self._find_group_ci(AUTO_GROUP_ADMIN)
+            else:
+                self.fields["group"].initial = self._find_group_ci(AUTO_GROUP_DEFAULT)
+
+        # Si ya viene bind y luego se renderiza con errores
+        if self.is_bound:
+            self._apply_bootstrap_error_classes()
+
+    # =========================
+    # HELPERS
+    # =========================
+    def _find_group_ci(self, group_name: str):
+        return Group.objects.filter(name__iexact=group_name).first()
 
     # =========================
     # VALIDACIONES POR CAMPO
@@ -74,15 +110,17 @@ class UnifiedWebUserForm(forms.Form):
 
         qs = Funcionarios.objects.filter(cedula=cedula)
 
-        # si es update, excluir el funcionario ligado al web_user actual (si existe)
         if self.web_user and self.web_user.pk:
             try:
-                from web.models import FuncionarioWebUser
-                link = FuncionarioWebUser.objects.select_related("funcionario").filter(web_user=self.web_user).first()
+                link = (
+                    FuncionarioWebUser.objects
+                    .select_related("funcionario")
+                    .filter(web_user=self.web_user)
+                    .first()
+                )
                 if link and link.funcionario_id:
                     qs = qs.exclude(pk=link.funcionario_id)
             except Exception:
-                # si por algo falla el lookup, igual no rompemos el form
                 pass
 
         if qs.exists():
@@ -90,16 +128,55 @@ class UnifiedWebUserForm(forms.Form):
         return cedula
 
     # =========================
+    # VALIDACIÓN GENERAL
+    # =========================
+    def clean(self):
+        cleaned_data = super().clean()
+
+        creating = self.web_user is None
+        is_superuser = cleaned_data.get("is_superuser")
+        group = cleaned_data.get("group")
+        departamento = cleaned_data.get("departamento")
+
+        # Crear -> siempre activo internamente
+        if creating:
+            cleaned_data["activo"] = True
+
+        if is_superuser:
+            cleaned_data["departamento"] = None
+
+            admin_group = self._find_group_ci(AUTO_GROUP_ADMIN)
+            if admin_group:
+                cleaned_data["group"] = admin_group
+            else:
+                self.add_error(
+                    "group",
+                    f"No existe el grupo '{AUTO_GROUP_ADMIN}'. Créalo o cambia el literal en el formulario."
+                )
+
+        else:
+            if not departamento:
+                self.add_error("departamento", "El departamento es obligatorio si no es superadmin.")
+
+            if not group:
+                default_group = self._find_group_ci(AUTO_GROUP_DEFAULT)
+                if default_group:
+                    cleaned_data["group"] = default_group
+                else:
+                    self.add_error(
+                        "group",
+                        f"No existe el grupo '{AUTO_GROUP_DEFAULT}'. Créalo o cambia el literal en el formulario."
+                    )
+
+        self._apply_bootstrap_error_classes()
+        return cleaned_data
+
+    # =========================
     # HELPER: CLASE ROJA BOOTSTRAP
     # =========================
     def _apply_bootstrap_error_classes(self):
-        """
-        Si un campo tiene errores, agrega 'is-invalid' al widget.
-        (Bootstrap 4/5 lo pinta rojo automáticamente)
-        """
         for name, field in self.fields.items():
             css = field.widget.attrs.get("class", "")
-            # cuando ya re-renderiza con errores, Django ya tiene self.errors cargado
             if self.errors.get(name):
                 if "is-invalid" not in css:
                     field.widget.attrs["class"] = (css + " is-invalid").strip()

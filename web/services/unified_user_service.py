@@ -21,6 +21,13 @@ from web.models import FuncionarioWebUser
 from django.db import IntegrityError
 
 
+AUTO_GROUP_ADMIN = "TICS_ADMIN"
+AUTO_GROUP_DEFAULT = "FUNCIONARIO"
+
+
+def _find_group_ci(name: str) -> Optional[Group]:
+    return Group.objects.filter(name__iexact=name).first()
+
 
 def _get_departamento(dep_id: Optional[int]) -> Optional[Departamentos]:
     if dep_id:
@@ -130,6 +137,7 @@ def can_soft_disable_user(user: User) -> bool:
 # ------------------------------------------------------------
 # CREATE / UPDATE: asegurar que existan las 4 tablas
 # ------------------------------------------------------------
+
 @transaction.atomic
 def upsert_unified_user(
     *,
@@ -159,29 +167,49 @@ def upsert_unified_user(
     creating = web_user is None
 
     # =========================================================
+    # REGLAS AUTOMÁTICAS DE NEGOCIO
+    # =========================================================
+    if is_superuser:
+        admin_group = _find_group_ci(AUTO_GROUP_ADMIN)
+        if not admin_group:
+            raise ValueError(
+                f"❌ No existe el grupo '{AUTO_GROUP_ADMIN}'. "
+                "Créalo primero o cambia ese nombre en el servicio."
+            )
+        group = admin_group
+        departamento_id = None
+    else:
+        if group is None:
+            default_group = _find_group_ci(AUTO_GROUP_DEFAULT)
+            if not default_group:
+                raise ValueError(
+                    f"❌ No existe el grupo '{AUTO_GROUP_DEFAULT}'. "
+                    "Créalo primero o cambia ese nombre en el servicio."
+                )
+            group = default_group
+
+        if not departamento_id:
+            raise ValueError("❌ Debes seleccionar un departamento para un funcionario que no sea superadmin.")
+
+    # =========================================================
     # VALIDACIONES (antes de tocar DB)
     # =========================================================
-
-    # Username único en auth_user (excepto el mismo en update)
     if User.objects.filter(username=username).exclude(pk=getattr(web_user, "pk", None)).exists():
         raise ValueError("❌ Ese usuario (username) ya existe. Prueba con otro.")
 
-    # Email único en auth_user (excepto el mismo en update)
     if User.objects.filter(email=email).exclude(pk=getattr(web_user, "pk", None)).exists():
         raise ValueError("❌ Ese correo ya está usado en otro usuario web. Usa otro correo.")
 
-    # Si ya existe un funcionario ligado (update), lo identificamos para excluirlo en la validación
     link_tmp = _get_link_for_user(web_user) if (web_user and web_user.pk) else None
     funcionario_tmp = link_tmp.funcionario if (link_tmp and link_tmp.funcionario) else None
     funcionario_pk = getattr(funcionario_tmp, "pk", None)
 
-    # Cédula única SOLO en Funcionarios (excepto el mismo en update)
     if Funcionarios.objects.filter(cedula=cedula).exclude(pk=funcionario_pk).exists():
         raise ValueError(
             f"❌ Ya existe un funcionario con la cédula {cedula}. "
             "No se puede crear otro funcionario con la misma cédula."
         )
-    
+
     # =========================================================
     # auth_user
     # =========================================================
@@ -189,7 +217,6 @@ def upsert_unified_user(
         web_user = User(username=username)
         web_user.date_joined = now
 
-    # Validación: si se intenta desactivar un usuario ya activo
     if web_user.pk and web_user.is_active and not activo:
         block_reason = get_soft_disable_block_reason(web_user)
         if block_reason:
@@ -223,7 +250,6 @@ def upsert_unified_user(
     if link and getattr(link, "funcionario", None):
         funcionario = link.funcionario
         usuario_uuid = getattr(funcionario, "usuario", None)
-
 
     # =========================================================
     # Usuarios (UUID)
@@ -261,7 +287,7 @@ def upsert_unified_user(
     # =========================================================
     # Funcionarios
     # =========================================================
-    dep = _get_departamento(departamento_id)
+    dep = None if is_superuser else _get_departamento(departamento_id)
 
     if not funcionario:
         funcionario = Funcionarios.objects.filter(usuario=usuario_uuid).first()
@@ -305,9 +331,14 @@ def upsert_unified_user(
             funcionario.cargo = cargo
             changed_f = True
 
-        if dep and getattr(funcionario, "departamento_id", None) != dep.id:
-            funcionario.departamento = dep
-            changed_f = True
+        if is_superuser:
+            if getattr(funcionario, "departamento_id", None) is not None:
+                funcionario.departamento = None
+                changed_f = True
+        else:
+            if dep and getattr(funcionario, "departamento_id", None) != dep.id:
+                funcionario.departamento = dep
+                changed_f = True
 
         if getattr(funcionario, "activo", None) != activo:
             funcionario.activo = activo
@@ -340,7 +371,6 @@ def upsert_unified_user(
         funcionario=funcionario,
         link=link,
     )
-
 
 # ------------------------------------------------------------
 # SOFT DISABLE
