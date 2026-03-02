@@ -1449,6 +1449,37 @@ class TiposDenunciaListView(FuncionarioRequiredMixin, ListView):
     ordering = ["-id"]
     paginate_by = 10
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+
+        # IDs SOLO de la página actual
+        tipos_page = ctx["tipos"]
+        tipo_ids = list(tipos_page.values_list("pk", flat=True))
+
+        # Conteo de denuncias por tipo
+        den_counts = (
+            Denuncias.objects
+            .filter(tipo_denuncia_id__in=tipo_ids)
+            .values("tipo_denuncia_id")
+            .annotate(c=Count("pk"))
+        )
+        tipo_to_den = {i["tipo_denuncia_id"]: i["c"] for i in den_counts}
+
+        # Asignación a departamento (tabla puente)
+        asignados = set(
+            TipoDenunciaDepartamento.objects
+            .filter(tipo_denuncia_id__in=tipo_ids)
+            .values_list("tipo_denuncia_id", flat=True)
+        )
+
+        # Inyectar flags a cada objeto para el template
+        for t in tipos_page:
+            t.denuncias_count = tipo_to_den.get(t.pk, 0)
+            t.asignado_depto = (t.pk in asignados)
+            t.can_delete = (t.denuncias_count == 0 and not t.asignado_depto)
+
+        return ctx
+
 
 class TiposDenunciaCreateView(CrudMessageMixin, FuncionarioRequiredMixin, CreateView):
     model = TiposDenuncia
@@ -1502,18 +1533,69 @@ class TiposDenunciaUpdateView(CrudMessageMixin, FuncionarioRequiredMixin, Update
         obj.save()
         return super().form_valid(form)
 
+from django.contrib import messages
+from django.db import IntegrityError
+from django.shortcuts import redirect
+
 class TiposDenunciaDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, DeleteView):
     model = TiposDenuncia
     template_name = "tipos_denuncia/tipos_denuncia_confirm_delete.html"
     success_url = reverse_lazy("web:tipos_denuncia_list")
     login_url = "web:login"
-    context_object_name = "tipo_denuncia"  #   para que tu template lo reciba también
+    context_object_name = "tipo_denuncia"
+
+    def _counts(self, tipo):
+        denuncias_count = Denuncias.objects.filter(tipo_denuncia=tipo).count()
+        asignado_depto = TipoDenunciaDepartamento.objects.filter(tipo_denuncia=tipo).exists()
+        deptos_count = TipoDenunciaDepartamento.objects.filter(tipo_denuncia=tipo).count()  # por si cambia a FK normal
+        return denuncias_count, asignado_depto, deptos_count
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         tipo = self.object
-        ctx["total_denuncias"] = Denuncias.objects.filter(tipo_denuncia=tipo).count()  #   modelo real
+
+        denuncias_count, asignado_depto, deptos_count = self._counts(tipo)
+
+        ctx["total_denuncias"] = denuncias_count
+        ctx["asignado_departamento"] = asignado_depto
+        ctx["deptos_count"] = deptos_count
+        ctx["can_delete"] = (denuncias_count == 0 and not asignado_depto)
+
         return ctx
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        denuncias_count, asignado_depto, deptos_count = self._counts(self.object)
+
+        # ✅ Regla 1: si hay denuncias -> NO borrar
+        if denuncias_count > 0:
+            messages.error(
+                request,
+                f"❌ No se puede eliminar '{self.object.nombre}' porque tiene {denuncias_count} denuncia(s) asociada(s)."
+            )
+            return redirect("web:tipos_denuncia_detail", pk=self.object.pk)
+
+        # ✅ Regla 2: si está asignado a un departamento -> NO borrar
+        if asignado_depto:
+            messages.error(
+                request,
+                f"❌ No se puede eliminar '{self.object.nombre}' porque está asignado a un departamento. "
+                "Primero elimina esa asignación en 'Tipo Denuncia ↔ Departamento'."
+            )
+            return redirect("web:tipos_denuncia_detail", pk=self.object.pk)
+
+        # ✅ Si pasó validaciones -> borrar
+        try:
+            messages.success(request, "🗑️ Tipo de denuncia eliminado.")
+            return super().post(request, *args, **kwargs)
+        except IntegrityError:
+            # por si hubo carrera o FK raro
+            messages.error(
+                request,
+                "❌ No se pudo eliminar por integridad de datos (existen relaciones en la base)."
+            )
+            return redirect("web:tipos_denuncia_detail", pk=self.object.pk)
 
 # =========================================
 # Helpers de contexto / tono / validación

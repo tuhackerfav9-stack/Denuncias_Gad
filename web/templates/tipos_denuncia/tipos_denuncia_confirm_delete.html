@@ -57,20 +57,32 @@
             {% else %}
               <div class="alert alert-info" role="alert">
                 <i class="bi bi-info-circle me-2"></i>
-                Este tipo de denuncia no tiene denuncias asociadas, por lo que se puede eliminar sin problemas.
+                Este tipo de denuncia no tiene denuncias asociadas.
               </div>
             {% endif %}
           {% endwith %}
+{% if total_denuncias|default:0 > 0 %}
+  <div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-circle-fill me-2"></i>
+    No se puede eliminar porque existen <strong>{{ total_denuncias }}</strong> denuncias asociadas.
+  </div>
+{% endif %}
 
+{% if asignado_departamento %}
+  <div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-circle-fill me-2"></i>
+    No se puede eliminar porque este tipo está <strong>asignado a un departamento</strong>.
+  </div>
+{% endif %}
           <form method="post">
             {% csrf_token %}
             <div class="d-flex justify-content-end gap-2 mt-4">
               <a href="{% url 'web:tipos_denuncia_list' %}" class="btn btn-secondary">
                 <i class="bi bi-x-circle me-2"></i>Cancelar
               </a>
-              <button type="submit" class="btn btn-danger">
-                <i class="bi bi-trash me-2"></i>Sí, eliminar
-              </button>
+              <button type="submit" class="btn btn-danger" {% if not can_delete %}disabled{% endif %}>
+  <i class="bi bi-trash me-2"></i>Sí, eliminar
+</button>
             </div>
           </form>
 
