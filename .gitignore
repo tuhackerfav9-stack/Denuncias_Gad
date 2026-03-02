@@ -10,7 +10,7 @@ media/
 *.bak 
 
 serviceAccountKey.json
-*.json
+#*.json
 
 # If you are using PyCharm # 
 # User-specific stuff
