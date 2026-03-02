@@ -5,7 +5,7 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# ✅ Paquetes del sistema para compilar wheels (pycairo, lxml, etc.)
+#  Paquetes del sistema para compilar wheels (pycairo, lxml, etc.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \

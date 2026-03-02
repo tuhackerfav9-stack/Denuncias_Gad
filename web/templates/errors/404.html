@@ -1,82 +1,116 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Error 404</title>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <meta content="" name="description" />
-    <meta content="" name="keywords" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Error 404 | Página no encontrada</title>
 
-    <!-- FavIcon -->
   <link rel="shortcut icon" href="{% static 'assets/img/logo_gad_municipal_claro.png' %}" />
 
+  <link href="https://fonts.googleapis.com" rel="preconnect" />
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+    rel="stylesheet"
+  />
 
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com" rel="preconnect" />
-    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-      rel="stylesheet"
-    />
+  <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" />
+  <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet" />
 
-    <!-- Vendor CSS Files -->
-    <link
-      href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}"
-      rel="stylesheet"
-    />
-    <link
-      href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}"
-      rel="stylesheet"
-    />
-    <link href="{% static 'assets/vendor/aos/aos.css' %}" rel="stylesheet" />
-    <link
-      href="{% static 'assets/vendor/glightbox/css/glightbox.min.css' %}"
-      rel="stylesheet"
-    />
-    <link
-      href="{% static 'assets/vendor/swiper/swiper-bundle.min.css' %}"
-      rel="stylesheet"
-    />
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #f8f9fa 0%, #eef4ff 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+    }
 
-    <!-- Main CSS File -->
-    <link href="{% static 'assets/css/main.css' %}" rel="stylesheet" />
-  </head>
-  <body>
-    <div class="container-fluid mt-5">
-      <div class="row justify-content-center">
-        <div class="col-lg-6 text-center">
-          <div class="card shadow-lg border-warning">
-            <div class="card-body p-5">
-              <div class="mb-4">
-                <i
-                  class="bi bi-file-earmark-x"
-                  style="font-size: 5rem; color: #ffc107"
-                ></i>
-              </div>
-              <h1 class="card-title text-warning mb-3">404</h1>
-              <h4 class="mb-3">Página No Encontrada</h4>
-              <p class="card-text text-muted mb-4">
-                La página que buscas no existe o ha sido eliminada. Por favor,
-                verifica la URL o intenta navegar desde el menú principal.
-              </p>
-              <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                <a href="/" class="btn btn-primary me-md-2">
-                  <i class="bi bi-house me-2"></i>Volver al Inicio
-                </a>
-                <button
-                  onclick="window.history.back()"
-                  class="btn btn-outline-secondary"
-                >
-                  <i class="bi bi-arrow-left me-2"></i>Atrás
-                </button>
+    .error-card {
+      border: 0;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.10);
+      background: #fff;
+    }
+
+    .error-image {
+      max-width: 100%;
+      max-height: 320px;
+      object-fit: contain;
+    }
+
+    .error-code {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #f59e0b;
+      margin-bottom: .5rem;
+    }
+
+    .error-title {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .error-text {
+      color: #6b7280;
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .btn-rounded {
+      border-radius: 12px;
+      padding: .75rem 1.2rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10 col-xl-9">
+        <div class="card error-card">
+          <div class="row g-0 align-items-center">
+            <div class="col-md-6 text-center p-4 p-md-5 bg-light">
+              <img
+                src="{% static 'assets/img/errors/error_404.png' %}"
+                alt="Error 404"
+                class="error-image img-fluid"
+              />
+             
+            </div>
+
+            <div class="col-md-6">
+              <div class="p-4 p-md-5">
+                <div class="error-code">404</div>
+                <h1 class="error-title mb-3">Página no encontrada</h1>
+
+                <p class="error-text mb-4">
+                  La dirección que intentaste abrir no existe, fue movida o no está disponible.
+                  Puedes volver al inicio, regresar a la página anterior o ingresar desde el menú principal del sistema.
+                </p>
+
+                <div class="d-flex flex-column flex-sm-row gap-2">
+                  <a href="/web/" class="btn btn-primary btn-rounded">
+                    <i class="bi bi-house-door me-2"></i>Ir al inicio
+                  </a>
+
+                  <button onclick="window.history.back()" class="btn btn-outline-secondary btn-rounded">
+                    <i class="bi bi-arrow-left me-2"></i>Volver atrás
+                  </button>
+                </div>
+
+                <div class="mt-4 text-muted small">
+                  Sistema de Denuncias Públicas · GAD Municipal de Salcedo
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </body>
+  </div>
+</body>
 </html>

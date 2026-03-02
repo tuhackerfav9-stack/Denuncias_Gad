@@ -2,9 +2,9 @@
 *.log
 *.pot
 *.pyc
-__pycache__
+__pycache__/
 db.sqlite3
-media
+media/
 
 # Backup files # 
 *.bak 
@@ -143,3 +143,9 @@ GitHub.sublime-settings
 
 #crear poryecto
 bootstrap.ps1
+
+# Archivos generados por Django / Docker / Gunicorn
+staticfiles/
+gunicorn.ctl
+*.pid
+*.sock
