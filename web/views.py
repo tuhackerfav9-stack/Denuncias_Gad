@@ -155,7 +155,7 @@ def tomar_denuncia_si_libre(denuncia, funcionario, motivo="Denuncia tomada para 
             denuncia=denuncia,
             funcionario=funcionario,
             asignado_en=timezone.now(),
-            activo=True,  # ✅ CLAVE para que no mande NULL
+            activo=True,  #  CLAVE para que no mande NULL
         )
 
 
@@ -171,7 +171,7 @@ def tomar_denuncia(request, denuncia_id):
 
     with transaction.atomic():
         denuncia = get_object_or_404(
-            Denuncias.objects.select_for_update(),  # ✅ SIN select_related
+            Denuncias.objects.select_for_update(),  #  SIN select_related
             id=denuncia_id,
         )
 
@@ -1393,7 +1393,7 @@ class MisDenunciasListView(LoginRequiredMixin, ListView):
         context["denuncias_asignadas"] = qs.filter(estado="asignada").count()
         context["denuncias_en_proceso"] = qs.filter(estado="en_proceso").count()
         context["denuncias_resueltas"] = qs.filter(estado="resuelta").count()
-        context["denuncias_rechazadas"] = qs.filter(estado="rechazada").count()  # ✅ nuevo
+        context["denuncias_rechazadas"] = qs.filter(estado="rechazada").count()  #  nuevo
 
         # Faltantes del DEPARTAMENTO (estado=asignada)
         faltantes_dep = 0
@@ -1405,7 +1405,7 @@ class MisDenunciasListView(LoginRequiredMixin, ListView):
                 estado="asignada",
             ).count()
 
-            # ✅ Tipos SOLO del departamento:
+            #  Tipos SOLO del departamento:
             # (asumiendo que TipoDenunciaDepartamento relaciona tipo_denuncia <-> departamento)
             tipos_qs = TiposDenuncia.objects.filter(
                 activo=True,
@@ -1613,7 +1613,7 @@ class TiposDenunciaDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, Delete
 
         denuncias_count, asignado_depto, deptos_count = self._counts(self.object)
 
-        # ✅ Regla 1: si hay denuncias -> NO borrar
+        #  Regla 1: si hay denuncias -> NO borrar
         if denuncias_count > 0:
             messages.error(
                 request,
@@ -1621,7 +1621,7 @@ class TiposDenunciaDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, Delete
             )
             return redirect("web:tipos_denuncia_detail", pk=self.object.pk)
 
-        # ✅ Regla 2: si está asignado a un departamento -> NO borrar
+        #  Regla 2: si está asignado a un departamento -> NO borrar
         if asignado_depto:
             messages.error(
                 request,
@@ -1630,7 +1630,7 @@ class TiposDenunciaDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, Delete
             )
             return redirect("web:tipos_denuncia_detail", pk=self.object.pk)
 
-        # ✅ Si pasó validaciones -> borrar
+        #  Si pasó validaciones -> borrar
         try:
             messages.success(request, "🗑️ Tipo de denuncia eliminado.")
             return super().post(request, *args, **kwargs)
@@ -2073,7 +2073,7 @@ def rechazar_denuncia(request, denuncia_id):
     except Exception as e:
         logger.exception("Fallo push Firebase: %s", e)
 
-    messages.success(request, "✅ Denuncia rechazada correctamente.")
+    messages.success(request, " Denuncia rechazada correctamente.")
     return redirect("web:denuncia_detail", pk=denuncia_id)
 
 #------------------------------------
@@ -2376,7 +2376,7 @@ class DepartamentosDeleteView(CrudMessageMixin, FuncionarioRequiredMixin, Delete
             )
             return redirect("web:departamento_detail", pk=self.object.pk)
 
-        # ✅ NUEVO: bloqueo por tabla puente TipoDenunciaDepartamento
+        #  NUEVO: bloqueo por tabla puente TipoDenunciaDepartamento
         tipos_count = TipoDenunciaDepartamento.objects.filter(departamento=self.object).count()
         if tipos_count > 0:
             messages.error(
