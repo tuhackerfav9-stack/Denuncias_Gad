@@ -28,7 +28,7 @@ handler500 = 'web.views.server_error_view'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('select2/', include('django_select2.urls')),
+    path('web/select2/', include('django_select2.urls')),
     path("web/api/auth/", include("usuarios_api.urls")),
     path("web/api/catalogos/", include("catalogos_api.urls")),
     path("web/api/denuncias/", include("denuncias_api.urls")),
@@ -36,7 +36,7 @@ urlpatterns = [
     path("web/api/chatbot/", include("chatbot_api.urls")),
     path("web/api/notificaciones/", include("notificaciones.urls")),
     
-
+    #rutas que se topo, se les aumento web/ para probar si el apuntador vale
 
     path("web/", include("web.urls")),
     path('', RedirectView.as_view(url='/web/', permanent=True)),
